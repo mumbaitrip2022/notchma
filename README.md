@@ -134,3 +134,7 @@ make run         # build and launch from ./build
 swift test       # 25 unit + integration tests (parsers, safety rules, git, shell)
 swift build      # debug build (includes test-only socket commands)
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE).
