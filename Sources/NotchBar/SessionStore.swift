@@ -176,8 +176,8 @@ final class SessionStore: ObservableObject {
         case "PostToolUse":
             if let pending = approvals.first(where: { $0.sessionID == sid }) {
                 s.status = .needsApproval(tool: pending.toolName)
-            } else if agent == .cursor {
-                // Cursor only reports tools after they run; show the latest action.
+            } else if agent == .cursor && !s.actions.contains(where: { $0.tool == tool && $0.ok == nil }) {
+                // A Cursor step we only heard about afterwards (no preToolUse): show it as the latest action.
                 s.status = .tool(name: tool, detail: ToolInfo.detail(tool: tool, input: input))
                 if s.turnStartedAt == nil { s.turnStartedAt = now }
                 newAlert = trackCall(&t, &s, tool: tool, input: input, now: now)

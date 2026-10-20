@@ -108,6 +108,11 @@ func finish(_ out: [String: Any]?) -> Never {
     exit(0)
 }
 
+// Cursor also runs Claude Code's hooks for its agent: route those payloads correctly.
+guard let routed = Normalizer.route(raw, invokedAs: agent,
+                                    cursorHooksInstalled: { Installer.isInstalled(agent: .cursor) }) else { exit(0) }
+agent = routed
+
 guard var event = Normalizer.normalize(raw, agent: agent) else { finish(fallbackOutput()) }
 
 let env = ProcessInfo.processInfo.environment

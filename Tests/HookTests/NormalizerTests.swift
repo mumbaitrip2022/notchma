@@ -36,3 +36,42 @@ final class NormalizerTests: XCTestCase {
         XCTAssertEqual((out["tool_input"] as? [String: Any])?["command"] as? String, "bash -lc ls")
     }
 }
+
+final class CursorRoutingTests: XCTestCase {
+    private func cursorEvent(_ name: String) -> [String: Any] {
+        ["hook_event_name": name, "cursor_version": "3.25.9", "conversation_id": "c", "session_id": "c"]
+    }
+
+    func testClaudePayloadStaysClaude() {
+        let raw: [String: Any] = ["hook_event_name": "PreToolUse", "session_id": "s"]
+        XCTAssertEqual(Normalizer.route(raw, invokedAs: .claude, cursorHooksInstalled: { true }), .claude)
+    }
+
+    func testCursorLiveToolEventsOnClaudePathBecomeCursor() {
+        for e in ["preToolUse", "postToolUse"] {
+            XCTAssertEqual(Normalizer.route(cursorEvent(e), invokedAs: .claude, cursorHooksInstalled: { true }), .cursor)
+        }
+    }
+
+    func testCursorDuplicatesOnClaudePathAreDropped() {
+        for e in ["beforeSubmitPrompt", "stop", "afterAgentThought"] {
+            XCTAssertNil(Normalizer.route(cursorEvent(e), invokedAs: .claude, cursorHooksInstalled: { true }))
+        }
+    }
+
+    func testWithoutNativeCursorHooksEverythingIsKeptAsCursor() {
+        XCTAssertEqual(Normalizer.route(cursorEvent("stop"), invokedAs: .claude, cursorHooksInstalled: { false }), .cursor)
+    }
+
+    func testCursorPreToolUseNormalizes() {
+        var raw = cursorEvent("preToolUse")
+        raw["workspace_roots"] = ["/p"]
+        raw["tool_name"] = "Shell"
+        raw["tool_input"] = ["command": "npm test"]
+        let out = Normalizer.normalize(raw, agent: .cursor)!
+        XCTAssertEqual(out["hook_event_name"] as? String, "PreToolUse")
+        XCTAssertEqual(out["tool_name"] as? String, "Bash")
+        XCTAssertEqual(out["cwd"] as? String, "/p")
+        XCTAssertEqual((out["tool_input"] as? [String: Any])?["command"] as? String, "npm test")
+    }
+}

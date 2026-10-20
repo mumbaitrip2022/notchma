@@ -17,6 +17,40 @@ enum Agent: String, CaseIterable {
 /// hook_event_name ∈ SessionStart, SessionEnd, UserPromptSubmit, PreToolUse,
 /// PostToolUse, PermissionRequest, Notification, Stop, Interrupt.
 enum Normalizer {
+    /// Events Cursor sends through its own hooks.json entry (when NotchBar's Cursor hooks are installed).
+    static let cursorNativeEvents: Set<String> = [
+        "sessionStart", "sessionEnd", "beforeSubmitPrompt", "afterShellExecution", "afterMCPExecution",
+        "afterFileEdit", "postToolUseFailure", "afterAgentResponse", "afterAgentThought", "stop",
+        "beforeShellExecution", "beforeMCPExecution",
+    ]
+
+    /// Which agent a payload really belongs to, or nil to drop it.
+    ///
+    /// Cursor also runs Claude Code's hooks (~/.claude/settings.json) for its own agent, so
+    /// Cursor events can arrive on the Claude entry. They carry `cursor_version`. Keep the
+    /// ones only that path delivers (live preToolUse/postToolUse) as Cursor, and drop the
+    /// ones Cursor already sends through its own entry, so nothing is counted twice.
+    static func route(_ raw: [String: Any], invokedAs agent: Agent, cursorHooksInstalled: () -> Bool) -> Agent? {
+        guard agent != .cursor, raw["cursor_version"] != nil else { return agent }
+        let event = raw["hook_event_name"] as? String ?? ""
+        if cursorNativeEvents.contains(event) && cursorHooksInstalled() { return nil }
+        return .cursor
+    }
+
+    /// Cursor tool names → the names NotchBar understands (Claude's vocabulary).
+    static func cursorTool(_ name: String) -> String {
+        switch name {
+        case "Shell", "run_terminal_cmd", "Terminal": return "Bash"
+        case "StrReplace", "search_replace", "edit_file", "ApplyPatch": return "Edit"
+        case "create_file": return "Write"
+        case "read_file": return "Read"
+        case "grep_search", "codebase_search", "SemanticSearch": return "Grep"
+        case "file_search", "list_dir": return "Glob"
+        case "web_search": return "WebSearch"
+        default: return name
+        }
+    }
+
     static func normalize(_ e: [String: Any], agent: Agent) -> [String: Any]? {
         // Internal control messages (debug builds) pass straight through.
         if (e["hook_event_name"] as? String)?.hasPrefix("_") == true { return e }
@@ -117,10 +151,14 @@ enum Normalizer {
             out["hook_event_name"] = "PostToolUse"
             out["tool_name"] = "Edit"
             out["tool_input"] = ["file_path": e["file_path"] as? String ?? ""]
-        case "postToolUse":
-            out["hook_event_name"] = "PostToolUse"
-            out["tool_name"] = e["tool_name"] as? String ?? "Tool"
-            out["tool_input"] = e["tool_input"] as? [String: Any] ?? [:]
+        case "preToolUse", "postToolUse":
+            out["hook_event_name"] = name == "preToolUse" ? "PreToolUse" : "PostToolUse"
+            out["tool_name"] = cursorTool(e["tool_name"] as? String ?? "Tool")
+            var input = e["tool_input"] as? [String: Any] ?? mcpInput()
+            if input["file_path"] == nil, let p = (input["path"] ?? input["target_file"]) as? String { input["file_path"] = p }
+            out["tool_input"] = input
+            if let id = e["tool_use_id"] as? String { out["tool_use_id"] = id }
+            if name == "postToolUse", let tail = outputTail(e["tool_output"]) { out["_output_tail"] = tail }
         case "postToolUseFailure":
             out["hook_event_name"] = "PostToolUseFailure"
             out["tool_name"] = e["tool_name"] as? String ?? "Tool"
