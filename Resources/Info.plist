@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>NotchBar</string>
+	<key>CFBundleExecutable</key>
+	<string>NotchBar</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>dev.notchbar.app</string>
+	<key>CFBundleName</key>
+	<string>NotchBar</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Lets NotchBar switch to the exact terminal tab an agent runs in, and open new agent tabs.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Lets NotchBar stay quiet during meetings and remind you about waiting agents before they start. Event details never leave your Mac.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>NotchBar listens only while you hold ⌃⌥V dictation, to turn your voice into the next prompt for an agent.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Turns your dictated instruction into text. Recognition runs on this Mac when supported.</string>
+	<key>NSSupportsAutomaticGraphicsSwitching</key>
+	<true/>
+</dict>
+</plist>
