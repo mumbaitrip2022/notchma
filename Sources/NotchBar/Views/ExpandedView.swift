@@ -251,10 +251,18 @@ struct SessionRow: View {
                             .frame(width: 14)
                             .padding(.trailing, 4)
                     }
-                    Text(session.alert?.text ?? session.statusText)
-                        .foregroundStyle(session.alert != nil ? Color.approval : statusColor)
-                        .lineLimit(1)
-                        .layoutPriority(1)
+                    Group {
+                        if session.status.isWorking && session.alert == nil {
+                            ShimmerText(text: session.statusText, active: true, size: 11.5,
+                                        color: NSColor(statusColor))
+                                .frame(height: 14)
+                        } else {
+                            Text(session.alert?.text ?? session.statusText)
+                                .foregroundStyle(session.alert != nil ? Color.approval : statusColor)
+                                .lineLimit(1)
+                        }
+                    }
+                    .layoutPriority(1)
                     if !detailLine.isEmpty {
                         Text("  ·  " + detailLine)
                             .foregroundStyle(Palette.text3)

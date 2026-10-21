@@ -113,10 +113,19 @@ struct AgentGlyph: View {
                     .foregroundStyle(color)
                     .symbolEffect(.pulse, options: .repeating, isActive: active)
             case .cursor:
-                Image(systemName: "cursorarrow")
-                    .font(.system(size: size * 0.95, weight: .bold))
-                    .foregroundStyle(color)
-                    .symbolEffect(.pulse, options: .repeating, isActive: active)
+                if let icon = AppIcons.icon(for: .cursor) {
+                    // The real Cursor logo, taken from the installed Cursor.app.
+                    Image(nsImage: icon)
+                        .resizable()
+                        .interpolation(.high)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: size * 1.25, height: size * 1.25)
+                } else {
+                    Image(systemName: "cursorarrow")
+                        .font(.system(size: size * 0.95, weight: .bold))
+                        .foregroundStyle(color)
+                        .symbolEffect(.pulse, options: .repeating, isActive: active)
+                }
             }
         }
         .frame(width: size, height: size)
@@ -131,8 +140,17 @@ struct AgentTile: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: size * 0.29, style: .continuous).fill(Palette.surface3)
-            AgentGlyph(agent: agent, active: status?.isWorking ?? false, size: size * 0.46)
+            if let icon = AppIcons.icon(for: agent) {
+                // App icons bring their own rounded-square background.
+                Image(nsImage: icon)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: size * 1.12, height: size * 1.12) // icon art has built-in margins
+            } else {
+                RoundedRectangle(cornerRadius: size * 0.29, style: .continuous).fill(Palette.surface3)
+                AgentGlyph(agent: agent, active: status?.isWorking ?? false, size: size * 0.46)
+            }
         }
         .frame(width: size, height: size)
         .overlay(alignment: .bottomTrailing) {
@@ -164,5 +182,136 @@ struct StatusBadge: View {
             }
         }
         .frame(width: 16, height: 16)
+    }
+}
+
+// MARK: - Shimmer text ("thinking" sheen)
+
+/// Status text with a soft white light passing over it while an agent works —
+/// the sheen modern agent UIs use for "Thinking…". Monochrome (gray text, white
+/// light), drawn by Core Animation: no per-frame CPU work.
+struct ShimmerText: NSViewRepresentable {
+    var text: String
+    var active: Bool
+    var size: CGFloat = 12.5
+    var weight: NSFont.Weight = .regular
+    var color: NSColor = NSColor.white.withAlphaComponent(0.56)
+
+    func makeNSView(context: Context) -> ShimmerTextView {
+        let v = ShimmerTextView()
+        v.configure(text: text, active: active, font: .systemFont(ofSize: size, weight: weight), color: color)
+        return v
+    }
+
+    func updateNSView(_ v: ShimmerTextView, context: Context) {
+        v.configure(text: text, active: active, font: .systemFont(ofSize: size, weight: weight), color: color)
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: ShimmerTextView, context: Context) -> CGSize? {
+        let s = nsView.textSize
+        var w = s.width
+        if let pw = proposal.width, pw.isFinite { w = min(w, pw) }
+        return CGSize(width: max(0, w), height: s.height)
+    }
+}
+
+final class ShimmerTextView: NSView {
+    private let base = CATextLayer()      // the gray text
+    private let sheen = CAGradientLayer() // white light band, visible only through…
+    private let mask = CATextLayer()      // …the same text as a mask
+    private var key = ""
+    private var shimmering = false
+    private(set) var textSize: CGSize = .zero
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        for t in [base, mask] {
+            t.truncationMode = .end
+            t.isWrapped = false
+            t.alignmentMode = .left
+        }
+        sheen.startPoint = CGPoint(x: 0, y: 0.5)
+        sheen.endPoint = CGPoint(x: 1, y: 0.5)
+        sheen.colors = [NSColor.white.withAlphaComponent(0).cgColor,
+                        NSColor.white.withAlphaComponent(0.95).cgColor,
+                        NSColor.white.withAlphaComponent(0).cgColor]
+        sheen.mask = mask
+        sheen.isHidden = true
+        layer?.addSublayer(base)
+        layer?.addSublayer(sheen)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    func configure(text: String, active: Bool, font: NSFont, color: NSColor) {
+        let k = "\(text)|\(font.pointSize)|\(font.fontName)|\(color)|\(active)"
+        guard k != key else { return }
+        let textChanged = !key.hasPrefix(text + "|")
+        key = k
+        base.string = NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: color])
+        mask.string = NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: NSColor.black])
+        let s = (text as NSString).size(withAttributes: [.font: font])
+        textSize = CGSize(width: ceil(s.width) + 1, height: ceil(s.height))
+        if textChanged { invalidateIntrinsicContentSize() }
+        needsLayout = true
+
+        let shouldShimmer = active && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        guard shouldShimmer != shimmering else { return }
+        shimmering = shouldShimmer
+        sheen.isHidden = !shouldShimmer
+        if shouldShimmer {
+            // A narrow band sweeps left→right, then rests briefly — calm, not frantic.
+            let a = CAKeyframeAnimation(keyPath: "locations")
+            a.values = [[-0.3, -0.15, 0.0], [1.0, 1.15, 1.3], [1.0, 1.15, 1.3]]
+            a.keyTimes = [0, 0.75, 1]
+            a.duration = 2.4
+            a.repeatCount = .infinity
+            a.timingFunctions = [CAMediaTimingFunction(name: .easeInEaseOut), CAMediaTimingFunction(name: .linear)]
+            a.preferredFrameRateRange = .lowPower
+            sheen.add(a, forKey: "shimmer")
+        } else {
+            sheen.removeAllAnimations()
+        }
+    }
+
+    override func layout() {
+        super.layout()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        let scale = window?.backingScaleFactor ?? 2
+        // CATextLayer draws from the top; centre the line vertically.
+        let y = max(0, (bounds.height - textSize.height) / 2)
+        let textFrame = CGRect(x: 0, y: y, width: bounds.width, height: textSize.height)
+        for l in [base, mask] { l.frame = textFrame; l.contentsScale = scale }
+        mask.frame = CGRect(origin: .zero, size: textFrame.size)
+        sheen.frame = textFrame
+        CATransaction.commit()
+    }
+
+    override func viewDidChangeBackingProperties() {
+        super.viewDidChangeBackingProperties()
+        needsLayout = true
+    }
+}
+
+// MARK: - Real app icons
+
+/// Official agent logos, read from the apps installed on this Mac (never bundled
+/// with NotchBar). Currently used for Cursor; nil means "not installed" and the
+/// built-in glyph is used instead.
+enum AppIcons {
+    private static var cache: [Agent: NSImage?] = [:]
+
+    static func icon(for agent: Agent) -> NSImage? {
+        if let cached = cache[agent] { return cached }
+        var image: NSImage?
+        if agent == .cursor,
+           let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: TerminalJump.cursorBundle) {
+            image = NSWorkspace.shared.icon(forFile: url.path)
+        }
+        cache[agent] = image
+        return image
     }
 }

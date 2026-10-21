@@ -648,7 +648,11 @@ extension NotchController {
             cg.fill(CGRect(x: 0, y: 0, width: size.width * scale, height: size.height * scale))
             cg.translateBy(x: 0, y: size.height * scale)
             cg.scaleBy(x: scale, y: -scale)
-            view.layer?.render(in: cg)
+            if (json["live"] as? Bool) == true, let p = view.layer?.presentation() {
+                p.render(in: cg) // what's on screen right now, mid-animation
+            } else {
+                view.layer?.render(in: cg)
+            }
             if ui.hasHardwareNotch {
                 // Mark where the camera would be, to check nothing sits behind it.
                 cg.setFillColor(NSColor.systemRed.withAlphaComponent(0.45).cgColor)

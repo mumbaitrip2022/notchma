@@ -10,13 +10,19 @@ struct CollapsedView: View {
         HStack(spacing: 8) {
             leading
             if showsActivity && !ui.hasHardwareNotch, let s = focus {
-                // One concatenated Text: truncates cleanly and never fights layout.
-                (Text(s.projectName).font(.system(size: 12.5, weight: .semibold)).foregroundColor(.white)
-                 + Text("  " + statusLabel).font(.system(size: 12.5)).foregroundColor(statusColor))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .transition(.opacity)
+                HStack(spacing: 7) {
+                    Text(s.projectName)
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .fixedSize()
+                    // While it works, a soft light passes over the status — the "thinking" sheen.
+                    ShimmerText(text: statusLabel, active: isThinkingLine(s), size: 12.5,
+                                color: NSColor(statusColor))
+                        .frame(height: 16)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .transition(.opacity)
             }
             if ui.hasHardwareNotch || !showsActivity { Spacer(minLength: ui.hasHardwareNotch ? ui.hardwareNotchWidth : 4) }
             trailing
@@ -43,6 +49,11 @@ struct CollapsedView: View {
         if store.doneFlash && s.status == .done { return "done" }
         if s.status.isWorking { return s.compactLine }
         return s.statusText.lowercased()
+    }
+
+    /// Shimmer only for genuine work-in-progress lines, not alerts, approvals or "done".
+    private func isThinkingLine(_ s: Session) -> Bool {
+        s.status.isWorking && s.alert == nil && store.approvals.isEmpty && !store.doneFlash
     }
 
     private var statusColor: Color {

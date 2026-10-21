@@ -51,15 +51,36 @@ struct SparkView: NSViewRepresentable {
     }
 }
 
+/// Claude-style starburst that feels alive while working: a wave ripples around
+/// the 12 rays (each grows and shrinks just after its neighbour) while the star
+/// slowly turns. Built from two CAReplicatorLayers, so one ray layer is drawn
+/// and the GPU does the rest — ~0% CPU, capped at 30 fps.
 final class SparkNSView: NSView {
-    private let shape = CAShapeLayer()
-    private var isSpinning = false
+    private let spinner = CALayer()              // slow rotation
+    private let longRep = CAReplicatorLayer()    // 6 long rays
+    private let shortRep = CAReplicatorLayer()   // 6 short rays, offset half a step
+    private let longRay = CALayer()
+    private let shortRay = CALayer()
+    private var animating = false
+    private var lastSize: CGSize = .zero
+
+    private static let wave: CFTimeInterval = 1.2   // one ray's grow-shrink cycle
+    private static let step: CFTimeInterval = wave / 12 // delay between neighbouring rays
 
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
         layer?.masksToBounds = false
-        layer?.addSublayer(shape)
+        layer?.addSublayer(spinner)
+        for (rep, ray) in [(longRep, longRay), (shortRep, shortRay)] {
+            rep.instanceCount = 6
+            rep.instanceTransform = CATransform3DMakeRotation(.pi / 3, 0, 0, 1)
+            rep.addSublayer(ray)
+            ray.anchorPoint = CGPoint(x: 0.5, y: 0) // grow outward from the centre
+            spinner.addSublayer(rep)
+        }
+        // Short rays sit between the long ones.
+        shortRep.setAffineTransform(CGAffineTransform(rotationAngle: .pi / 6))
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
@@ -68,52 +89,83 @@ final class SparkNSView: NSView {
 
     override func layout() {
         super.layout()
+        guard bounds.size != lastSize else { return }
+        lastSize = bounds.size
         let b = bounds
+        let outer = min(b.width, b.height) / 2
+        let w = max(1.2, outer * 0.17), inner = outer * 0.12
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        shape.bounds = b
-        shape.position = CGPoint(x: b.midX, y: b.midY)
-        shape.path = Self.starburst(in: b)
-        shape.shadowPath = shape.path
+        spinner.frame = b
+        for (rep, ray, len) in [(longRep, longRay, outer), (shortRep, shortRay, outer * 0.72)] {
+            rep.bounds = b
+            rep.position = CGPoint(x: b.midX, y: b.midY)
+            ray.bounds = CGRect(x: 0, y: 0, width: w, height: max(1, len - inner))
+            ray.position = CGPoint(x: b.midX, y: b.midY + inner)
+            ray.cornerRadius = w / 2
+        }
         CATransaction.commit()
+        if animating { animating = false; startAnimating() } // restart with new geometry
     }
 
     func update(color: NSColor, spinning: Bool) {
         CATransaction.begin()
         CATransaction.setAnimationDuration(0.3)
-        shape.fillColor = color.cgColor
-        // Soft halo; shadowPath keeps it cheap even while rotating.
-        shape.shadowColor = color.cgColor
-        shape.shadowOpacity = 0
-        shape.shadowRadius = 3.5
-        shape.shadowOffset = .zero
+        longRay.backgroundColor = color.cgColor
+        shortRay.backgroundColor = color.cgColor
         CATransaction.commit()
 
-        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        let shouldSpin = spinning && !reduceMotion
-        guard shouldSpin != isSpinning else { return }
-        isSpinning = shouldSpin
-        if shouldSpin {
-            let spin = CABasicAnimation(keyPath: "transform.rotation.z")
-            spin.fromValue = 0
-            spin.toValue = -Double.pi * 2
-            spin.duration = 5
-            spin.repeatCount = .infinity
-            spin.preferredFrameRateRange = .lowPower
-            shape.add(spin, forKey: "spin")
+        let shouldAnimate = spinning && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        guard shouldAnimate != animating else { return }
+        shouldAnimate ? startAnimating() : stopAnimating()
+    }
 
-            let breathe = CABasicAnimation(keyPath: "transform.scale")
-            breathe.fromValue = 0.82
-            breathe.toValue = 1.06
-            breathe.duration = 0.9
-            breathe.autoreverses = true
-            breathe.repeatCount = .infinity
-            breathe.preferredFrameRateRange = .lowPower
-            breathe.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            shape.add(breathe, forKey: "breathe")
-        } else {
-            shape.removeAllAnimations()
+    private func startAnimating() {
+        guard !animating else { return }
+        animating = true
+        let now = CACurrentMediaTime()
+
+        // The ripple: rays breathe in sequence around the circle.
+        func wave(offset: CFTimeInterval) -> CABasicAnimation {
+            let a = CABasicAnimation(keyPath: "transform.scale.y")
+            a.fromValue = 1.0
+            a.toValue = 0.55
+            a.duration = Self.wave / 2
+            a.autoreverses = true
+            a.repeatCount = .infinity
+            a.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            a.beginTime = now + offset
+            a.fillMode = .backwards
+            a.preferredFrameRateRange = .lowPower
+            return a
         }
+        // Long rays are every other position (2 steps apart); short ones fill the gaps.
+        longRep.instanceDelay = Self.step * 2
+        shortRep.instanceDelay = Self.step * 2
+        longRay.add(wave(offset: 0), forKey: "wave")
+        shortRay.add(wave(offset: Self.step), forKey: "wave")
+
+        // Gentle turn underneath the ripple.
+        let spin = CABasicAnimation(keyPath: "transform.rotation.z")
+        spin.fromValue = 0
+        spin.toValue = -Double.pi * 2
+        spin.duration = 9
+        spin.repeatCount = .infinity
+        spin.preferredFrameRateRange = .lowPower
+        spinner.add(spin, forKey: "spin")
+    }
+
+    private func stopAnimating() {
+        animating = false
+        // Settle smoothly back to the resting star instead of snapping.
+        for l in [longRay, shortRay, spinner] {
+            if let p = l.presentation() { l.transform = p.transform }
+            l.removeAllAnimations()
+        }
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(0.35)
+        for l in [longRay, shortRay, spinner] { l.transform = CATransform3DIdentity }
+        CATransaction.commit()
     }
 
     /// 12 tapered rays, alternating long/short, like Claude's mark.
