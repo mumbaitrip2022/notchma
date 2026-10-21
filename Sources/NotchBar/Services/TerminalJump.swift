@@ -34,6 +34,113 @@ enum TerminalJump {
         }
     }
 
+    enum SubmitOutcome: Equatable { case typed, pasted, copied }
+
+    /// What sending to an idle session will do, in plain words (for the UI).
+    static func deliveryHint(for s: Session, pasteAllowed: Bool) -> String {
+        let ref = Ref(session: s)
+        let alive = s.pid > 1 && kill(s.pid, 0) == 0
+        if alive && (ref.tmuxPane != nil || ref.terminalBundle == "com.googlecode.iterm2"
+                     || (ref.terminalBundle == "com.apple.Terminal" && ref.tty != nil)) {
+            return "Sends straight to its terminal"
+        }
+        let name = terminalName(ref.terminalBundle) ?? s.agent.shortName
+        return pasteAllowed && Paster.canPaste ? "Pastes into \(name), then you press Return" : "Copies it, then jumps to \(name) to paste"
+    }
+
+    static func terminalName(_ bundle: String?) -> String? {
+        switch bundle {
+        case "dev.warp.Warp-Stable", "dev.warp.Warp": return "Warp"
+        case "com.googlecode.iterm2": return "iTerm"
+        case "com.apple.Terminal": return "Terminal"
+        case "com.mitchellh.ghostty": return "Ghostty"
+        case cursorBundle: return "Cursor"
+        case vscodeBundle: return "VS Code"
+        case "com.openai.codex": return "Codex"
+        default: return nil
+        }
+    }
+
+    /// Sends a prompt to an idle agent. Types it straight into the agent's own
+    /// tmux pane / iTerm session / Terminal tab when that's possible — but only if
+    /// the agent process is verified alive, so text never lands in a bare shell.
+    /// Otherwise copies it, jumps there and (with Accessibility) pastes, never pressing Return.
+    static func submit(_ text: String, to s: Session, pasteAllowed: Bool,
+                       completion: @escaping (SubmitOutcome) -> Void) {
+        let ref = Ref(session: s)
+        let agentAlive = s.pid > 1 && kill(s.pid, 0) == 0
+        // Agent prompts submit on Return, so send a single line.
+        let line = text.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }.joined(separator: " ")
+        queue.async {
+            var typed = false
+            if agentAlive && !line.isEmpty {
+                if let pane = ref.tmuxPane, let socket = ref.tmuxSocket {
+                    typed = tmuxSend(pane: pane, socket: socket, line: line)
+                } else if ref.terminalBundle == "com.googlecode.iterm2" {
+                    typed = runAppleScript(itermWriteScript(guid: ref.itermGUID, tty: ref.tty, line: line))
+                } else if ref.terminalBundle == "com.apple.Terminal", let tty = ref.tty {
+                    typed = runAppleScript(terminalWriteScript(tty: tty, line: line))
+                }
+            }
+            DispatchQueue.main.async {
+                if typed { completion(.typed); return } // stay where you are — no focus stealing
+                let pb = NSPasteboard.general
+                pb.clearContents()
+                pb.setString(text, forType: .string)
+                jump(to: s)
+                if pasteAllowed && Paster.canPaste {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { Paster.paste() }
+                    completion(.pasted)
+                } else {
+                    completion(.copied)
+                }
+            }
+        }
+    }
+
+    private static func tmuxSend(pane: String, socket: String, line: String) -> Bool {
+        guard let tmux = ["/opt/homebrew/bin/tmux", "/usr/local/bin/tmux", "/usr/bin/tmux"]
+            .first(where: { FileManager.default.isExecutableFile(atPath: $0) }) else { return false }
+        guard run(tmux, ["-S", socket, "send-keys", "-t", pane, "-l", line], timeout: 3) != nil else { return false }
+        return run(tmux, ["-S", socket, "send-keys", "-t", pane, "Enter"], timeout: 3) != nil
+    }
+
+    private static func itermWriteScript(guid: String?, tty: String?, line: String) -> String {
+        let g = escape(guid ?? "-"), t = escape(tty ?? "-")
+        return """
+        tell application id "com.googlecode.iterm2"
+          repeat with w in windows
+            repeat with tb in tabs of w
+              repeat with s in sessions of tb
+                if (unique id of s is "\(g)") or (tty of s is "\(t)") then
+                  tell s to write text "\(escape(line))"
+                  return "ok"
+                end if
+              end repeat
+            end repeat
+          end repeat
+        end tell
+        return "miss"
+        """
+    }
+
+    private static func terminalWriteScript(tty: String, line: String) -> String {
+        """
+        tell application id "com.apple.Terminal"
+          repeat with w in windows
+            repeat with t in tabs of w
+              if tty of t is "\(escape(tty))" then
+                do script "\(escape(line))" in t
+                return "ok"
+              end if
+            end repeat
+          end repeat
+        end tell
+        return "miss"
+        """
+    }
+
     /// Everything needed off the main thread, captured up front.
     private struct Ref {
         let tty: String?

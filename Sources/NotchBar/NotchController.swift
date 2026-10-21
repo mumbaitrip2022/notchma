@@ -23,6 +23,7 @@ final class NotchController: NSObject {
     let launcher = Launcher()
     let calendar = CalendarWatcher()
     let dictation = Dictation()
+    let system = SystemMonitor()
 
     var panel: NotchPanel!
     var panelContentView: NSView? { panel.contentView }
@@ -132,6 +133,7 @@ final class NotchController: NSObject {
         p.becomesKeyOnlyIfNeeded = true
         p.acceptsMouseMovedEvents = true
         p.isReleasedWhenClosed = false
+        p.appearance = NSAppearance(named: .darkAqua) // system colours resolve to their dark variants
 
         let actions = NotchActions(
             showMenu: { [weak self] in self?.showMenu() },
@@ -141,7 +143,7 @@ final class NotchController: NSObject {
             copySummary: { [weak self] sid in self?.copySummary(sid) },
             openSettings: { [weak self] in self?.openSettings() })
         let root = RootView(store: store, ui: ui, prefs: prefs, trust: store.trust, launcher: launcher,
-                            dictation: dictation, actions: actions) { [weak self] size in
+                            dictation: dictation, system: system, actions: actions) { [weak self] size in
             // Never resize the window inside SwiftUI's update pass: that re-enters
             // layout and can swallow the state change that triggered it.
             DispatchQueue.main.async { self?.notchSizeChanged(size) }
@@ -347,13 +349,33 @@ final class NotchController: NSObject {
             if working > 0 { parts.append("\(working) still working") }
             self.store.showBanner(Banner(kind: .info, sessionID: "", agent: .claude,
                                          title: "\(title) in \(minutes) min",
-                                         subtitle: parts.joined(separator: " · ") + " — clear approvals before you go",
+                                         subtitle: parts.joined(separator: " · ") + ". Clear approvals before you go",
                                          action: .expand, important: true))
         }
         calendar.onMeetingEnded = { [weak self] title in self?.store.flushDigest(context: title) }
         prefs.$calendarAware.dropFirst().sink { [weak self] _ in
             DispatchQueue.main.async { self?.calendar.check() }
         }.store(in: &bag)
+
+        // System vitals: sample only while you can see them; warn before the disk fills up.
+        system.agentRoots = { [weak self] in
+            self?.store.sessions.values.compactMap { $0.pid > 1 ? $0.pid : nil } ?? []
+        }
+        Publishers.CombineLatest(ui.$expanded, prefs.$showVitals)
+            .sink { [weak self] expanded, show in self?.system.setLive(expanded && show) }
+            .store(in: &bag)
+        system.onDiskLow = { [weak self] free, critical in
+            self?.store.showBanner(Banner(kind: .attention, sessionID: "", agent: .claude,
+                                          title: "SSD almost full, only \(SystemMonitor.diskString(free)) left",
+                                          subtitle: critical ? "Builds and agents will start failing soon" : "Agents' builds and caches can fill it quickly",
+                                          action: .expand, important: critical))
+        }
+        system.onMemoryCritical = { [weak self] in
+            self?.store.showBanner(Banner(kind: .attention, sessionID: "", agent: .claude,
+                                          title: "Your Mac is short of memory",
+                                          subtitle: "Memory pressure is critical. Pause an agent or close a few apps",
+                                          action: .expand, important: true))
+        }
 
         dictation.onFinal = { [weak self] text in self?.routeDictation(text) }
         dictation.onError = { [weak self] msg in
@@ -406,12 +428,12 @@ final class NotchController: NSObject {
             return
         }
         store.drafts[s.id] = text
-        if s.status.isWorking {
+        let busy = store.isBusy(s)
+        store.sendDraft(s.id) // queues if busy, otherwise delivers now
+        if busy {
             store.showBanner(Banner(kind: .draft, sessionID: s.id, agent: s.agent,
-                                    title: "Saved as next prompt for \(s.projectName)",
-                                    subtitle: "Offered when it finishes · " + ToolInfo.clip(text, 50), action: .expand))
-        } else {
-            store.sendDraft(s.id)
+                                    title: "Queued for \(s.projectName). Sends when it finishes",
+                                    subtitle: ToolInfo.clip(text, 60), action: .expand))
         }
     }
 
@@ -683,6 +705,23 @@ extension NotchController {
             return true
         case "_Draft":
             if let sid = json["sid"] as? String { store.drafts[sid] = json["text"] as? String }
+            return true
+        case "_QueueByPrompt":
+            // Test hook: queue a follow-up for the session whose prompt contains `match`.
+            if let m = json["match"] as? String, let text = json["text"] as? String,
+               let s = store.sessions.values.first(where: { $0.lastPrompt.contains(m) }) {
+                store.queue(s.id, text)
+            }
+            return true
+        case "_Vitals":
+            let txt = String(format: "cpu=%.1f agent=%.1f memUsed=%.2fGiB total=%.2fGiB pressure=%d diskFree=%.2fGB diskTotal=%.1fGB\n",
+                             system.cpu, system.agentCPU, Double(system.memUsed) / 1_073_741_824,
+                             Double(system.memTotal) / 1_073_741_824, system.pressure.rawValue,
+                             Double(system.diskFree) / 1e9, Double(system.diskTotal) / 1e9)
+            try? txt.write(toFile: json["path"] as? String ?? "/dev/null", atomically: true, encoding: .utf8)
+            return true
+        case "_Send":
+            if let sid = json["sid"] as? String { store.sendDraft(sid) }
             return true
         case "_Tap":
             if let b = store.banner { handleBannerTap(b) }

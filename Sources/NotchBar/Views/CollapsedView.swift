@@ -16,10 +16,14 @@ struct CollapsedView: View {
                         .foregroundStyle(.white)
                         .lineLimit(1)
                         .fixedSize()
-                    // While it works, a soft light passes over the status — the "thinking" sheen.
-                    ShimmerText(text: statusLabel, active: isThinkingLine(s), size: 12.5,
-                                color: NSColor(statusColor))
-                        .frame(height: 16)
+                    if s.status == .waitingForInput && s.alert == nil && store.approvals.isEmpty && !store.doneFlash {
+                        WaitingLine(session: s, size: 12.5)
+                    } else {
+                        // While it works, the status gently breathes.
+                        ShimmerText(text: statusLabel, active: isThinkingLine(s), size: 12.5,
+                                    color: NSColor(statusColor))
+                            .frame(height: 16)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .transition(.opacity)
@@ -104,7 +108,7 @@ struct CollapsedView: View {
                         .monospacedDigit()
                         .contentTransition(.numericText())
                         .foregroundStyle(Palette.text2)
-                    ProgressRing(fraction: Double(p.done) / Double(max(p.total, 1)), color: s.agent.tint)
+                    ProgressRing(fraction: Double(p.done) / Double(max(p.total, 1)))
                 } else if let start = s.turnStartedAt {
                     // Ticks once a second, only while something is running.
                     TimelineView(.periodic(from: .now, by: 1)) { ctx in

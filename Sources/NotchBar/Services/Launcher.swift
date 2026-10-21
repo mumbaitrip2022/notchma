@@ -72,7 +72,7 @@ final class Launcher: ObservableObject {
 
     private func launch(_ r: LaunchRequest) {
         guard let cliPath = cli[r.agentValue] else {
-            onMessage?("\(r.agentValue.shortName) CLI not found — install it or pick another agent", true)
+            onMessage?("\(r.agentValue.shortName) CLI isn't installed. Install it or pick another agent", true)
             return
         }
         let terminal = resolveTerminal(terminalPreference())

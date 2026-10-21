@@ -13,8 +13,10 @@ final class SessionStore: ObservableObject {
     @Published private(set) var banner: Banner?
     /// Plan-limit windows per agent (Claude 5h/week, Codex windows).
     @Published private(set) var limits: [Agent: [UsageWindow]] = SessionStore.loadLimits()
-    /// Your drafted next prompt per session.
+    /// Your drafted next prompt per session (still being written).
     @Published var drafts: [String: String] = [:]
+    /// Follow-ups waiting to be sent automatically when the session finishes its turn.
+    @Published private(set) var queued: [String: String] = [:]
 
     // MARK: collaborators
     let rules = RuleStore()
@@ -124,6 +126,7 @@ final class SessionStore: ObservableObject {
         s.lastEventAt = now
 
         var needsCodexBaseline = false
+        var turnFinished = false
         let tool = e["tool_name"] as? String ?? ""
         let input = e["tool_input"] as? [String: Any] ?? [:]
         if case .stuck = s.alert { s.alert = nil } // any event is progress
@@ -135,27 +138,12 @@ final class SessionStore: ObservableObject {
             s.status = .idle
 
         case "UserPromptSubmit":
-            s.status = .thinking
-            s.lastPrompt = (e["prompt"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            s.turnStartedAt = now
-            s.turnEndedAt = nil
-            clearApprovals(for: sid) // a new turn means any old request is stale
-            // Fresh turn: reset per-turn state and take usage baselines.
-            s.lastTask = nil; s.lastMessage = nil; s.editedFiles = []; s.testResult = nil
-            s.alert = nil; s.autoAllowed = 0
-            s.intent = nil; s.intentAt = nil; s.actions = []; s.steps = 0
-            if s.plan.allSatisfy({ $0.status == .done }) { s.plan = [] } // finished plans don't carry over
-            s.waitingSince = nil; s.attended = false
-            t.recentCalls = []; t.failStreak = [:]
-            s.costAtTurnStart = s.costTotal
-            s.linesAddedAtTurnStart = s.linesAddedTotal
-            s.linesRemovedAtTurnStart = s.linesRemovedTotal
-            s.tokensAtTurnStart = nil
-            if agent == .claude, let tp = s.transcriptPath { s.transcriptOffsetAtTurnStart = UsageReader.fileSize(tp) }
+            beginTurn(&s, &t, prompt: e["prompt"] as? String ?? "", agent: agent, now: now)
             needsCodexBaseline = agent == .codex
-            if s.status.isWorking, drafts[sid]?.isEmpty == false, drafts[sid] == s.lastPrompt { drafts[sid] = nil }
+            if drafts[sid]?.trimmingCharacters(in: .whitespacesAndNewlines) == s.lastPrompt { drafts[sid] = nil }
 
         case "PreToolUse":
+            s.question = nil
             s.status = .tool(name: tool, detail: ToolInfo.detail(tool: tool, input: input))
             if s.turnStartedAt == nil { s.turnStartedAt = now }
             s.waitingSince = nil
@@ -198,9 +186,11 @@ final class SessionStore: ObservableObject {
             if !hasApproval(for: sid), s.status != .waitingForInput {
                 s.status = .waitingForInput
                 s.waitingSince = now; s.attended = false
+                if s.question == nil, let m = s.lastMessage { s.question = Self.openQuestion(in: m) }
                 showBanner(Banner(kind: .waiting, sessionID: sid, agent: agent,
-                                  title: "\(s.projectName) needs you",
-                                  subtitle: ToolInfo.clip(e["message"] as? String ?? "Waiting for your input", 60),
+                                  title: s.question != nil ? "\(s.projectName) has a question 👀" : "\(s.projectName) is waiting on you ✨",
+                                  subtitle: s.question.map { "“" + ToolInfo.clip($0, 62) + "”" }
+                                      ?? "\(agent.shortName.lowercased()) is all ears. tap to jump in",
                                   important: true))
             }
 
@@ -217,9 +207,25 @@ final class SessionStore: ObservableObject {
             clearApprovals(for: sid)
 
         case "Stop":
+            let failed = (e["status"] as? String).map { $0 == "error" || $0 == "aborted" } ?? false
+            if let clientID {
+                // You queued a follow-up: hand it to the agent so it carries straight on.
+                if !failed, let text = queued[sid]?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
+                    queued[sid] = nil
+                    sendReply?(clientID, ["behavior": "followup", "text": text])
+                    beginTurn(&s, &t, prompt: text, agent: agent, now: now)
+                    needsCodexBaseline = agent == .codex
+                    showBanner(Banner(kind: .draft, sessionID: sid, agent: agent,
+                                      title: "Sent your follow-up to \(s.projectName)",
+                                      subtitle: ToolInfo.clip(ToolInfo.firstLine(text), 70), action: .expand))
+                    break
+                }
+                sendReply?(clientID, ["behavior": "none"])
+            }
             finishTurn(&s, agent: agent, e: e, now: now)
             s.intent = nil; s.intentAt = nil
             t.recentCalls = []; t.failStreak = [:]
+            turnFinished = true
 
         default:
             break
@@ -231,7 +237,7 @@ final class SessionStore: ObservableObject {
         }
         tracking[sid] = t
         sessions[sid] = s
-        if event == "Stop" { afterTurn(sid) }
+        if turnFinished { afterTurn(sid) }
         if s.status.isWorking, ["PreToolUse", "PostToolUse", "UserPromptSubmit"].contains(event) {
             refreshNarration(sid, delay: event == "UserPromptSubmit" ? 2 : 0.3)
         }
@@ -275,6 +281,7 @@ final class SessionStore: ObservableObject {
         guard let clientID else {
             s.status = .waitingForInput // e.g. AskUserQuestion — answered in the agent's own UI
             s.waitingSince = now; s.attended = false
+            s.question = Self.question(tool: tool, input: input)
             return false
         }
         if agent == .cursor, !cursorApprovalsEnabled() {
@@ -385,7 +392,7 @@ final class SessionStore: ObservableObject {
         let hasDraft = drafts[s.id]?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
         if hasDraft {
             showBanner(Banner(kind: .draft, sessionID: s.id, agent: agent,
-                              title: "\(s.projectName) is done — your next prompt is ready",
+                              title: "\(s.projectName) is done and your next prompt is ready",
                               subtitle: ToolInfo.clip(ToolInfo.firstLine(drafts[s.id] ?? ""), 60),
                               action: .sendDraft, important: true))
         } else {
@@ -508,18 +515,94 @@ final class SessionStore: ObservableObject {
 
     // MARK: - Drafts
 
+    /// What a blocked tool is asking (AskUserQuestion's question, or a plan to review).
+    static func question(tool: String, input: [String: Any]) -> String? {
+        switch tool {
+        case "AskUserQuestion":
+            let qs = input["questions"] as? [[String: Any]] ?? []
+            return (qs.first?["question"] as? String).map { ToolInfo.clip($0, 110) }
+        case "ExitPlanMode":
+            return "Plan ready for your review"
+        default:
+            return nil
+        }
+    }
+
+    /// The question an agent ended its reply with, if any ("Should I also update the docs?").
+    static func openQuestion(in message: String) -> String? {
+        let text = plain(message)
+        guard let q = text.range(of: "?", options: .backwards) else { return nil }
+        // Walk back to the start of that sentence.
+        let head = text[..<q.lowerBound]
+        let start = head.lastIndex(where: { ".!?\n".contains($0) }).map { head.index(after: $0) } ?? head.startIndex
+        var sentence = String(text[start..<q.upperBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+        // Ignore questions buried far back in a long answer.
+        guard text.distance(from: q.upperBound, to: text.endIndex) < 220, sentence.count >= 8 else { return nil }
+        while sentence.hasPrefix("-") || sentence.hasPrefix("*") { sentence = String(sentence.dropFirst()).trimmingCharacters(in: .whitespaces) }
+        return ToolInfo.clip(sentence, 110)
+    }
+
+    /// Starts a fresh turn (from a typed prompt or a delivered follow-up).
+    private func beginTurn(_ s: inout Session, _ t: inout Tracking, prompt: String, agent: Agent, now: Date) {
+        s.status = .thinking
+        s.lastPrompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        s.turnStartedAt = now
+        s.turnEndedAt = nil
+        clearApprovals(for: s.id) // a new turn means any old request is stale
+        // Fresh turn: reset per-turn state and take usage baselines.
+        s.lastTask = nil; s.lastMessage = nil; s.editedFiles = []; s.testResult = nil; s.question = nil
+        s.alert = nil; s.autoAllowed = 0
+        s.intent = nil; s.intentAt = nil; s.actions = []; s.steps = 0
+        if s.plan.allSatisfy({ $0.status == .done }) { s.plan = [] } // finished plans don't carry over
+        s.waitingSince = nil; s.attended = false
+        t.recentCalls = []; t.failStreak = [:]
+        s.costAtTurnStart = s.costTotal
+        s.linesAddedAtTurnStart = s.linesAddedTotal
+        s.linesRemovedAtTurnStart = s.linesRemovedTotal
+        s.tokensAtTurnStart = nil
+        if agent == .claude, let tp = s.transcriptPath { s.transcriptOffsetAtTurnStart = UsageReader.fileSize(tp) }
+    }
+
+    /// Is the agent mid-turn (so a follow-up should wait for it to finish)?
+    func isBusy(_ s: Session) -> Bool {
+        if s.status.isWorking { return true }
+        if case .needsApproval = s.status { return true }
+        return false
+    }
+
+    /// Queue a follow-up: the agent receives it the moment it finishes this turn.
+    func queue(_ sid: String, _ text: String) {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return }
+        queued[sid] = t
+        drafts[sid] = nil
+    }
+
+    func cancelQueued(_ sid: String) {
+        guard let t = queued.removeValue(forKey: sid) else { return }
+        drafts[sid] = t // back into the box, nothing lost
+    }
+
+    /// Send your draft: queue it if the agent is busy, otherwise deliver it now.
     func sendDraft(_ sid: String) {
         guard let s = sessions[sid], let text = drafts[sid]?.trimmingCharacters(in: .whitespacesAndNewlines),
               !text.isEmpty else { return }
-        let pb = NSPasteboard.general
-        pb.clearContents()
-        pb.setString(text, forType: .string)
+        if isBusy(s) { queue(sid, text); return }
         drafts[sid] = nil
-        TerminalJump.jump(to: s)
         attend(sid)
-        // Paste after the terminal is frontmost; never presses Return.
-        if autoPaste() && Paster.canPaste {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { Paster.paste() }
+        TerminalJump.submit(text, to: s, pasteAllowed: autoPaste()) { [weak self] outcome in
+            guard let self else { return }
+            let title: String, sub: String
+            switch outcome {
+            case .typed:
+                title = "Sent to \(s.projectName)"; sub = ToolInfo.clip(ToolInfo.firstLine(text), 70)
+            case .pasted:
+                title = "Pasted into \(s.projectName). Press Return to send"; sub = "This terminal can't be typed into directly"
+            case .copied:
+                title = "Copied. Paste it into \(s.projectName)"; sub = "Grant Accessibility in Settings to paste automatically"
+            }
+            self.showBanner(Banner(kind: .draft, sessionID: s.id, agent: s.agent, title: title, subtitle: sub,
+                                   action: .jump, important: outcome != .typed))
         }
     }
 
@@ -670,7 +753,7 @@ final class SessionStore: ObservableObject {
             return (a, 100 - worst)
         }
         guard let best = candidates.max(by: { $0.1 < $1.1 }) else { return nil }
-        return "\(best.0.shortName) has \(Int(best.1))% left — send the next task there"
+        return "\(best.0.shortName) still has \(Int(best.1))% left, so send the next task there"
     }
 
     /// Limits that are still valid (drops windows whose reset time has passed).
@@ -692,7 +775,7 @@ final class SessionStore: ObservableObject {
         let compact = s.agent == .claude ? "/compact" : (s.agent == .codex ? "/compact" : "")
         showBanner(Banner(kind: .info, sessionID: s.id, agent: s.agent,
                           title: "\(s.projectName) context is \(Int(pct))% full",
-                          subtitle: compact.isEmpty ? "Consider starting a fresh chat" : "Tap to copy \(compact) — or start a fresh session",
+                          subtitle: compact.isEmpty ? "Consider starting a fresh chat" : "Tap to copy \(compact), or start a fresh session",
                           action: compact.isEmpty ? .jump : .copyAndJump(compact)))
     }
 
@@ -708,7 +791,7 @@ final class SessionStore: ObservableObject {
                       once("useit-\(agent.rawValue)-\(w.label)-\(resetKey(w))") else { continue }
                 showBanner(Banner(kind: .info, sessionID: "", agent: agent,
                                   title: "\(100 - Int(w.usedPercent))% of \(agent.shortName)'s \(Self.windowName(w)) window unused",
-                                  subtitle: "Resets \(Fmt.reset(reset)) — a good moment for tests, refactors or docs",
+                                  subtitle: "Resets \(Fmt.reset(reset)). A good moment for tests, refactors or docs",
                                   action: .expand))
             }
         }
@@ -772,6 +855,7 @@ final class SessionStore: ObservableObject {
     func remove(sessionID: String) {
         lastStatusSig[sessionID] = nil
         narrationAt[sessionID] = nil
+        queued[sessionID] = nil
         tracking[sessionID] = nil
         codexRefreshAt[sessionID] = nil
         conflicts.forget(session: sessionID)

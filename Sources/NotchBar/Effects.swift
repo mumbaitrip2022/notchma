@@ -15,8 +15,8 @@ enum Palette {
     static let surface3 = Color(white: 0.17)    // secondary buttons, tiles
     static let code = Color(white: 0.045)
     static let hairline = Color.white.opacity(0.07)
-    static let text2 = Color.white.opacity(0.56)
-    static let text3 = Color.white.opacity(0.34)
+    static let text2 = Color.white.opacity(0.70)   // secondary
+    static let text3 = Color.white.opacity(0.50)   // tertiary — still readable at 10–11pt
 }
 
 // MARK: - Activity ring (indeterminate spinner, solid arc)
@@ -185,17 +185,17 @@ struct StatusBadge: View {
     }
 }
 
-// MARK: - Shimmer text ("thinking" sheen)
+// MARK: - Working text ("thinking" breath)
 
-/// Status text with a soft white light passing over it while an agent works —
-/// the sheen modern agent UIs use for "Thinking…". Monochrome (gray text, white
-/// light), drawn by Core Animation: no per-frame CPU work.
+/// Status text that gently breathes (solid colour, brightness easing 100% ↔ 45%)
+/// while an agent works. No gradients. Animated by Core Animation, so no
+/// per-frame CPU work; still when idle or with Reduce Motion on.
 struct ShimmerText: NSViewRepresentable {
     var text: String
     var active: Bool
     var size: CGFloat = 12.5
     var weight: NSFont.Weight = .regular
-    var color: NSColor = NSColor.white.withAlphaComponent(0.56)
+    var color: NSColor = NSColor.white.withAlphaComponent(0.70)
 
     func makeNSView(context: Context) -> ShimmerTextView {
         let v = ShimmerTextView()
@@ -207,8 +207,10 @@ struct ShimmerText: NSViewRepresentable {
         v.configure(text: text, active: active, font: .systemFont(ofSize: size, weight: weight), color: color)
     }
 
+    /// Measured from *this* text, not the view's previous state — SwiftUI may ask for
+    /// the size before it hands the new text to the view.
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: ShimmerTextView, context: Context) -> CGSize? {
-        let s = nsView.textSize
+        let s = ShimmerTextView.measure(text, font: .systemFont(ofSize: size, weight: weight))
         var w = s.width
         if let pw = proposal.width, pw.isFinite { w = min(w, pw) }
         return CGSize(width: max(0, w), height: s.height)
@@ -216,30 +218,23 @@ struct ShimmerText: NSViewRepresentable {
 }
 
 final class ShimmerTextView: NSView {
-    private let base = CATextLayer()      // the gray text
-    private let sheen = CAGradientLayer() // white light band, visible only through…
-    private let mask = CATextLayer()      // …the same text as a mask
+    static func measure(_ text: String, font: NSFont) -> CGSize {
+        let s = (text as NSString).size(withAttributes: [.font: font])
+        return CGSize(width: ceil(s.width) + 1, height: ceil(s.height))
+    }
+
+    private let label = CATextLayer()
     private var key = ""
-    private var shimmering = false
+    private var breathing = false
     private(set) var textSize: CGSize = .zero
 
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
-        for t in [base, mask] {
-            t.truncationMode = .end
-            t.isWrapped = false
-            t.alignmentMode = .left
-        }
-        sheen.startPoint = CGPoint(x: 0, y: 0.5)
-        sheen.endPoint = CGPoint(x: 1, y: 0.5)
-        sheen.colors = [NSColor.white.withAlphaComponent(0).cgColor,
-                        NSColor.white.withAlphaComponent(0.95).cgColor,
-                        NSColor.white.withAlphaComponent(0).cgColor]
-        sheen.mask = mask
-        sheen.isHidden = true
-        layer?.addSublayer(base)
-        layer?.addSublayer(sheen)
+        label.truncationMode = .end
+        label.isWrapped = false
+        label.alignmentMode = .left
+        layer?.addSublayer(label)
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -250,29 +245,26 @@ final class ShimmerTextView: NSView {
         guard k != key else { return }
         let textChanged = !key.hasPrefix(text + "|")
         key = k
-        base.string = NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: color])
-        mask.string = NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: NSColor.black])
-        let s = (text as NSString).size(withAttributes: [.font: font])
-        textSize = CGSize(width: ceil(s.width) + 1, height: ceil(s.height))
+        label.string = NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: color])
+        textSize = Self.measure(text, font: font)
         if textChanged { invalidateIntrinsicContentSize() }
         needsLayout = true
 
-        let shouldShimmer = active && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        guard shouldShimmer != shimmering else { return }
-        shimmering = shouldShimmer
-        sheen.isHidden = !shouldShimmer
-        if shouldShimmer {
-            // A narrow band sweeps left→right, then rests briefly — calm, not frantic.
-            let a = CAKeyframeAnimation(keyPath: "locations")
-            a.values = [[-0.3, -0.15, 0.0], [1.0, 1.15, 1.3], [1.0, 1.15, 1.3]]
-            a.keyTimes = [0, 0.75, 1]
-            a.duration = 2.4
+        let shouldBreathe = active && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        guard shouldBreathe != breathing else { return }
+        breathing = shouldBreathe
+        if shouldBreathe {
+            let a = CABasicAnimation(keyPath: "opacity")
+            a.fromValue = 1.0
+            a.toValue = 0.45
+            a.duration = 1.1
+            a.autoreverses = true
             a.repeatCount = .infinity
-            a.timingFunctions = [CAMediaTimingFunction(name: .easeInEaseOut), CAMediaTimingFunction(name: .linear)]
+            a.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             a.preferredFrameRateRange = .lowPower
-            sheen.add(a, forKey: "shimmer")
+            label.add(a, forKey: "breathe")
         } else {
-            sheen.removeAllAnimations()
+            label.removeAnimation(forKey: "breathe")
         }
     }
 
@@ -280,13 +272,9 @@ final class ShimmerTextView: NSView {
         super.layout()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        let scale = window?.backingScaleFactor ?? 2
-        // CATextLayer draws from the top; centre the line vertically.
-        let y = max(0, (bounds.height - textSize.height) / 2)
-        let textFrame = CGRect(x: 0, y: y, width: bounds.width, height: textSize.height)
-        for l in [base, mask] { l.frame = textFrame; l.contentsScale = scale }
-        mask.frame = CGRect(origin: .zero, size: textFrame.size)
-        sheen.frame = textFrame
+        let y = max(0, (bounds.height - textSize.height) / 2) // CATextLayer draws from the top
+        label.frame = CGRect(x: 0, y: y, width: bounds.width, height: textSize.height)
+        label.contentsScale = window?.backingScaleFactor ?? 2
         CATransaction.commit()
     }
 

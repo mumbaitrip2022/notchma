@@ -129,7 +129,10 @@ if let s = env["ITERM_SESSION_ID"], !s.isEmpty { event["_iterm_session"] = s }
 
 let eventName = event["hook_event_name"] as? String ?? ""
 let toolName = event["tool_name"] as? String ?? ""
-let wantsReply = eventName == "PermissionRequest" && !passthroughTools.contains(toolName)
+let isPermission = eventName == "PermissionRequest" && !passthroughTools.contains(toolName)
+// Stop asks the app whether you queued a follow-up prompt for this session.
+let isStop = eventName == "Stop"
+let wantsReply = isPermission || isStop
 event["_await"] = wantsReply
 
 guard var payload = try? JSONSerialization.data(withJSONObject: event) else { finish(fallbackOutput()) }
@@ -142,7 +145,8 @@ guard writeAll(fd: fd, data: payload) else { close(fd); finish(fallbackOutput())
 if !wantsReply { close(fd); finish(fallbackOutput()) }
 
 // Wait for the decision line.
-var tv = timeval(tv_sec: replyTimeoutSeconds, tv_usec: 0)
+// A Stop answer is instant (the app replies straight away); never hold up the agent for long.
+var tv = isStop ? timeval(tv_sec: 2, tv_usec: 0) : timeval(tv_sec: replyTimeoutSeconds, tv_usec: 0)
 setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
 
 var reply = Data()
@@ -161,6 +165,15 @@ guard let line = reply.split(separator: 0x0A).first,
 else { finish(fallbackOutput()) }
 
 let message = (answer["message"] as? String) ?? "Denied from NotchBar."
+
+// Your queued follow-up: the agent continues with it instead of stopping.
+if isStop {
+    guard behavior == "followup", let text = answer["text"] as? String, !text.isEmpty else { finish(fallbackOutput()) }
+    switch agent {
+    case .cursor: finish(["followup_message": text])
+    case .claude, .codex: finish(["decision": "block", "reason": text])
+    }
+}
 
 switch agent {
 case .cursor:

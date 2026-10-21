@@ -124,6 +124,9 @@ struct Session: Identifiable, Equatable {
     var actions: [ActionRecord] = [] // last few things it did (newest last)
     var steps = 0                // tool calls this turn
 
+    /// What the agent is asking you, when it's waiting (its question, or "plan ready").
+    var question: String?
+
     // Turn summary
     var lastMessage: String?
     var editedFiles: [String] = []
@@ -371,12 +374,15 @@ enum ToolInfo {
                 out[ar].mergeAttributes(c)
             }
         }
+        // Hierarchy by weight and brightness, not hue: commands bold white, flags and
+        // operators dimmer, quoted strings slightly softer.
         paint(#"(^|&&|\|\||\||;|\$\()\s*([A-Za-z0-9_./~+-]+)"#, group: 2) {
-            $0.foregroundColor = Color(red: 1.0, green: 0.62, blue: 0.47)
+            $0.foregroundColor = .white
+            $0.inlinePresentationIntent = .stronglyEmphasized
         }
-        paint(#"(?<=\s)--?[A-Za-z0-9][\w-]*"#) { $0.foregroundColor = Color(red: 0.55, green: 0.75, blue: 1.0) }
-        paint(#"&&|\|\||\||;|>>?|<"#) { $0.foregroundColor = Color(red: 0.85, green: 0.55, blue: 0.95) }
-        paint(#""(?:[^"\\]|\\.)*"|'[^']*'"#) { $0.foregroundColor = Color(red: 0.6, green: 0.88, blue: 0.6) }
+        paint(#"(?<=\s)--?[A-Za-z0-9][\w-]*"#) { $0.foregroundColor = .white.opacity(0.62) }
+        paint(#"&&|\|\||\||;|>>?|<"#) { $0.foregroundColor = .white.opacity(0.45) }
+        paint(#""(?:[^"\\]|\\.)*"|'[^']*'"#) { $0.foregroundColor = .white.opacity(0.78) }
         return out
     }
 

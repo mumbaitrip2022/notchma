@@ -6,6 +6,7 @@ struct ExpandedView: View {
     @ObservedObject var prefs: Prefs
     @ObservedObject var trust: TrustPolicy
     @ObservedObject var launcher: Launcher
+    let system: SystemMonitor
     var actions: NotchActions
 
     var body: some View {
@@ -26,8 +27,9 @@ struct ExpandedView: View {
         header
         if !trust.active.isEmpty { TrustBar(trust: trust) }
         let limits = store.activeLimits
-        if !limits.isEmpty {
-            UsageStrip(limits: limits) { agent, w in store.forecast.fullAt(agent, w) }
+        if !limits.isEmpty || prefs.showVitals {
+            ResourcesCard(limits: limits, forecast: { agent, w in store.forecast.fullAt(agent, w) },
+                          system: system, showVitals: prefs.showVitals)
         }
         if let approval = store.approvals.first {
             let siblings = store.approvals.filter { $0.sessionID == approval.sessionID && !$0.risky }.count
@@ -140,6 +142,7 @@ struct ExpandedView: View {
                         Rectangle().fill(Palette.hairline).frame(height: 1).padding(.leading, 58)
                     }
                     SessionRow(session: s, open: ui.openRow == s.id, queued: queued.contains(s.id),
+                               queuedFollowUp: store.queued[s.id] != nil,
                                onTap: { store.jump(to: s.id) },
                                onToggle: {
                                    ui.openRow = ui.openRow == s.id ? nil : s.id
@@ -189,7 +192,7 @@ struct TrustBar: View {
                 HStack(spacing: 9) {
                     Image(systemName: "checkmark.shield.fill").foregroundStyle(Color.success)
                     Text((item.project as NSString).lastPathComponent).fontWeight(.semibold).foregroundStyle(.white)
-                    Text("trusted — safe requests are auto-allowed").foregroundStyle(Palette.text2).lineLimit(1)
+                    Text("is trusted, safe requests are auto-allowed").foregroundStyle(Palette.text2).lineLimit(1)
                     Spacer(minLength: 6)
                     TimelineView(.periodic(from: .now, by: 30)) { ctx in
                         Text("\(max(1, Int(item.until.timeIntervalSince(ctx.date) / 60)))m left")
@@ -214,6 +217,7 @@ struct SessionRow: View {
     let session: Session
     let open: Bool
     let queued: Bool
+    var queuedFollowUp = false
     let onTap: () -> Void
     let onToggle: () -> Void
     @State private var hover = false
@@ -224,8 +228,9 @@ struct SessionRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     if queued {
-                        Circle().fill(Color.waiting).frame(width: 6, height: 6)
-                            .help("Waiting on you")
+                        Circle().fill(dotColor)
+                            .frame(width: 6, height: 6)
+                            .help(yourTurn ? "Waiting on you" : "Finished, not reviewed yet")
                     }
                     Text(session.projectName)
                         .font(.system(size: 13, weight: .semibold))
@@ -252,7 +257,9 @@ struct SessionRow: View {
                             .padding(.trailing, 4)
                     }
                     Group {
-                        if session.status.isWorking && session.alert == nil {
+                        if session.status == .waitingForInput && session.alert == nil {
+                            WaitingLine(session: session)
+                        } else if session.status.isWorking && session.alert == nil {
                             ShimmerText(text: session.statusText, active: true, size: 11.5,
                                         color: NSColor(statusColor))
                                 .frame(height: 14)
@@ -277,7 +284,7 @@ struct SessionRow: View {
                     HStack(spacing: 5) {
                         Text("\(p.done)/\(p.total)").font(.system(size: 11.5, weight: .semibold)).monospacedDigit()
                             .foregroundStyle(Palette.text2)
-                        ProgressRing(fraction: Double(p.done) / Double(max(p.total, 1)), size: 12, color: session.agent.tint)
+                        ProgressRing(fraction: Double(p.done) / Double(max(p.total, 1)), size: 12)
                     }
                     .help("Step \(min(p.done + 1, p.total)) of \(p.total) in its plan")
                 } else if session.status == .done, let cost = session.lastTask?.costUSD, cost > 0 {
@@ -315,6 +322,20 @@ struct SessionRow: View {
         .help("Jump to \(session.agent == .cursor ? "Cursor" : "its terminal")")
     }
 
+    /// Amber: approve something. Blue: your reply. White: finished, not reviewed yet.
+    private var dotColor: Color {
+        if case .needsApproval = session.status { return .approval }
+        if session.alert != nil { return .approval }
+        if session.status == .waitingForInput { return .waiting }
+        return Color.white.opacity(0.85)
+    }
+
+    /// Approval or input needed (vs. a finished task you haven't looked at).
+    private var yourTurn: Bool {
+        if case .needsApproval = session.status { return true }
+        return session.status == .waitingForInput || session.alert != nil
+    }
+
     /// After a task: its receipt (time, tokens, lines, tests). Otherwise: the prompt.
     private var detailLine: String {
         if session.status.isWorking {
@@ -323,6 +344,7 @@ struct SessionRow: View {
                 bits.append(item.activeText ?? item.text)
             }
             if session.steps > 0 { bits.append("\(session.steps) step\(session.steps == 1 ? "" : "s")") }
+            if queuedFollowUp { bits.insert("follow-up queued", at: 0) }
             if session.autoAllowed > 0 { bits.append("\(session.autoAllowed) auto-allowed") }
             if !bits.isEmpty { return bits.joined(separator: " · ") }
         }
@@ -378,7 +400,7 @@ struct SessionDetail: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Palette.code))
             }
-            if !session.plan.isEmpty { PlanList(plan: session.plan, tint: session.agent.tint) }
+            if !session.plan.isEmpty { PlanList(plan: session.plan, tint: .white) }
             if !session.actions.isEmpty && (session.status.isWorking || session.lastMessage == nil) {
                 ActivityTrail(actions: session.actions)
             }
@@ -410,9 +432,26 @@ struct SessionDetail: View {
                 Spacer()
             }
 
-            // Next prompt: type now, send when the agent is ready.
+            // A follow-up already waiting for this session.
+            if let q = store.queued[session.id] {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock.arrow.circlepath").foregroundStyle(Color.success)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Queued, sends when it finishes").font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.success)
+                        Text(q).font(.system(size: 12)).foregroundStyle(.white).lineLimit(2)
+                    }
+                    Spacer(minLength: 6)
+                    Button("Edit") { store.cancelQueued(session.id); focused = true }
+                        .buttonStyle(NBButtonStyle(kind: .secondary, compact: true))
+                }
+                .padding(10)
+                .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(Color.success.opacity(0.08)))
+            }
+
+            // Next prompt: queue it while the agent works, or send it now.
             HStack(alignment: .bottom, spacing: 8) {
-                TextField(session.status.isWorking ? "Next prompt — offered when it finishes…" : "Next prompt…",
+                TextField(store.isBusy(session) ? "Follow-up for when it finishes…" : "Next prompt…",
                           text: draft, axis: .vertical)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12.5))
@@ -422,16 +461,19 @@ struct SessionDetail: View {
                     .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(Palette.code))
                     .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
                         .strokeBorder(focused ? Color.white.opacity(0.25) : Palette.hairline, lineWidth: 1))
-                    .onSubmit { if !session.status.isWorking { send() } }
+                    .onSubmit { send() }
                 Button(action: send) {
                     Image(systemName: "arrow.up").font(.system(size: 12, weight: .bold)).frame(width: 30, height: 30)
                 }
                 .buttonStyle(CircleSolidButtonStyle())
-                .disabled(draft.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || session.status.isWorking)
-                .help(session.status.isWorking ? "Offered when the agent finishes"
-                      : (prefs.autoPaste && Paster.canPaste ? "Paste into its terminal (you press Return)"
-                         : "Copy and jump to its terminal"))
+                .disabled(draft.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .help(deliveryHint)
             }
+            Text(deliveryHint)
+                .font(.system(size: 10.5))
+                .foregroundStyle(Palette.text3)
+                .padding(.leading, 4)
+                .padding(.top, -4)
         }
         .padding(.horizontal, 12)
         .padding(.top, 2)
@@ -443,6 +485,11 @@ struct SessionDetail: View {
     private func send() {
         focused = false
         store.sendDraft(session.id)
+    }
+
+    private var deliveryHint: String {
+        store.isBusy(session) ? "Sends itself the moment it finishes. No copy paste needed"
+            : TerminalJump.deliveryHint(for: session, pasteAllowed: prefs.autoPaste)
     }
 
     private var summaryChips: [String] {

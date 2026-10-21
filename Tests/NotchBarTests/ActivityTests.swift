@@ -91,3 +91,36 @@ final class ActivityTests: XCTestCase {
         XCTAssertEqual(UsageReader.claudeNarration(transcript: url.path, since: turnStart)?.text, "Now I'll wire the checkout page")
     }
 }
+
+final class WaitingTests: XCTestCase {
+    func testOpenQuestionFindsTheFinalQuestion() {
+        let m = "I added the tax calculation and all 24 tests pass. Want me to update the docs too? Or should I also wire it into checkout?"
+        XCTAssertEqual(SessionStore.openQuestion(in: m), "Or should I also wire it into checkout?")
+        XCTAssertEqual(SessionStore.openQuestion(in: "Done.\n\nShould I commit this?"), "Should I commit this?")
+        XCTAssertNil(SessionStore.openQuestion(in: "All done. Tests pass."))
+        let buried = "Why? Because the cache was stale. " + String(repeating: "Details follow here. ", count: 20)
+        XCTAssertNil(SessionStore.openQuestion(in: buried)) // a question far back isn't "asking you"
+    }
+
+    func testAskUserQuestionAndPlan() {
+        XCTAssertEqual(SessionStore.question(tool: "AskUserQuestion",
+                                             input: ["questions": [["question": "Which database should we use?"]]]),
+                       "Which database should we use?")
+        XCTAssertEqual(SessionStore.question(tool: "ExitPlanMode", input: [:]), "Plan ready for your review")
+        XCTAssertNil(SessionStore.question(tool: "Bash", input: [:]))
+    }
+
+    func testPhrasesLeadWithTheQuestion() {
+        var s = Session(id: "s", cwd: "/p", pid: 0, termProgram: "", bundleID: "")
+        s.question = "Should I commit this?"
+        XCTAssertEqual(WaitingLine.phrases(for: s).first, "“Should I commit this?”")
+        XCTAssertEqual(WaitingLine.phrases(for: s)[1], "claude needs your call on this 👀")
+        s.question = nil
+        s.lastMessage = "Fixed the login bug and added tests."
+        XCTAssertEqual(WaitingLine.phrases(for: s).first, "done cooking 🍳 fixed the login bug and added tests.")
+        s.lastMessage = nil
+        // Only casual lines left, all drawn from the pool.
+        let pool = Set(WaitingLine.vibes("claude"))
+        XCTAssertTrue(WaitingLine.phrases(for: s).allSatisfy(pool.contains))
+    }
+}

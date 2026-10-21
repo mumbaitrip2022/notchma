@@ -18,6 +18,7 @@ struct SettingsView: View {
                 Picker("Show on", selection: $prefs.screenMode) {
                     ForEach(Prefs.ScreenMode.allCases) { Text($0.title).tag($0) }
                 }
+                Toggle("Show CPU, memory and disk", isOn: $prefs.showVitals)
                 Toggle("Sounds", isOn: $prefs.sounds)
                 Toggle("Launch at login", isOn: Binding(get: { prefs.launchAtLogin }, set: { prefs.launchAtLogin = $0 }))
             }
@@ -85,8 +86,8 @@ struct SettingsView: View {
             }
 
             Section("Shortcuts") {
-                Toggle("⌃⌥J — jump to the next thing waiting on you", isOn: $prefs.jumpShortcut)
-                Toggle("⌃⌥V — dictate your next prompt", isOn: $prefs.voice)
+                Toggle("⌃⌥J  Jump to the next thing waiting on you", isOn: $prefs.jumpShortcut)
+                Toggle("⌃⌥V  Dictate your next prompt", isOn: $prefs.voice)
                 LabeledContent("While a request is waiting", value: "⌃⌥Y allow · ⌃⌥N deny · ⌃⌥A always · ⌃⌥T trust")
             }
 

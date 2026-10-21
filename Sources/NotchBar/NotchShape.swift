@@ -187,15 +187,33 @@ final class SparkNSView: NSView {
 }
 
 extension Color {
+    // Colour means something. Everything normal is grayscale; there is exactly one
+    // "needs you" colour, one danger colour and one success colour. Brand colours
+    // appear only on the agents' own marks.
+
+    /// Claude's brand colour — only on Claude's spark, never as a status colour.
     static let claude = Color(red: 0.851, green: 0.467, blue: 0.341)      // #D97757
-    static let approval = Color(red: 1.0, green: 0.72, blue: 0.24)
-    static let success = Color(red: 0.33, green: 0.85, blue: 0.52)
+    /// The one "needs you" colour: approvals, waiting for input, warnings.
+    static let approval = Color(nsColor: .approval)
+    /// "Your reply" — the agent is waiting for you to type. Soft blue (#6AAAFF), distinct from amber "approve".
+    static let waiting = Color(nsColor: NSColor(name: "notchbar.waiting") { _ in
+        NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
+            ? NSColor(srgbRed: 0.52, green: 0.76, blue: 1.0, alpha: 1)
+            : NSColor(srgbRed: 0.416, green: 0.667, blue: 1.0, alpha: 1)
+    })
+    /// Done, passed.
+    static let success = Color(nsColor: .systemGreen)
+    /// Destructive, failed, critical.
+    static let danger = Color(nsColor: .systemRed)
     static let dim = Color.white.opacity(0.5)
-    static let waiting = Color(red: 0.45, green: 0.7, blue: 1)
-    static let danger = Color(red: 1, green: 0.38, blue: 0.4)
 }
 
 extension NSColor {
     static let claude = NSColor(red: 0.851, green: 0.467, blue: 0.341, alpha: 1)
-    static let approval = NSColor(red: 1.0, green: 0.72, blue: 0.24, alpha: 1)
+    /// Warm amber (#F2B84B) — calmer than system yellow on black; brighter with Increase Contrast.
+    static let approval = NSColor(name: "notchbar.approval") { _ in
+        NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
+            ? NSColor(srgbRed: 1.0, green: 0.80, blue: 0.36, alpha: 1)
+            : NSColor(srgbRed: 0.949, green: 0.722, blue: 0.294, alpha: 1)
+    }
 }

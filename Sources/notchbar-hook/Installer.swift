@@ -118,7 +118,7 @@ enum Installer {
         }
         if data.isEmpty { return [:] }
         guard let obj = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
-            fputs("\(url.path) is not valid JSON — refusing to modify it.\n", stderr); return nil
+            fputs("\(url.path) is not valid JSON, so NotchBar left it untouched.\n", stderr); return nil
         }
         return obj
     }

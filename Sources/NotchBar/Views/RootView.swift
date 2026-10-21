@@ -17,6 +17,7 @@ struct RootView: View {
     @ObservedObject var trust: TrustPolicy
     @ObservedObject var launcher: Launcher
     @ObservedObject var dictation: Dictation
+    let system: SystemMonitor
     var actions: NotchActions
     var onSize: (CGSize) -> Void
 
@@ -108,7 +109,7 @@ struct RootView: View {
         return ZStack(alignment: .top) {
             switch mode {
             case .expanded:
-                ExpandedView(store: store, ui: ui, prefs: prefs, trust: trust, launcher: launcher, actions: actions)
+                ExpandedView(store: store, ui: ui, prefs: prefs, trust: trust, launcher: launcher, system: system, actions: actions)
                     .transition(.blurReplace)
             case .banner:
                 if let b = store.banner {
@@ -225,9 +226,9 @@ struct BannerView: View {
                 .font(.system(size: 24))
                 .foregroundStyle(.black, Color.danger)
         case .info:
-            Image(systemName: "lightbulb.fill")
-                .font(.system(size: 20))
-                .foregroundStyle(Color.waiting)
+            Image(systemName: "info.circle.fill")
+                .font(.system(size: 21))
+                .foregroundStyle(.black, Color.white.opacity(0.85))
                 .symbolEffect(.bounce, value: banner.id)
         case .draft:
             Image(systemName: "arrow.up.message.fill")
