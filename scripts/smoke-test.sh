@@ -9,8 +9,11 @@ SOCK="$HOME/Library/Application Support/NotchBar/nb.sock"
 pass() { echo "✓ $1"; echo "| ✅ | $1 |" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"; }
 fail() {
   echo "✗ $1"; echo "| ❌ | $1 |" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+  # macOS writes crash reports a few seconds after the fact.
+  for _ in $(seq 1 20); do ls "$HOME"/Library/Logs/DiagnosticReports/NotchBar* >/dev/null 2>&1 && break; sleep 1; done
   echo "::group::NotchBar log (last 3 minutes)"
-  log show --last 3m --style compact --predicate 'process == "NotchBar"' 2>/dev/null | tail -80 || true
+  log show --last 3m --style compact --predicate 'process == "NotchBar" AND messageType >= 16' 2>/dev/null | tail -60 || true
+  log show --last 3m --style compact --predicate 'eventMessage CONTAINS "NotchBar" AND (process == "launchd" OR process == "ReportCrash" OR process == "kernel")' 2>/dev/null | tail -30 || true
   echo "::endgroup::"
   for f in "$HOME"/Library/Logs/DiagnosticReports/NotchBar*; do
     [ -e "$f" ] || continue
