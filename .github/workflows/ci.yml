@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: House style (no em or en dashes in app text)
         run: bash scripts/check-copy.sh
       - name: Workflow files
@@ -51,7 +51,7 @@ jobs:
           - name: macOS 26 · Apple silicon
             os: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Use the newest Xcode on this runner
         id: xcode
@@ -110,7 +110,7 @@ jobs:
     outputs:
       version: ${{ steps.meta.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Use the newest Xcode
         run: ./scripts/select-xcode.sh
       - name: Build DMG and zip
@@ -163,7 +163,7 @@ jobs:
           - name: macOS 26
             os: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           sparse-checkout: scripts
       - uses: actions/download-artifact@v4
