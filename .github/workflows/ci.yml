@@ -55,11 +55,10 @@ jobs:
 
       - name: Use the newest Xcode on this runner
         id: xcode
+        run: ./scripts/select-xcode.sh
+
+      - name: Describe the machine
         run: |
-          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
-          sudo xcode-select -s "$XCODE"
-          SWIFT=$(swift --version 2>&1 | head -1)
-          echo "swift=$SWIFT" >> "$GITHUB_OUTPUT"
           {
             echo "### 🖥️ ${{ matrix.name }}"
             echo
@@ -67,8 +66,8 @@ jobs:
             echo "|---|---|"
             echo "| Runner | \`${{ matrix.os }}\`, $(uname -m) |"
             echo "| macOS | $(sw_vers -productVersion) |"
-            echo "| Xcode | $(basename "$XCODE" .app) |"
-            echo "| Swift | $SWIFT |"
+            echo "| Xcode | ${{ steps.xcode.outputs.xcode }} |"
+            echo "| Swift | ${{ steps.xcode.outputs.swift }} |"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Cache build
@@ -113,7 +112,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Use the newest Xcode
-        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+        run: ./scripts/select-xcode.sh
       - name: Build DMG and zip
         run: ./scripts/dist.sh
       - name: Describe the build
