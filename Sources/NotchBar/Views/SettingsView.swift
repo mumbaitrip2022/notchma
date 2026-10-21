@@ -7,11 +7,23 @@ struct SettingsView: View {
     @ObservedObject var rules: RuleStore
     @ObservedObject var calendar: CalendarWatcher
     @ObservedObject var ledger: DayLedger
+    @ObservedObject var updater: Updater
+    var openUpdate: () -> Void = {}
     var setAgent: (Agent, Bool) -> Void
     var applyCursorMode: () -> Void
     var uninstall: () -> Void = {}
 
     @State private var axTrusted = Paster.canPaste
+
+    private var updateStatus: String {
+        if let r = updater.release { return "NotchBar \(r.version) is available" }
+        switch updater.phase {
+        case .checking: return "Checking…"
+        case .upToDate: return "You're on the latest version (\(updater.current))"
+        case let .failed(m): return m
+        default: return "Version \(updater.current)"
+        }
+    }
 
     var body: some View {
         Form {
@@ -90,6 +102,24 @@ struct SettingsView: View {
                 Text("Notifications")
             } footer: {
                 Text("During meetings, only approvals and urgent alerts show; the rest wait in a digest.")
+            }
+
+            Section {
+                Toggle("Check for updates automatically", isOn: $prefs.autoUpdate)
+                HStack {
+                    Text(updateStatus).foregroundStyle(.secondary)
+                    Spacer()
+                    if updater.release != nil {
+                        Button("See what's new", action: openUpdate)
+                    } else {
+                        Button("Check now") { updater.check(manual: true) }
+                            .disabled(updater.phase == .checking)
+                    }
+                }
+            } header: {
+                Text("Updates")
+            } footer: {
+                Text("Once a day NotchBar asks GitHub for the latest release. Nothing about you or your code is sent. Updates are checked against GitHub's checksum and their code signature before they're installed.")
             }
 
             Section("Shortcuts") {

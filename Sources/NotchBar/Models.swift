@@ -65,11 +65,12 @@ enum BannerAction: Equatable {
     case sendDraft            // paste your drafted next prompt
     case expand               // open the notch
     case receipt              // open today's receipt
+    case update               // open the update page
 }
 
 /// A short Dynamic-Island-style alert shown in the notch.
 struct Banner: Identifiable, Equatable {
-    enum Kind: Equatable { case done, waiting, failed, limit(critical: Bool), attention, info, draft, pet }
+    enum Kind: Equatable { case done, waiting, failed, limit(critical: Bool), attention, info, draft, pet, update }
     let id = UUID()
     let kind: Kind
     let sessionID: String

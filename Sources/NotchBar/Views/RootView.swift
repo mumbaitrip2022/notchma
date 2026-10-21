@@ -19,6 +19,7 @@ struct RootView: View {
     @ObservedObject var dictation: Dictation
     let system: SystemMonitor
     let pet: PetBrain
+    let updater: Updater
     var actions: NotchActions
     var onSize: (CGSize) -> Void
 
@@ -114,7 +115,7 @@ struct RootView: View {
             switch mode {
             case .expanded:
                 ExpandedView(store: store, ui: ui, prefs: prefs, trust: trust, launcher: launcher, system: system,
-                             pet: pet, actions: actions)
+                             pet: pet, updater: updater, actions: actions)
                     .transition(.blurReplace)
             case .banner:
                 if let b = store.banner {
@@ -189,7 +190,7 @@ struct BannerView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            if banner.kind == .pet {
+            if banner.kind == .pet || banner.kind == .update {
                 PetCanvas(frame: PetBrain.Frame(pose: PetSprite.Pose(eyes: .happy, mouth: .smile, blush: true, outfit: petOutfit)),
                           pixel: 2, ink: .white, roams: false, ground: 1)
                     .frame(width: 36, height: 36)
@@ -243,6 +244,11 @@ struct BannerView: View {
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 24))
                 .foregroundStyle(.black, Color.danger)
+        case .update:
+            Image(systemName: "gift.fill")
+                .font(.system(size: 21, weight: .semibold))
+                .foregroundStyle(.white)
+                .symbolEffect(.bounce, value: banner.id)
         case .pet:
             Image(systemName: "sparkles")
                 .font(.system(size: 21, weight: .semibold))

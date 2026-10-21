@@ -25,6 +25,7 @@ NotchBar turns the top of your Mac screen into a control center for coding agent
 - 📊 **Usage limits and cost.** Claude's 5 hour and weekly limits, Codex windows, context fill, and a forecast of when you'll hit the limit.
 - 🐾 **A notch pet and a daily receipt.** Share what your agents shipped today as a receipt image.
 - 🪶 **Native and light.** Swift, SwiftUI and AppKit. About 20 MB of memory and close to 0% CPU when idle. No Electron, no account, no telemetry.
+- 🎁 **Updates in one tap.** When a new version is out, your pet shows up with a gift. One click downloads it, checks it and restarts.
 
 <div align="center">
 <img src="docs/images/states.png" width="560" alt="The NotchBar island in three states: idle with the pixel pet, a Claude Code session running tests with progress 3 of 5, and an agent asking for approval">
@@ -156,7 +157,7 @@ agent ──hook JSON──▶ notchbar-hook ──unix socket──▶ NotchBar
 - **Fail safe:** if NotchBar isn't running, crashes, or you don't answer within about 10 minutes, the hook exits quietly and the agent shows its normal prompt. Nothing can get stuck.
 - `AskUserQuestion` and plan approvals always stay in the terminal.
 - The socket lives at `~/Library/Application Support/NotchBar/nb.sock` and only you can read it (mode 0600).
-- Everything stays on your Mac. No account, no network calls, no analytics.
+- Everything stays on your Mac. No account, no analytics. The only network request is a daily check of GitHub for a new version, which you can turn off in Settings.
 
 ## FAQ
 
@@ -173,7 +174,10 @@ Yes. Claude Code, OpenAI Codex and Cursor all show live status. Claude Code and 
 Yes. The 5 hour and weekly limits show as rings with reset times, plus a forecast of when you'll hit them at your current pace.
 
 **Is it free? Does it send my code anywhere?**
-It's free and open source (MIT). It never sends anything off your Mac.
+It's free and open source (MIT). It never sends your code or activity anywhere. The only request it makes is a daily check for updates on GitHub, and you can turn that off.
+
+**How do I update?**
+NotchBar checks once a day. When there's a new version, a banner shows what's new and *Update and restart* installs it in a few seconds. You can also use *Check for Updates…* in the gear menu. Every update is checked against GitHub's checksum and its code signature first.
 
 **What is the notch pet?**
 A tiny pixel pet that lives in the notch while your agents are idle. It levels up as you ship, and hovering prints a shareable receipt of your day.

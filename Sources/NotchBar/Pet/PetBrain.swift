@@ -26,6 +26,10 @@ final class PetBrain: ObservableObject {
     @Published private(set) var frame = Frame()
     /// Set by the hero view while the receipt prints.
     var printing = false
+    /// A new NotchBar version is waiting: the pet carries a little gift box.
+    var hasGift = false {
+        didSet { if hasGift != oldValue { lastStimulus = Date(); if case .sleep = act { start(.yawn) } } }
+    }
     /// Stand still (the big pet on the printer) instead of wandering.
     var stayPut = false
     /// Receipt signature last printed, so it only prints again when something changed.
@@ -291,7 +295,12 @@ final class PetBrain: ObservableObject {
             if p.kind == .crumb { p.vy += 0.5 }
             return p.life > 0 ? p : nil
         }
-        let next = Frame(pose: pose, x: x, lift: lift, particles: particles)
+        var shown = particles
+        if hasGift && !pose.egg {
+            // The present sits on the ground next to the pet, on the side it faces.
+            shown.append(Particle(kind: .gift, x: facingLeft ? -6 : 15, y: 15 + Double(lift), life: 1))
+        }
+        let next = Frame(pose: pose, x: x, lift: lift, particles: shown)
         if next != frame { frame = next }
     }
 

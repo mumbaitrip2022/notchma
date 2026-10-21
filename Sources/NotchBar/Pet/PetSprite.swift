@@ -132,7 +132,7 @@ enum PetSprite {
 
     // MARK: particles
 
-    enum ParticleKind: Equatable { case heart, z, sparkle, cookie, crumb, note }
+    enum ParticleKind: Equatable { case heart, z, sparkle, cookie, crumb, note, gift }
 
     static func particle(_ k: ParticleKind) -> [String] {
         switch k {
@@ -142,6 +142,7 @@ enum PetSprite {
         case .cookie:  return [".##.", "#+##", "##+#", ".##."]
         case .crumb:   return ["#"]
         case .note:    return [".##", ".#.", "##."]
+        case .gift:    return ["##.##", ".###.", "#####", "##+##", "##+##"]
         }
     }
 }

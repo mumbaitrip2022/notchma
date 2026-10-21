@@ -25,6 +25,7 @@ final class NotchController: NSObject {
     let dictation = Dictation()
     let system = SystemMonitor()
     let pet = PetBrain()
+    let updater = Updater()
 
     var panel: NotchPanel!
     var panelContentView: NSView? { panel.contentView }
@@ -40,6 +41,7 @@ final class NotchController: NSObject {
     private var bag = Set<AnyCancellable>()
     private lazy var settingsWindow = SettingsWindowController { [unowned self] in
         AnyView(SettingsView(prefs: self.prefs, rules: self.store.rules, calendar: self.calendar, ledger: self.store.ledger,
+                             updater: self.updater, openUpdate: { [weak self] in self?.openUpdate() },
                              setAgent: { [weak self] a, on in self?.setHooks(a, installed: on) },
                              applyCursorMode: { [weak self] in
                                  guard let self, self.prefs.installed.contains(.cursor) else { return }
@@ -70,6 +72,54 @@ final class NotchController: NSObject {
         panel.orderFrontRegardless()
         launcher.refreshCLIs()
         welcomeIfFirstRun()
+        wireUpdater()
+    }
+
+    // MARK: - Updates
+
+    func openUpdate() {
+        ui.page = .update
+        ui.pinned = true
+    }
+
+    private func wireUpdater() {
+        updater.enabled = { [weak self] in self?.prefs.autoUpdate ?? false }
+        updater.onFound = { [weak self] r in
+            self?.store.showBanner(Banner(kind: .update, sessionID: "", agent: .claude,
+                                          title: "NotchBar \(r.version) is here ✨",
+                                          subtitle: r.headline + ". tap to see what's new", action: .update))
+        }
+        updater.onUpToDate = { [weak self] in
+            guard let self else { return }
+            self.store.showBanner(Banner(kind: .update, sessionID: "", agent: .claude,
+                                         title: "You're on the latest NotchBar ✨",
+                                         subtitle: "version \(self.updater.current). nothing new yet", action: .update))
+        }
+        updater.onFailed = { [weak self] message in
+            guard let self, self.ui.page != .update else { return } // the update page shows it already
+            self.store.showBanner(Banner(kind: .attention, sessionID: "", agent: .claude,
+                                         title: "Update didn't work", subtitle: message, action: .update))
+        }
+        // The pet carries a little present while a new version waits.
+        updater.$release.map { $0 != nil }.removeDuplicates()
+            .sink { [weak self] has in self?.pet.hasGift = has }
+            .store(in: &bag)
+        updater.$phase.removeDuplicates().dropFirst()
+            .sink { [weak self] _ in self?.remeasureSoon() }
+            .store(in: &bag)
+
+        // Just restarted into a new version: say hi.
+        if let done = updater.takeJustUpdated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+                guard let self else { return }
+                self.store.showBanner(Banner(kind: .update, sessionID: "", agent: .claude,
+                                             title: "Updated to NotchBar \(done.version) 🎉",
+                                             subtitle: "\(self.store.ledger.petName) unwrapped it. tap to see what's new",
+                                             action: .update, important: true))
+                self.pet.party()
+            }
+        }
+        updater.start()
     }
 
     /// First launch: open the notch once so new users see it and the Connect button.
@@ -146,7 +196,7 @@ final class NotchController: NSObject {
             copySummary: { [weak self] sid in self?.copySummary(sid) },
             openSettings: { [weak self] in self?.openSettings() })
         let root = RootView(store: store, ui: ui, prefs: prefs, trust: store.trust, launcher: launcher,
-                            dictation: dictation, system: system, pet: pet, actions: actions) { [weak self] size in
+                            dictation: dictation, system: system, pet: pet, updater: updater, actions: actions) { [weak self] size in
             // Never resize the window inside SwiftUI's update pass: that re-enters
             // layout and can swallow the state change that triggered it.
             DispatchQueue.main.async { self?.notchSizeChanged(size) }
@@ -337,7 +387,7 @@ final class NotchController: NSObject {
             .store(in: &bag)
 
         // Expand while hovered, pinned, typing, on the launcher, or while approvals wait.
-        let sticky = Publishers.CombineLatest4(ui.$pinned, ui.$menuOpen, ui.$editing, ui.$page.map { $0 == .launcher })
+        let sticky = Publishers.CombineLatest4(ui.$pinned, ui.$menuOpen, ui.$editing, ui.$page.map { $0 == .launcher || $0 == .update })
             .map { $0 || $1 || $2 || $3 }
         Publishers.CombineLatest3(ui.$hovering, sticky, store.$approvals.map { !$0.isEmpty })
             .receive(on: RunLoop.main)
@@ -496,6 +546,7 @@ final class NotchController: NSObject {
         case .sendDraft: store.sendDraft(b.sessionID)
         case .expand: ui.pinned = true
         case .receipt: openReceipt()
+        case .update: openUpdate()
         }
     }
 
@@ -647,6 +698,13 @@ final class NotchController: NSObject {
         menu.addItem(MenuItem("New Task…") { [weak self] in self?.ui.page = .launcher })
         if prefs.showPet {
             menu.addItem(MenuItem("Today's Receipt") { [weak self] in self?.openReceipt() })
+        }
+        if let r = updater.release {
+            menu.addItem(MenuItem("Update to \(r.version)…") { [weak self] in self?.openUpdate() })
+        } else {
+            menu.addItem(MenuItem("Check for Updates…") { [weak self] in
+                self?.updater.check(manual: true)
+            })
         }
         menu.addItem(MenuItem("Settings…", key: ",") { [weak self] in self?.openSettings() })
         menu.addItem(.separator())
@@ -863,6 +921,18 @@ extension NotchController {
             return true
         case "_Promo":
             MainActor.assumeIsolated { Promo.write(to: json["dir"] as? String ?? NSTemporaryDirectory()) }
+            return true
+        case "_Update":
+            switch json["do"] as? String {
+            case "install": updater.install()
+            case "open": openUpdate()
+            case "fake":
+                updater.debugOffer(.init(version: "9.9.9", title: "NotchBar 9.9.9",
+                                         notes: "## A test release 🧪\n\n- First thing that got better\n- **Second** thing, with more words so it wraps a little\n- Third thing",
+                                         zipURL: URL(string: "https://github.com/x/y.zip")!, sha256: nil, size: 2_500_000,
+                                         pageURL: URL(string: "https://github.com/\(Updater.repo)/releases")!))
+            default: updater.check(manual: true)
+            }
             return true
         case "_PetAct":
             switch json["act"] as? String {

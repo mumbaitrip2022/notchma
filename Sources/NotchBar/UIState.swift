@@ -19,7 +19,7 @@ final class NotchUI: ObservableObject {
     /// Test hook: treat the notch as idle even while sessions run (always false in release).
     @Published var forceIdle = false
 
-    enum Page: Equatable { case home, launcher, receipt }
+    enum Page: Equatable { case home, launcher, receipt, update }
 
     /// Height of the menu-bar band on the current screen (the notch's collapsed height).
     @Published var bandHeight: CGFloat = 24
@@ -85,6 +85,8 @@ final class Prefs: ObservableObject {
     @Published var showVitals: Bool { didSet { d.set(showVitals, forKey: "showVitals") } }
     /// The notch pet and the daily receipt while nothing is running.
     @Published var showPet: Bool { didSet { d.set(showPet, forKey: "showPet") } }
+    /// Check GitHub once a day for a new NotchBar.
+    @Published var autoUpdate: Bool { didSet { d.set(autoUpdate, forKey: "autoUpdate") } }
     /// Terminal used to start new agents: "auto", or a bundle id.
     @Published var launchTerminal: String { didSet { d.set(launchTerminal, forKey: "launchTerminal") } }
     /// Most-recent-first project folders seen in sessions.
@@ -125,6 +127,7 @@ final class Prefs: ObservableObject {
         voice = d.object(forKey: "voice") as? Bool ?? false
         showVitals = d.object(forKey: "showVitals") as? Bool ?? true
         showPet = d.object(forKey: "showPet") as? Bool ?? true
+        autoUpdate = d.object(forKey: "autoUpdate") as? Bool ?? true
         launchTerminal = d.string(forKey: "launchTerminal") ?? "auto"
         recentProjects = (d.stringArray(forKey: "recentProjects") ?? [])
             .filter { FileManager.default.fileExists(atPath: $0) }

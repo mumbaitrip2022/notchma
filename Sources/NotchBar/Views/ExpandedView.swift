@@ -8,6 +8,7 @@ struct ExpandedView: View {
     @ObservedObject var launcher: Launcher
     let system: SystemMonitor
     let pet: PetBrain
+    @ObservedObject var updater: Updater
     var actions: NotchActions
 
     var body: some View {
@@ -19,6 +20,9 @@ struct ExpandedView: View {
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             case .receipt:
                 receiptPage
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .update:
+                UpdateView(updater: updater, ui: ui, pet: pet)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
@@ -132,6 +136,9 @@ struct ExpandedView: View {
             if prefs.installed.isEmpty {
                 Button(action: actions.connect) { Text("Connect") }
                     .buttonStyle(NBButtonStyle(kind: .primary, compact: true))
+            }
+            if let r = updater.release, updater.phase == .available {
+                UpdateChip(version: r.version) { ui.page = .update }
             }
             if prefs.showPet && !idle {
                 PetButton(ledger: store.ledger, brain: pet) { ui.page = .receipt }
