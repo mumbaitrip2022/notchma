@@ -9,6 +9,8 @@ struct SettingsView: View {
     @ObservedObject var ledger: DayLedger
     @ObservedObject var updater: Updater
     var openUpdate: () -> Void = {}
+    var openTour: () -> Void = {}
+    var openReport: () -> Void = {}
     var setAgent: (Agent, Bool) -> Void
     var applyCursorMode: () -> Void
     var uninstall: () -> Void = {}
@@ -157,6 +159,8 @@ struct SettingsView: View {
                 Text("NotchBar \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
                     .foregroundStyle(.secondary)
                 Spacer()
+                Button("Show Tour", action: openTour)
+                Button("Report a Problem…", action: openReport)
                 Button("Uninstall NotchBar…", role: .destructive, action: uninstall)
             }
             .padding(.horizontal, 20).padding(.vertical, 10)

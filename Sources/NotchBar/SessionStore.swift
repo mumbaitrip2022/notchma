@@ -123,6 +123,7 @@ final class SessionStore: ObservableObject {
         if event == "StatusLine" { applyStatusLine(e, sid: sid); return }
 
         let agent = Agent(rawValue: e["_agent"] as? String ?? "") ?? .claude
+        DiagLog.log("\(event) \(agent.rawValue) s\(sid.prefix(4))\(clientID != nil ? " waits" : "")")
         var s = sessions[sid] ?? newSession(sid, e)
         s.agent = agent
         updateIdentity(&s, e)
@@ -337,6 +338,7 @@ final class SessionStore: ObservableObject {
 
     func decide(_ approval: Approval, _ decision: Decision) {
         guard let idx = approvals.firstIndex(of: approval) else { return }
+        DiagLog.log("decided \(decision) for \(approval.toolName)\(approval.risky ? " (risky)" : "")")
         approvals.remove(at: idx)
         switch decision {
         case .allow, .always, .trust:
@@ -939,6 +941,7 @@ final class SessionStore: ObservableObject {
     }
 
     private func present(_ b: Banner) {
+        DiagLog.log("banner \(b.kind)")
         bannerWork?.cancel()
         banner = b
         let work = DispatchWorkItem { [weak self] in

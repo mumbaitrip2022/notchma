@@ -66,6 +66,7 @@ enum BannerAction: Equatable {
     case expand               // open the notch
     case receipt              // open today's receipt
     case update               // open the update page
+    case report               // open Report a Problem
 }
 
 /// A short Dynamic-Island-style alert shown in the notch.

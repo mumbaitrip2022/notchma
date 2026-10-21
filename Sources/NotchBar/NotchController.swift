@@ -42,6 +42,8 @@ final class NotchController: NSObject {
     private lazy var settingsWindow = SettingsWindowController { [unowned self] in
         AnyView(SettingsView(prefs: self.prefs, rules: self.store.rules, calendar: self.calendar, ledger: self.store.ledger,
                              updater: self.updater, openUpdate: { [weak self] in self?.openUpdate() },
+                             openTour: { [weak self] in self?.openTour() },
+                             openReport: { [weak self] in self?.openReport() },
                              setAgent: { [weak self] a, on in self?.setHooks(a, installed: on) },
                              applyCursorMode: { [weak self] in
                                  guard let self, self.prefs.installed.contains(.cursor) else { return }
@@ -73,6 +75,8 @@ final class NotchController: NSObject {
         launcher.refreshCLIs()
         welcomeIfFirstRun()
         wireUpdater()
+        checkForCrash()
+        DiagLog.log("launch \(updater.current)")
     }
 
     // MARK: - Updates
@@ -129,8 +133,49 @@ final class NotchController: NSObject {
         UserDefaults.standard.set(true, forKey: key)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
             guard let self else { return }
-            self.ui.pinned = true
+            self.openTour()
             if self.prefs.sounds { Sounds.done() }
+        }
+    }
+
+    func openTour() {
+        ui.page = .tour
+        ui.pinned = true
+        DiagLog.log("tour opened")
+    }
+
+    private func finishTour() {
+        ui.page = .home
+        ui.pinned = false
+        pet.party()
+        DiagLog.log("tour finished")
+    }
+
+    func openReport() {
+        if ui.crash == nil { ui.crash = Diagnostics.latestCrash(since: Date().addingTimeInterval(-7 * 86_400)) }
+        ui.page = .report
+        ui.pinned = true
+    }
+
+    /// If macOS wrote a NotchBar crash report since the last launch, offer to report it.
+    private func checkForCrash() {
+        let key = "lastLaunchAt"
+        let last = UserDefaults.standard.object(forKey: key) as? Date
+        UserDefaults.standard.set(Date(), forKey: key)
+        guard let last else { return }
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            guard let crash = Diagnostics.latestCrash(since: last) else { return }
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.ui.crash = crash
+                DiagLog.log("found a crash report from the last run")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    self.store.showBanner(Banner(kind: .attention, sessionID: "", agent: .claude,
+                                                 title: "NotchBar crashed last time 😵",
+                                                 subtitle: "sorry about that. tap to send a report, it takes 10 seconds",
+                                                 action: .report, important: true))
+                }
+            }
         }
     }
 
@@ -167,7 +212,11 @@ final class NotchController: NSObject {
         NSApp.terminate(nil)
     }
 
-    func stop() { if started { server.stop() } }
+    func stop() {
+        DiagLog.log("quit")
+        DiagLog.shared.flushNow()
+        if started { server.stop() }
+    }
 
     // MARK: - Panel
 
@@ -194,7 +243,9 @@ final class NotchController: NSObject {
             bannerTap: { [weak self] b in self?.handleBannerTap(b) },
             openDiff: { [weak self] sid in self?.openDiff(sid) },
             copySummary: { [weak self] sid in self?.copySummary(sid) },
-            openSettings: { [weak self] in self?.openSettings() })
+            openSettings: { [weak self] in self?.openSettings() },
+            setAgent: { [weak self] a, on in self?.setHooks(a, installed: on) },
+            finishTour: { [weak self] in self?.finishTour() })
         let root = RootView(store: store, ui: ui, prefs: prefs, trust: store.trust, launcher: launcher,
                             dictation: dictation, system: system, pet: pet, updater: updater, actions: actions) { [weak self] size in
             // Never resize the window inside SwiftUI's update pass: that re-enters
@@ -209,6 +260,7 @@ final class NotchController: NSObject {
 
     private func notchSizeChanged(_ size: CGSize) {
         guard size.width > 0, size.height > 0 else { return }
+        if size != notchSize { DiagLog.log("notch \(Int(size.width))×\(Int(size.height)) expanded \(ui.expanded)") }
         notchSize = size
         let target = windowSize(for: size)
         let current = panel.frame.size
@@ -387,7 +439,7 @@ final class NotchController: NSObject {
             .store(in: &bag)
 
         // Expand while hovered, pinned, typing, on the launcher, or while approvals wait.
-        let sticky = Publishers.CombineLatest4(ui.$pinned, ui.$menuOpen, ui.$editing, ui.$page.map { $0 == .launcher || $0 == .update })
+        let sticky = Publishers.CombineLatest4(ui.$pinned, ui.$menuOpen, ui.$editing, ui.$page.map { [.launcher, .update, .tour, .report].contains($0) })
             .map { $0 || $1 || $2 || $3 }
         Publishers.CombineLatest3(ui.$hovering, sticky, store.$approvals.map { !$0.isEmpty })
             .receive(on: RunLoop.main)
@@ -547,6 +599,7 @@ final class NotchController: NSObject {
         case .expand: ui.pinned = true
         case .receipt: openReceipt()
         case .update: openUpdate()
+        case .report: openReport()
         }
     }
 
@@ -638,6 +691,7 @@ final class NotchController: NSObject {
     private func setExpanded(_ value: Bool) {
         guard ui.expanded != value else { return }
         if value { updateScreen(); pet.poke() }
+        DiagLog.log(value ? "expand (page \(ui.page))" : "collapse")
         // Expand first, then drop the banner, so the notch never passes through the small pill in between.
         withAnimation(NotchUI.motion) { ui.expanded = value }
         if value { store.dismissBanner() }
@@ -707,6 +761,8 @@ final class NotchController: NSObject {
             })
         }
         menu.addItem(MenuItem("Settings…", key: ",") { [weak self] in self?.openSettings() })
+        menu.addItem(MenuItem("Report a Problem…") { [weak self] in self?.openReport() })
+        menu.addItem(MenuItem("Show Tour") { [weak self] in self?.openTour() })
         menu.addItem(.separator())
 
         let agentsHeader = NSMenuItem(title: "Agents", action: nil, keyEquivalent: "")
@@ -881,6 +937,8 @@ extension NotchController {
             switch json["page"] as? String {
             case "launcher": ui.page = .launcher
             case "receipt": ui.page = .receipt
+            case "tour": openTour()
+            case "report": openReport()
             default: ui.page = .home
             }
             return true
@@ -933,6 +991,9 @@ extension NotchController {
                                          pageURL: URL(string: "https://github.com/\(Updater.repo)/releases")!))
             default: updater.check(manual: true)
             }
+            return true
+        case "_TourStep":
+            NotificationCenter.default.post(name: .init("NBTourStep"), object: json["step"] as? Int ?? 0)
             return true
         case "_PetAct":
             switch json["act"] as? String {

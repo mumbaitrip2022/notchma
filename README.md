@@ -42,7 +42,7 @@ NotchBar turns the top of your Mac screen into a control center for coding agent
 ### Download
 1. Get the latest **[NotchBar.dmg](https://github.com/mumbaitrip2022/notchma/releases/latest)**, open it and drag **NotchBar** into **Applications**.
 2. Open NotchBar. If it starts from somewhere else, it offers to move itself to Applications. Say yes, since agents connect to it by path.
-3. Click **Connect** in the island. NotchBar adds its hooks to whichever of Claude Code, Codex and Cursor you have. Your other settings stay untouched, and a backup is kept next to each file.
+3. A short tour hosted by your pet opens in the notch and connects your agents. Or click **Connect** in the island. NotchBar adds its hooks to whichever of Claude Code, Codex and Cursor you have. Your other settings stay untouched, and a backup is kept next to each file.
 4. **Codex only:** run `/hooks` in Codex once and trust the NotchBar entries.
 5. Optional, in Settings: launch at login, Accessibility (paste drafts, raise Warp windows), Calendar, Voice.
 
@@ -181,6 +181,9 @@ NotchBar checks once a day. When there's a new version, a banner shows what's ne
 
 **What is the notch pet?**
 A tiny pixel pet that lives in the notch while your agents are idle. It levels up as you ship, and hovering prints a shareable receipt of your day.
+
+**Something broke. How do I report it?**
+Gear menu › *Report a Problem…* opens a page in the notch. Describe what happened, and NotchBar adds your Mac and app details and a short activity log (event names and timings only, never prompts, commands, code or paths). You can read every word before anything is shared, then it opens a ready-to-submit GitHub issue. If NotchBar ever crashes, it offers this on the next launch with the crash details attached.
 
 **What happens if NotchBar quits?**
 Your agents fall back to their normal prompts. Every hook checks that the app exists first.

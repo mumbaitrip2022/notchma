@@ -24,6 +24,13 @@ struct ExpandedView: View {
             case .update:
                 UpdateView(updater: updater, ui: ui, pet: pet)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .tour:
+                TourView(ui: ui, prefs: prefs, ledger: store.ledger, pet: pet, connectAll: actions.connect,
+                         setAgent: actions.setAgent, finish: actions.finishTour)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .report:
+                ReportView(ui: ui, prefs: prefs, pet: pet, crash: ui.crash)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
         .padding(.horizontal, 8)

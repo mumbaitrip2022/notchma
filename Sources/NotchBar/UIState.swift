@@ -18,8 +18,10 @@ final class NotchUI: ObservableObject {
     @Published var idleShowsSessions = false
     /// Test hook: treat the notch as idle even while sessions run (always false in release).
     @Published var forceIdle = false
+    /// A recent NotchBar crash report, offered on the Report a Problem page.
+    @Published var crash: Diagnostics.Crash?
 
-    enum Page: Equatable { case home, launcher, receipt, update }
+    enum Page: Equatable { case home, launcher, receipt, update, tour, report }
 
     /// Height of the menu-bar band on the current screen (the notch's collapsed height).
     @Published var bandHeight: CGFloat = 24

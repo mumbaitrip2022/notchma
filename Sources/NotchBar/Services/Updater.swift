@@ -240,6 +240,7 @@ final class Updater: NSObject, ObservableObject {
     }
 
     private func fail(_ message: String) {
+        DiagLog.log("update failed: \(message)")
         session?.invalidateAndCancel()
         session = nil
         phase = .failed(message)

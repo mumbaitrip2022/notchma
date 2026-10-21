@@ -8,6 +8,8 @@ struct NotchActions {
     var openDiff: (String) -> Void
     var copySummary: (String) -> Void
     var openSettings: () -> Void
+    var setAgent: (Agent, Bool) -> Void = { _, _ in }
+    var finishTour: () -> Void = {}
 }
 
 struct RootView: View {
@@ -190,8 +192,11 @@ struct BannerView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            if banner.kind == .pet || banner.kind == .update {
-                PetCanvas(frame: PetBrain.Frame(pose: PetSprite.Pose(eyes: .happy, mouth: .smile, blush: true, outfit: petOutfit)),
+            if banner.kind == .pet || banner.kind == .update || banner.action == .report {
+                let startled = banner.action == .report
+                PetCanvas(frame: PetBrain.Frame(pose: startled
+                            ? PetSprite.Pose(eyes: .wide, mouth: .open, ears: false, outfit: petOutfit)
+                            : PetSprite.Pose(eyes: .happy, mouth: .smile, blush: true, outfit: petOutfit)),
                           pixel: 2, ink: .white, roams: false, ground: 1)
                     .frame(width: 36, height: 36)
                     .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface3))
