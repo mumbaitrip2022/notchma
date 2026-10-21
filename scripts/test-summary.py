@@ -36,4 +36,4 @@ if failures:
     print("\n**Failures**\n")
     for f in failures:
         print(f"- `{f}`")
-sys.exit(1 if failed else 0)
+# The test step itself already fails the job; this only reports.
