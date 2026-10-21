@@ -19,7 +19,7 @@ final class NotchUI: ObservableObject {
     /// Test hook: treat the notch as idle even while sessions run (always false in release).
     @Published var forceIdle = false
 
-    enum Page: Equatable { case home, launcher }
+    enum Page: Equatable { case home, launcher, receipt }
 
     /// Height of the menu-bar band on the current screen (the notch's collapsed height).
     @Published var bandHeight: CGFloat = 24

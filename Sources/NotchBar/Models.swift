@@ -64,6 +64,7 @@ enum BannerAction: Equatable {
     case copyAndJump(String)  // copy text (e.g. "/compact"), then go
     case sendDraft            // paste your drafted next prompt
     case expand               // open the notch
+    case receipt              // open today's receipt
 }
 
 /// A short Dynamic-Island-style alert shown in the notch.

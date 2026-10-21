@@ -72,6 +72,7 @@ Needs Xcode 16+ (Swift 6). Apps you build yourself never trigger Gatekeeper warn
 
 When nothing is running, a tiny pixel pet lives in the notch. It wanders, blinks, naps when things are quiet, and eats a cookie every time one of your agents finishes a task.
 
+- **Your pet sits in the notch header.** Click it any time, even while agents are busy, and it prints today's receipt. A scrap of paper sticks out when there's something new, and once an evening after a real day of work it tells you your receipt is ready (also in the gear menu: *Today's Receipt*).
 - **Hover while idle** and today's receipt prints out of the notch line by line: time per agent, tasks shipped, files touched, lines, commands, tests, approvals, tokens and the API value of the day. Every number comes from your agents' real activity.
 - **Post it** copies the receipt as an image and opens a post on X (press ⌘V to add the image). You can also copy it or save it to your Desktop.
 - **Levels:** the pet hatches from an egg on your first finished task and levels up as you ship. Level 3 unlocks a sprout, level 6 headphones, level 10 a crown, and a 7 day streak gets it sunglasses.

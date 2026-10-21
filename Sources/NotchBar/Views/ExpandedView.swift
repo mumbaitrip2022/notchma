@@ -17,11 +17,34 @@ struct ExpandedView: View {
             case .launcher:
                 LauncherView(store: store, ui: ui, prefs: prefs, launcher: launcher)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .receipt:
+                receiptPage
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
         .padding(.horizontal, 8)
         .padding(.bottom, 14)
         .animation(NotchUI.motion, value: ui.page)
+    }
+
+    /// Today's receipt on demand, whatever the agents are doing.
+    private var receiptPage: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            BandRow(gap: ui.cameraGap) {
+                Button { ui.page = .home } label: {
+                    Image(systemName: "chevron.left").font(.system(size: 12, weight: .bold))
+                        .frame(width: 26, height: 26).contentShape(Circle())
+                }
+                .buttonStyle(CircleIconButtonStyle())
+                .help("Back")
+                Text("Today's receipt").font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+            } trailing: {
+                EmptyView()
+            }
+            .frame(height: max(ui.bandHeight, 30))
+            .padding(.horizontal, 8)
+            IdleHero(ledger: store.ledger, brain: pet, sessionCount: 0, sounds: prefs.sounds, showSessions: {})
+        }
     }
 
     /// Nothing needs you and nothing runs: the pet and today's receipt take the stage.
@@ -109,6 +132,9 @@ struct ExpandedView: View {
             if prefs.installed.isEmpty {
                 Button(action: actions.connect) { Text("Connect") }
                     .buttonStyle(NBButtonStyle(kind: .primary, compact: true))
+            }
+            if prefs.showPet && !idle {
+                PetButton(ledger: store.ledger, brain: pet) { ui.page = .receipt }
             }
             Button { ui.page = .launcher } label: {
                 Image(systemName: "plus")

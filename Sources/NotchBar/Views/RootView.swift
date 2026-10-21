@@ -134,6 +134,10 @@ struct RootView: View {
                     .transition(.blurReplace)
             }
         }
+        // Always lay out at the natural height. Otherwise, when the window is still small
+        // (a banner) as a big card arrives, text squeezes to fit, reports that small size,
+        // and the window never grows to show the card.
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, topR)
         .frame(width: width, alignment: .top)
         .background(Color.black)

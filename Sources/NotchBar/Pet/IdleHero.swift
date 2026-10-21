@@ -217,3 +217,47 @@ struct IdleHero: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: w)
     }
 }
+
+/// Your pet, live, in the notch header. Click it for today's receipt. A scrap of
+/// paper sticks out when there's activity you haven't seen printed yet.
+struct PetButton: View {
+    @ObservedObject var ledger: DayLedger
+    @ObservedObject var brain: PetBrain
+    let open: () -> Void
+    @State private var hover = false
+    @Environment(\.displayScale) private var displayScale
+
+    private var fresh: Bool {
+        ledger.today.tasks > 0 && !brain.lastPrinted.hasPrefix(ledger.today.signature + ledger.petName)
+    }
+
+    var body: some View {
+        Button(action: open) {
+            ZStack(alignment: .bottom) {
+                Circle().fill(hover ? Palette.surface3.opacity(1.4) : Palette.surface3)
+                PetView(brain: brain, pixel: displayScale >= 2 ? 1.5 : 1, roams: false, ground: 3)
+                    .frame(width: 26, height: 26)
+                    .clipShape(Circle())
+                if fresh {
+                    // The receipt peeking out: new numbers to print.
+                    VStack(spacing: 1.5) {
+                        ForEach(0..<2, id: \.self) { _ in Rectangle().fill(Thermal.faint).frame(width: 5, height: 1) }
+                    }
+                    .frame(width: 8, height: 9)
+                    .background(Thermal.paper)
+                    .clipShape(TornEdge(tooth: 1.5))
+                    .offset(x: 9, y: 4)
+                    .transition(.scale(scale: 0.3, anchor: .top).combined(with: .opacity))
+                }
+            }
+            .frame(width: 26, height: 26)
+            .contentShape(Circle())
+            .scaleEffect(hover ? 1.08 : 1)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: hover)
+            .animation(NotchUI.motion, value: fresh)
+        }
+        .buttonStyle(.plain)
+        .onHover { hover = $0; if $0 { brain.poke() } }
+        .help(fresh ? "\(ledger.petName) has a fresh receipt for you" : "Today's receipt from \(ledger.petName)")
+    }
+}

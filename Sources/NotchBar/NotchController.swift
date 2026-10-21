@@ -34,6 +34,8 @@ final class NotchController: NSObject {
     private var collapseWork: DispatchWorkItem?
     private var previousApp: NSRunningApplication?
     private var hoverWork: DispatchWorkItem?
+    private var remeasureWork: [DispatchWorkItem] = []
+    private var receiptNudgeWork: DispatchWorkItem?
     private let hotKeys = HotKeys()
     private var bag = Set<AnyCancellable>()
     private lazy var settingsWindow = SettingsWindowController { [unowned self] in
@@ -174,6 +176,18 @@ final class NotchController: NSObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.55, execute: work)
     }
 
+    /// SwiftUI can drop the last size report when several state changes land in the same
+    /// instant (a banner closing as an approval opens), leaving the window at the old, small
+    /// size. Any later redraw delivers the missed size, so ask for a couple of redraws.
+    private func remeasureSoon() {
+        remeasureWork.forEach { $0.cancel() }
+        remeasureWork = [0.12, 0.6].map { delay in
+            let w = DispatchWorkItem { [weak self] in self?.ui.objectWillChange.send() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: w)
+            return w
+        }
+    }
+
     private func windowSize(for notch: CGSize) -> CGSize {
         let floating = ui.expanded || store.banner != nil || dictation.state != .idle
         let pad = floating ? shadowPad : 0
@@ -282,6 +296,7 @@ final class NotchController: NSObject {
         store.onTurnDone = { [weak self] in
             guard let self else { return }
             self.pet.feed() // a cookie drops into the notch next time the pet is on screen
+            self.scheduleReceiptNudge()
             guard self.prefs.sounds, !self.store.isQuiet() else { return }
             Sounds.done()
         }
@@ -290,7 +305,11 @@ final class NotchController: NSObject {
             .sink { [weak self] _ in
                 guard let self else { return }
                 DispatchQueue.main.async { self.notchSizeChanged(self.notchSize) }
+                self.remeasureSoon()
             }
+            .store(in: &bag)
+        store.$approvals.map(\.count).removeDuplicates().dropFirst()
+            .sink { [weak self] _ in self?.remeasureSoon() }
             .store(in: &bag)
 
         // Global shortcuts: approval keys only while something waits; the rest per settings.
@@ -318,7 +337,7 @@ final class NotchController: NSObject {
             .store(in: &bag)
 
         // Expand while hovered, pinned, typing, on the launcher, or while approvals wait.
-        let sticky = Publishers.CombineLatest4(ui.$pinned, ui.$menuOpen, ui.$editing, ui.$page.map { $0 != .home })
+        let sticky = Publishers.CombineLatest4(ui.$pinned, ui.$menuOpen, ui.$editing, ui.$page.map { $0 == .launcher })
             .map { $0 || $1 || $2 || $3 }
         Publishers.CombineLatest3(ui.$hovering, sticky, store.$approvals.map { !$0.isEmpty })
             .receive(on: RunLoop.main)
@@ -333,6 +352,36 @@ final class NotchController: NSObject {
             guard let self else { return }
             DispatchQueue.main.async { self.notchSizeChanged(self.notchSize) }
         }.store(in: &bag)
+    }
+
+    /// Open the notch on today's receipt.
+    func openReceipt() {
+        ui.page = .receipt
+        ui.pinned = true
+    }
+
+    /// Once an evening, after a real day of work, the pet lets you know your receipt is ready.
+    private func scheduleReceiptNudge() {
+        receiptNudgeWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, self.prefs.showPet else { return }
+            let ledger = self.store.ledger
+            let day = ledger.today
+            let hour = Calendar.current.component(.hour, from: Date())
+            let key = "receiptNudgeDay"
+            guard hour >= 18 || hour < 4, day.tasks >= 3,
+                  UserDefaults.standard.string(forKey: key) != day.key,
+                  !self.store.isAnyWorking, self.store.approvals.isEmpty, !self.ui.expanded else { return }
+            UserDefaults.standard.set(day.key, forKey: key)
+            self.store.showBanner(Banner(kind: .pet, sessionID: "", agent: .claude,
+                                         title: "\(ledger.petName) printed your receipt 🧾",
+                                         subtitle: "\(day.tasks) tasks shipped today. tap to see the damage",
+                                         action: .receipt))
+            self.pet.party()
+        }
+        receiptNudgeWork = work
+        // Wait for a quiet moment. If an agent is busy by then, the next finished task tries again.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 45, execute: work)
     }
 
     private func wirePet() {
@@ -359,7 +408,7 @@ final class NotchController: NSObject {
             // Let the "done" banner show first.
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 self.store.showBanner(Banner(kind: .pet, sessionID: "", agent: .claude, title: title,
-                                             subtitle: sub, action: .expand))
+                                             subtitle: sub, action: .receipt))
                 self.pet.party()
             }
         }
@@ -446,6 +495,7 @@ final class NotchController: NSObject {
         case let .copyAndJump(text): store.copyAndJump(text, sid: b.sessionID)
         case .sendDraft: store.sendDraft(b.sessionID)
         case .expand: ui.pinned = true
+        case .receipt: openReceipt()
         }
     }
 
@@ -537,8 +587,10 @@ final class NotchController: NSObject {
     private func setExpanded(_ value: Bool) {
         guard ui.expanded != value else { return }
         if value { updateScreen(); pet.poke() }
-        if value { store.dismissBanner() }
+        // Expand first, then drop the banner, so the notch never passes through the small pill in between.
         withAnimation(NotchUI.motion) { ui.expanded = value }
+        if value { store.dismissBanner() }
+        remeasureSoon()
         if !value {
             ui.pinned = false
             ui.idleShowsSessions = false
@@ -593,6 +645,9 @@ final class NotchController: NSObject {
         menu.autoenablesItems = false
 
         menu.addItem(MenuItem("New Task…") { [weak self] in self?.ui.page = .launcher })
+        if prefs.showPet {
+            menu.addItem(MenuItem("Today's Receipt") { [weak self] in self?.openReceipt() })
+        }
         menu.addItem(MenuItem("Settings…", key: ",") { [weak self] in self?.openSettings() })
         menu.addItem(.separator())
 
@@ -765,7 +820,11 @@ extension NotchController {
             ui.openRow = json["sid"] as? String
             return true
         case "_Page":
-            ui.page = (json["page"] as? String) == "launcher" ? .launcher : .home
+            switch json["page"] as? String {
+            case "launcher": ui.page = .launcher
+            case "receipt": ui.page = .receipt
+            default: ui.page = .home
+            }
             return true
         case "_AllowAll":
             store.allowAll(sessionID: json["sid"] as? String ?? "")
