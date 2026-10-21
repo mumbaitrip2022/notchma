@@ -6,7 +6,9 @@ import Foundation
 /// them. Main thread only. Heavy work (file reads, git) runs on `io`.
 final class SessionStore: ObservableObject {
     // MARK: published state
-    @Published private(set) var sessions: [String: Session] = [:]
+    @Published private(set) var sessions: [String: Session] = [:] {
+        didSet { syncLedger(oldValue) }
+    }
     @Published private(set) var approvals: [Approval] = []
     @Published private(set) var doneFlash = false
     /// Transient Dynamic-Island-style alert (turn finished, waiting for you…).
@@ -22,6 +24,7 @@ final class SessionStore: ObservableObject {
     let rules = RuleStore()
     let trust = TrustPolicy()
     let forecast = UsageForecast()
+    let ledger = DayLedger()
     private let conflicts = ConflictTracker()
     private let io = DispatchQueue(label: "notchbar.usage", qos: .utility)
 
@@ -294,6 +297,7 @@ final class SessionStore: ObservableObject {
             sendReply?(clientID, ["behavior": "allow"])
             if case let .rule(r) = reason { rules.noteUse(r) }
             s.autoAllowed += 1
+            ledger.autoAllowed()
             s.status = .tool(name: tool, detail: ToolInfo.detail(tool: tool, input: input))
             noteEdits(&s, tool: tool, input: input)
             sessions[sid] = s
@@ -337,6 +341,7 @@ final class SessionStore: ObservableObject {
         switch decision {
         case .allow, .always, .trust:
             sendReply?(approval.clientID, ["behavior": "allow"])
+            ledger.approval(allowed: true)
             if let c = approval.candidate {
                 if decision == .always {
                     rules.add(agent: c.agent, project: c.project, tool: c.tool, pattern: c.pattern)
@@ -355,6 +360,7 @@ final class SessionStore: ObservableObject {
             }
         case .deny:
             sendReply?(approval.clientID, ["behavior": "deny", "message": "The user denied this from NotchBar."])
+            ledger.approval(allowed: false)
             restoreStatusAfterApproval(sessionID: approval.sessionID)
         case .terminal:
             sendReply?(approval.clientID, ["behavior": "ask"])
@@ -436,8 +442,10 @@ final class SessionStore: ObservableObject {
             return
         }
         guard !["ToolSearch", "AskUserQuestion", "ExitPlanMode"].contains(tool) else { return }
+        let phase = Phase.of(tool: tool, input: input)
         s.actions.append(ActionRecord(tool: tool, detail: ToolInfo.detail(tool: tool, input: input),
-                                      phase: Phase.of(tool: tool, input: input), at: now))
+                                      phase: phase, at: now))
+        if tool == "Bash" { ledger.command() }
         if s.actions.count > 8 { s.actions.removeFirst(s.actions.count - 8) }
     }
 
@@ -475,6 +483,7 @@ final class SessionStore: ObservableObject {
         guard !files.isEmpty else { return }
         let live = Set(sessions.keys).union([s.id])
         for f in files {
+            ledger.file(f)
             if !s.editedFiles.contains(f) { s.editedFiles.append(f) }
             if let c = conflicts.record(file: f, session: s.id, liveSessions: live),
                let other = sessions[c.otherSession] {
@@ -491,6 +500,7 @@ final class SessionStore: ObservableObject {
     private func noteOutput(_ s: inout Session, tool: String, _ e: [String: Any]) {
         guard tool == "Bash", let tail = e["_output_tail"] as? String, let r = TestParser.parse(tail) else { return }
         s.testResult = r
+        ledger.tests(passed: r.passed, failed: r.failed)
         if let i = s.actions.lastIndex(where: { $0.tool == "Bash" }) {
             s.actions[i].note = r.short
             s.actions[i].ok = r.failed == 0
@@ -611,6 +621,18 @@ final class SessionStore: ObservableObject {
         pb.clearContents()
         pb.setString(text, forType: .string)
         jump(to: sid)
+    }
+
+    // MARK: - Day ledger
+
+    /// Finished turns (and their late-arriving tokens and cost) go to today's receipt.
+    private func syncLedger(_ old: [String: Session]) {
+        for (sid, s) in sessions where s.status == .done {
+            guard let r = s.lastTask, let ended = s.turnEndedAt else { continue }
+            if let o = old[sid], o.status == .done, o.lastTask == r, o.turnEndedAt == ended { continue }
+            ledger.turn(key: "\(sid)#\(Int(ended.timeIntervalSince1970))", agent: s.agent,
+                        project: s.projectName, receipt: r, endedAt: ended)
+        }
     }
 
     // MARK: - Usage

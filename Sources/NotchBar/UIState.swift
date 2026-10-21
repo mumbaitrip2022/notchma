@@ -14,6 +14,10 @@ final class NotchUI: ObservableObject {
     @Published var page: Page = .home
     /// Session row whose details (answer, review, draft) are unfolded.
     @Published var openRow: String?
+    /// While idle, show the session list instead of the pet and receipt.
+    @Published var idleShowsSessions = false
+    /// Test hook: treat the notch as idle even while sessions run (always false in release).
+    @Published var forceIdle = false
 
     enum Page: Equatable { case home, launcher }
 
@@ -79,6 +83,8 @@ final class Prefs: ObservableObject {
     @Published var voice: Bool { didSet { d.set(voice, forKey: "voice") } }
     /// CPU · MEM · SSD row in the expanded notch.
     @Published var showVitals: Bool { didSet { d.set(showVitals, forKey: "showVitals") } }
+    /// The notch pet and the daily receipt while nothing is running.
+    @Published var showPet: Bool { didSet { d.set(showPet, forKey: "showPet") } }
     /// Terminal used to start new agents: "auto", or a bundle id.
     @Published var launchTerminal: String { didSet { d.set(launchTerminal, forKey: "launchTerminal") } }
     /// Most-recent-first project folders seen in sessions.
@@ -118,6 +124,7 @@ final class Prefs: ObservableObject {
         calendarAware = d.object(forKey: "calendarAware") as? Bool ?? false
         voice = d.object(forKey: "voice") as? Bool ?? false
         showVitals = d.object(forKey: "showVitals") as? Bool ?? true
+        showPet = d.object(forKey: "showPet") as? Bool ?? true
         launchTerminal = d.string(forKey: "launchTerminal") ?? "auto"
         recentProjects = (d.stringArray(forKey: "recentProjects") ?? [])
             .filter { FileManager.default.fileExists(atPath: $0) }

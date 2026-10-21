@@ -24,6 +24,7 @@ final class NotchController: NSObject {
     let calendar = CalendarWatcher()
     let dictation = Dictation()
     let system = SystemMonitor()
+    let pet = PetBrain()
 
     var panel: NotchPanel!
     var panelContentView: NSView? { panel.contentView }
@@ -36,7 +37,7 @@ final class NotchController: NSObject {
     private let hotKeys = HotKeys()
     private var bag = Set<AnyCancellable>()
     private lazy var settingsWindow = SettingsWindowController { [unowned self] in
-        AnyView(SettingsView(prefs: self.prefs, rules: self.store.rules, calendar: self.calendar,
+        AnyView(SettingsView(prefs: self.prefs, rules: self.store.rules, calendar: self.calendar, ledger: self.store.ledger,
                              setAgent: { [weak self] a, on in self?.setHooks(a, installed: on) },
                              applyCursorMode: { [weak self] in
                                  guard let self, self.prefs.installed.contains(.cursor) else { return }
@@ -143,7 +144,7 @@ final class NotchController: NSObject {
             copySummary: { [weak self] sid in self?.copySummary(sid) },
             openSettings: { [weak self] in self?.openSettings() })
         let root = RootView(store: store, ui: ui, prefs: prefs, trust: store.trust, launcher: launcher,
-                            dictation: dictation, system: system, actions: actions) { [weak self] size in
+                            dictation: dictation, system: system, pet: pet, actions: actions) { [weak self] size in
             // Never resize the window inside SwiftUI's update pass: that re-enters
             // layout and can swallow the state change that triggered it.
             DispatchQueue.main.async { self?.notchSizeChanged(size) }
@@ -279,9 +280,12 @@ final class NotchController: NSObject {
             if self.prefs.sounds { Sounds.approval() } // approvals sound even in meetings: they block work
         }
         store.onTurnDone = { [weak self] in
-            guard let self, self.prefs.sounds, !self.store.isQuiet() else { return }
+            guard let self else { return }
+            self.pet.feed() // a cookie drops into the notch next time the pet is on screen
+            guard self.prefs.sounds, !self.store.isQuiet() else { return }
             Sounds.done()
         }
+        wirePet()
         store.$banner.map { $0 != nil }.removeDuplicates().dropFirst()
             .sink { [weak self] _ in
                 guard let self else { return }
@@ -329,6 +333,36 @@ final class NotchController: NSObject {
             guard let self else { return }
             DispatchQueue.main.async { self.notchSizeChanged(self.notchSize) }
         }.store(in: &bag)
+    }
+
+    private func wirePet() {
+        let ledger = store.ledger
+        pet.level = { ledger.level }
+        pet.lastFedAt = { ledger.lastTaskAt }
+        pet.streak = { ledger.streak }
+        ledger.onLevelChange = { [weak self] old, new in
+            guard let self, self.prefs.showPet, new > old else { return }
+            let name = ledger.petName
+            let title: String, sub: String
+            if old == 0 {
+                title = "\(name) just hatched 🐣"
+                sub = "your first task fed it. it lives in your notch now"
+            } else {
+                title = "\(name) hit level \(new) ✨"
+                switch new {
+                case 3: sub = "unlocked a sprout 🌱"
+                case 6: sub = "unlocked headphones 🎧"
+                case 10: sub = "unlocked the crown 👑 absolute legend"
+                default: sub = "keep shipping. hover the notch for today's receipt"
+                }
+            }
+            // Let the "done" banner show first.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                self.store.showBanner(Banner(kind: .pet, sessionID: "", agent: .claude, title: title,
+                                             subtitle: sub, action: .expand))
+                self.pet.party()
+            }
+        }
     }
 
     private func wireServices() {
@@ -502,11 +536,12 @@ final class NotchController: NSObject {
 
     private func setExpanded(_ value: Bool) {
         guard ui.expanded != value else { return }
-        if value { updateScreen() }
+        if value { updateScreen(); pet.poke() }
         if value { store.dismissBanner() }
         withAnimation(NotchUI.motion) { ui.expanded = value }
         if !value {
             ui.pinned = false
+            ui.idleShowsSessions = false
             ui.page = .home
         }
     }
@@ -737,6 +772,44 @@ extension NotchController {
             return true
         case "_Hover":
             ui.hovering = (json["on"] as? Bool) ?? false
+            return true
+        case "_PetDemo":
+            // Sample numbers in memory only, to preview the receipt and outfits.
+            var d = DayLedger.Day(key: DayLedger.dayKey(Date()))
+            let now = Date()
+            func t(_ a: Agent, _ p: String, _ m: Double, _ tok: Int, _ c: Double, _ add: Int, _ rem: Int) -> DayLedger.Turn {
+                .init(key: UUID().uuidString, agent: a.rawValue, project: p, duration: m * 60, tokens: tok, cost: c,
+                      added: add, removed: rem, endedAt: now)
+            }
+            if (json["empty"] as? Bool) != true {
+                d.turns = [t(.claude, "notchbar", 42, 900_000, 2.10, 640, 120), t(.claude, "notchbar", 18, 400_000, 0.9, 220, 80),
+                           t(.cursor, "landing-page", 26, 600_000, 1.2, 300, 110), t(.claude, "api", 9, 200_000, 0.62, 44, 8)]
+                d.files = Set((0..<37).map { "f\($0)" })
+                d.commands = 86; d.testsPassed = 112; d.testsFailed = 0; d.allowed = 19; d.denied = 2; d.autoAllowed = 7
+            }
+            let tasks = json["tasks"] as? Int ?? 60
+            store.ledger.debugFill(d, lifetime: .init(tasks: tasks, files: tasks * 3, tests: 400, approvals: 50))
+            pet.lastPrinted = ""
+            ui.forceIdle = (json["idle"] as? Bool) ?? true
+            return true
+        case "_PetShare":
+            let l = store.ledger
+            var pose = PetSprite.Pose(eyes: .happy, mouth: .smile, blush: true, outfit: .forLevel(l.level))
+            pose.egg = l.level == 0
+            let c = ReceiptContent.make(day: l.today, number: l.receiptNumber, petName: l.petName, streak: l.streak)
+            if let img = MainActor.assumeIsolated({ ReceiptExport.image(ReceiptShareCard(content: c, pose: pose, petName: l.petName, level: l.level)) }),
+               let data = ReceiptExport.png(img) {
+                try? data.write(to: URL(fileURLWithPath: json["path"] as? String ?? "/dev/null"))
+            }
+            return true
+        case "_PetAct":
+            switch json["act"] as? String {
+            case "feed": pet.feed()
+            case "party": pet.party()
+            case "pet": pet.pet()
+            case "sleep": pet.debugSleep()
+            default: pet.poke()
+            }
             return true
         default:
             return false

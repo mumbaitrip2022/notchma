@@ -18,6 +18,7 @@ struct RootView: View {
     @ObservedObject var launcher: Launcher
     @ObservedObject var dictation: Dictation
     let system: SystemMonitor
+    let pet: PetBrain
     var actions: NotchActions
     var onSize: (CGSize) -> Void
 
@@ -57,12 +58,15 @@ struct RootView: View {
         case .compact:
             let base: CGFloat = ui.hasHardwareNotch ? ui.hardwareNotchWidth : 186
             let wings: CGFloat = ui.hasHardwareNotch ? 112 : 168
-            return base + (showsActivity ? wings : 0) + 2 * topR
+            // With a hardware notch the pet needs a little room on each side to walk (and hide behind the camera).
+            let petWings: CGFloat = ui.hasHardwareNotch && prefs.showPet ? 88 : 0
+            return base + (showsActivity ? wings : petWings) + 2 * topR
         }
     }
 
     private var showsActivity: Bool {
-        !store.approvals.isEmpty || store.isAnyWorking || store.doneFlash
+        guard !ui.forceIdle else { return false }
+        return !store.approvals.isEmpty || store.isAnyWorking || store.doneFlash
             || store.sessions.values.contains { $0.status == .waitingForInput }
     }
 
@@ -109,11 +113,13 @@ struct RootView: View {
         return ZStack(alignment: .top) {
             switch mode {
             case .expanded:
-                ExpandedView(store: store, ui: ui, prefs: prefs, trust: trust, launcher: launcher, system: system, actions: actions)
+                ExpandedView(store: store, ui: ui, prefs: prefs, trust: trust, launcher: launcher, system: system,
+                             pet: pet, actions: actions)
                     .transition(.blurReplace)
             case .banner:
                 if let b = store.banner {
-                    BannerView(banner: b, receipt: store.session(b.sessionID)?.lastTask) { actions.bannerTap(b) }
+                    BannerView(banner: b, receipt: store.session(b.sessionID)?.lastTask,
+                               petOutfit: .forLevel(store.ledger.level)) { actions.bannerTap(b) }
                         .padding(.top, ui.hasHardwareNotch ? ui.bandHeight - 6 : 0)
                         .id(b.id)
                         .transition(.blurReplace)
@@ -123,7 +129,7 @@ struct RootView: View {
                     .padding(.top, ui.hasHardwareNotch ? ui.bandHeight - 6 : 0)
                     .transition(.blurReplace)
             case .compact:
-                CollapsedView(store: store, ui: ui, showsActivity: showsActivity)
+                CollapsedView(store: store, ui: ui, pet: pet, showPet: prefs.showPet, showsActivity: showsActivity)
                     .frame(height: ui.bandHeight)
                     .transition(.blurReplace)
             }
@@ -174,11 +180,19 @@ struct SplitBubble: View {
 struct BannerView: View {
     let banner: Banner
     var receipt: TaskReceipt?
+    var petOutfit: PetSprite.Outfit = .none
     let onTap: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            AgentTile(agent: banner.agent, size: 36)
+            if banner.kind == .pet {
+                PetCanvas(frame: PetBrain.Frame(pose: PetSprite.Pose(eyes: .happy, mouth: .smile, blush: true, outfit: petOutfit)),
+                          pixel: 2, ink: .white, roams: false, ground: 1)
+                    .frame(width: 36, height: 36)
+                    .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface3))
+            } else {
+                AgentTile(agent: banner.agent, size: 36)
+            }
             VStack(alignment: .leading, spacing: 3) {
                 Text(banner.title)
                     .font(.system(size: 13.5, weight: .semibold))
@@ -225,6 +239,11 @@ struct BannerView: View {
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 24))
                 .foregroundStyle(.black, Color.danger)
+        case .pet:
+            Image(systemName: "sparkles")
+                .font(.system(size: 21, weight: .semibold))
+                .foregroundStyle(.white)
+                .symbolEffect(.bounce, value: banner.id)
         case .info:
             Image(systemName: "info.circle.fill")
                 .font(.system(size: 21))

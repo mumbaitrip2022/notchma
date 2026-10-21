@@ -68,7 +68,7 @@ enum BannerAction: Equatable {
 
 /// A short Dynamic-Island-style alert shown in the notch.
 struct Banner: Identifiable, Equatable {
-    enum Kind: Equatable { case done, waiting, failed, limit(critical: Bool), attention, info, draft }
+    enum Kind: Equatable { case done, waiting, failed, limit(critical: Bool), attention, info, draft, pet }
     let id = UUID()
     let kind: Kind
     let sessionID: String

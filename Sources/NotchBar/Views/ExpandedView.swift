@@ -7,6 +7,7 @@ struct ExpandedView: View {
     @ObservedObject var trust: TrustPolicy
     @ObservedObject var launcher: Launcher
     let system: SystemMonitor
+    let pet: PetBrain
     var actions: NotchActions
 
     var body: some View {
@@ -23,8 +24,25 @@ struct ExpandedView: View {
         .animation(NotchUI.motion, value: ui.page)
     }
 
+    /// Nothing needs you and nothing runs: the pet and today's receipt take the stage.
+    private var idle: Bool {
+        if ui.forceIdle { return true }
+        return prefs.showPet && !ui.idleShowsSessions && store.approvals.isEmpty && store.queue.isEmpty
+            && !store.sessions.values.contains { $0.status.isWorking || $0.status == .waitingForInput }
+    }
+
     @ViewBuilder private var home: some View {
         header
+        if idle {
+            IdleHero(ledger: store.ledger, brain: pet, sessionCount: store.sessions.count, sounds: prefs.sounds,
+                     showSessions: { ui.idleShowsSessions = true })
+                .transition(.blurReplace)
+        } else {
+            busyHome
+        }
+    }
+
+    @ViewBuilder private var busyHome: some View {
         if !trust.active.isEmpty { TrustBar(trust: trust) }
         let limits = store.activeLimits
         if !limits.isEmpty || prefs.showVitals {

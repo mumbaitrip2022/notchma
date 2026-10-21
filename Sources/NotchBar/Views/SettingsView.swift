@@ -6,6 +6,7 @@ struct SettingsView: View {
     @ObservedObject var prefs: Prefs
     @ObservedObject var rules: RuleStore
     @ObservedObject var calendar: CalendarWatcher
+    @ObservedObject var ledger: DayLedger
     var setAgent: (Agent, Bool) -> Void
     var applyCursorMode: () -> Void
     var uninstall: () -> Void = {}
@@ -20,6 +21,12 @@ struct SettingsView: View {
                 }
                 Toggle("Show CPU, memory and disk", isOn: $prefs.showVitals)
                 Toggle("Sounds", isOn: $prefs.sounds)
+                Toggle("Notch pet and daily receipt", isOn: $prefs.showPet)
+                if prefs.showPet {
+                    TextField("Pet's name", text: Binding(
+                        get: { ledger.petName },
+                        set: { let n = String($0.trimmingCharacters(in: .whitespaces).prefix(14)); if !n.isEmpty { ledger.petName = n.lowercased() } }))
+                }
                 Toggle("Launch at login", isOn: Binding(get: { prefs.launchAtLogin }, set: { prefs.launchAtLogin = $0 }))
             }
 

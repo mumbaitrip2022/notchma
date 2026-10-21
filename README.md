@@ -90,6 +90,15 @@ Needs Xcode 16+ (Swift 6). Apps you build yourself never trigger Gatekeeper warn
 
 All shortcuts are ⌃⌥ and only registered while useful: `Y` allow · `N` deny · `A` always · `T` trust · `J` next · `V` voice.
 
+## Notch pet and daily receipt
+
+When nothing is running, a tiny pixel pet lives in the notch. It wanders, blinks, naps when things are quiet, and eats a cookie every time one of your agents finishes a task.
+
+- **Hover while idle** and today's receipt prints out of the notch line by line: time per agent, tasks shipped, files touched, lines, commands, tests, approvals, tokens and the API value of the day. Every number comes from your agents' real activity.
+- **Post it**: copies the receipt as an image and opens a post on X (press ⌘V to add the image). You can also copy it or save it to your Desktop.
+- **Levels**: the pet hatches from an egg on your first finished task and levels up as you ship. Level 3 unlocks a sprout, level 6 headphones, level 10 a crown, and a 7 day streak gets it sunglasses.
+- **Cheap**: it animates at a few frames per second only while visible and stops when your displays sleep. Turn it off or rename it in Settings.
+
 ## Use
 
 | | |

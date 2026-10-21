@@ -4,9 +4,28 @@ import SwiftUI
 struct CollapsedView: View {
     @ObservedObject var store: SessionStore
     @ObservedObject var ui: NotchUI
+    let pet: PetBrain
+    let showPet: Bool
     let showsActivity: Bool
+    @Environment(\.displayScale) private var displayScale
 
     var body: some View {
+        if showPet && !showsActivity {
+            // Nothing running: the pet hangs out in the notch.
+            // Whole device pixels only, so the art stays crisp: 1.5pt on Retina, 2pt on 1x screens.
+            let px: CGFloat = ui.bandHeight >= 30 || displayScale < 2 ? 2 : 1.5
+            PetView(brain: pet, pixel: px, roams: true, ground: ui.bandHeight >= 30 ? 1 : 0,
+                    hiddenWidth: ui.hardwareNotchWidth)
+                .padding(.horizontal, 4)
+                .contentShape(Rectangle())
+                .onTapGesture { ui.pinned.toggle() }
+                .transition(.opacity)
+        } else {
+            activity
+        }
+    }
+
+    private var activity: some View {
         HStack(spacing: 8) {
             leading
             if showsActivity && !ui.hasHardwareNotch, let s = focus {
