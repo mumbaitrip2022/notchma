@@ -802,6 +802,9 @@ extension NotchController {
                 try? data.write(to: URL(fileURLWithPath: json["path"] as? String ?? "/dev/null"))
             }
             return true
+        case "_Promo":
+            MainActor.assumeIsolated { Promo.write(to: json["dir"] as? String ?? NSTemporaryDirectory()) }
+            return true
         case "_PetAct":
             switch json["act"] as? String {
             case "feed": pet.feed()
