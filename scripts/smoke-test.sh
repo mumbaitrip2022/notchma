@@ -7,7 +7,17 @@ APP="$HOME/Applications/NotchBar.app"
 HOOK="$APP/Contents/MacOS/notchbar-hook"
 SOCK="$HOME/Library/Application Support/NotchBar/nb.sock"
 pass() { echo "✓ $1"; echo "| ✅ | $1 |" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"; }
-fail() { echo "✗ $1"; echo "| ❌ | $1 |" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"; exit 1; }
+fail() {
+  echo "✗ $1"; echo "| ❌ | $1 |" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+  echo "::group::NotchBar log (last 3 minutes)"
+  log show --last 3m --style compact --predicate 'process == "NotchBar"' 2>/dev/null | tail -80 || true
+  echo "::endgroup::"
+  for f in "$HOME"/Library/Logs/DiagnosticReports/NotchBar*; do
+    [ -e "$f" ] || continue
+    echo "::group::Crash report $(basename "$f")"; head -c 12000 "$f"; echo; echo "::endgroup::"
+  done
+  exit 1
+}
 now() { python3 -c 'import time; print(time.time())'; }
 
 { echo "### 🔥 Smoke test"; echo; echo "| | Check |"; echo "|---|---|"; } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
