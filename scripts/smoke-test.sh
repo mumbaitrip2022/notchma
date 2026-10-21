@@ -28,7 +28,7 @@ now() { python3 -c 'import time; print(time.time())'; }
 mkdir -p "$HOME/Applications"
 rm -rf "$APP" && cp -R "$APP_SRC" "$APP"
 codesign --verify --deep --strict "$APP" && pass "Code signature is valid"
-lipo "$APP/Contents/MacOS/NotchBar" -verify_arch arm64 x86_64 && pass "App is universal (Apple silicon and Intel)"
+[ "$(lipo -archs "$APP/Contents/MacOS/NotchBar")" = "arm64" ] && pass "App is built for Apple silicon"
 
 # 1. Fail safe: with NotchBar closed, a permission request must return nothing, fast.
 REQ='{"session_id":"ci-smoke","hook_event_name":"PermissionRequest","cwd":"/tmp","tool_name":"Bash","tool_input":{"command":"ls"}}'

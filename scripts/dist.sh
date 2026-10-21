@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Builds a shareable, universal (Apple Silicon + Intel) NotchBar.
+# Builds a shareable NotchBar for Apple silicon Macs.
 #
 #   make dist                       → ad-hoc signed .zip + .dmg in ./dist
 #   NOTCHBAR_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
@@ -17,9 +17,9 @@ NOTARY=${NOTCHBAR_NOTARY_PROFILE:-}
 
 [ -f Resources/AppIcon.icns ] || swift scripts/make-icon.swift Resources/AppIcon.icns
 
-echo "▸ Building universal release…"
-swift build -c release --arch arm64 --arch x86_64
-BIN=$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)
+echo "▸ Building release for Apple silicon…"
+swift build -c release --arch arm64
+BIN=$(swift build -c release --arch arm64 --show-bin-path)
 
 rm -rf dist && mkdir -p dist
 APP=dist/NotchBar.app
@@ -28,7 +28,7 @@ cp "$BIN/NotchBar" "$BIN/notchbar-hook" "$APP/Contents/MacOS/"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/"
 for b in NotchBar notchbar-hook; do
-  lipo "$APP/Contents/MacOS/$b" -verify_arch arm64 x86_64 || { echo "✗ $b is not universal"; exit 1; }
+  [ "$(lipo -archs "$APP/Contents/MacOS/$b")" = "arm64" ] || { echo "✗ $b must be Apple silicon (arm64) only"; exit 1; }
 done
 
 echo "▸ Signing…"

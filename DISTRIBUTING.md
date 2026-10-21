@@ -6,7 +6,7 @@
 make dist
 ```
 
-Produces `dist/NotchBar-<version>.zip` and `dist/NotchBar-<version>.dmg`: a universal app (Apple Silicon + Intel),
+Produces `dist/NotchBar-<version>.zip` and `dist/NotchBar-<version>.dmg`: an Apple silicon app (arm64),
 macOS 14+. Without signing credentials it's ad-hoc signed, so recipients must approve it once
 (System Settings › Privacy & Security › **Open Anyway**).
 

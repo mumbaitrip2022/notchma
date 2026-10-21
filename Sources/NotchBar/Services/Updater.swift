@@ -206,6 +206,11 @@ final class Updater: NSObject, ObservableObject {
               info["CFBundleShortVersionString"] as? String == r.version else {
             return .failure(.init(message: "The download isn't the NotchBar version it claims to be"))
         }
+        // NotchBar is Apple silicon only: never install something this Mac can't run.
+        let archs = Shell.run("/usr/bin/lipo", ["-archs", app.appendingPathComponent("Contents/MacOS/NotchBar").path])?.stdout ?? ""
+        guard archs.split(separator: " ").map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }).contains("arm64") else {
+            return .failure(.init(message: "This version needs a Mac with Apple silicon"))
+        }
         guard Shell.run("/usr/bin/codesign", ["--verify", "--deep", "--strict", app.path], timeout: 60)?.ok == true else {
             return .failure(.init(message: "The update's code signature is broken, so it wasn't installed"))
         }

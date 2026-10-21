@@ -11,7 +11,7 @@ Thanks for wanting to help! NotchBar is a small native Mac app, so getting start
 
 ## Set up
 
-Needs macOS 14 or newer and Xcode 16 or newer (Swift 6). No other dependencies.
+Needs a Mac with Apple silicon, macOS 14 or newer, and Xcode 16 or newer (Swift 6). No other dependencies.
 
 ```sh
 git clone https://github.com/mumbaitrip2022/notchma.git && cd notchma
@@ -66,7 +66,7 @@ These commands don't exist in release builds.
 ## Releases (maintainer)
 
 1. Bump `CFBundleShortVersionString` and `CFBundleVersion` in `Resources/Info.plist`.
-2. `make dist` builds the universal app, zip and DMG in `./dist`.
+2. `make dist` builds the Apple silicon app, zip and DMG in `./dist`.
 3. Tag `vX.Y.Z`, push, and create a GitHub release with the DMG and zip attached.
 4. The release notes' first `## heading` and first six `- ` bullets become the in-app update banner and "what's new" list, so write them for users.
 
