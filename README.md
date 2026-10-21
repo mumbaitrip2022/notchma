@@ -8,6 +8,7 @@
 
 [![Download for macOS](https://img.shields.io/badge/Download-macOS%2014%2B-black?style=for-the-badge&logo=apple)](https://github.com/mumbaitrip2022/notchma/releases/latest)
 
+[![CI](https://github.com/mumbaitrip2022/notchma/actions/workflows/ci.yml/badge.svg)](https://github.com/mumbaitrip2022/notchma/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/mumbaitrip2022/notchma?style=flat-square&color=black)](https://github.com/mumbaitrip2022/notchma/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/mumbaitrip2022/notchma/total?style=flat-square&color=black)](https://github.com/mumbaitrip2022/notchma/releases)
 [![Stars](https://img.shields.io/github/stars/mumbaitrip2022/notchma?style=flat-square&color=black)](https://github.com/mumbaitrip2022/notchma/stargazers)
@@ -205,7 +206,7 @@ make dist        # universal DMG and zip in ./dist
 
 ## Contributing
 
-Issues and pull requests are welcome. If NotchBar saves you a few context switches a day, a ⭐ helps other people find it.
+Issues and pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), and report security problems privately as described in [SECURITY.md](SECURITY.md). If NotchBar saves you a few context switches a day, a ⭐ helps other people find it.
 
 ## License
 

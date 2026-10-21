@@ -1,0 +1,60 @@
+name: Bug report
+description: Something in NotchBar isn't working right
+labels: [bug, needs triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time! 🙏
+        **Fastest way:** in NotchBar, open the gear menu › *Report a Problem…*. It fills in your Mac details and a private activity log for you.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start Claude Code in Warp
+        2. Ask it to run a command
+        3. The approval card…
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Which agent?
+      multiple: true
+      options:
+        - Claude Code
+        - Codex
+        - Cursor
+        - Not agent specific
+  - type: dropdown
+    id: screen
+    attributes:
+      label: Where does the notch show?
+      options:
+        - MacBook with a notch
+        - Mac or display without a notch
+        - Both
+  - type: input
+    id: version
+    attributes:
+      label: NotchBar version
+      description: Gear menu › Settings shows it at the bottom
+      placeholder: "1.0.7"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "macOS 15.4"
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or diagnostics
+      description: A screenshot of the notch helps a lot. Drag images straight in.

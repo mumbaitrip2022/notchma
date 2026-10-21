@@ -1,0 +1,28 @@
+name: Feature idea
+description: Suggest something that would make NotchBar better
+labels: [enhancement, needs triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's the problem or itch?
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like to happen?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Approvals
+        - Session status
+        - Usage and limits
+        - Notch pet and receipt
+        - Agents (Claude Code, Codex, Cursor)
+        - Something else

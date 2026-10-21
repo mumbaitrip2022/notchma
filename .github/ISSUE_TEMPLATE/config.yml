@@ -1,0 +1,9 @@
+# Blank issues stay on so NotchBar's "Report a Problem" can open a prefilled issue.
+blank_issues_enabled: true
+contact_links:
+  - name: Question or idea to talk through
+    url: https://github.com/mumbaitrip2022/notchma/discussions
+    about: Ask and share in Discussions
+  - name: Security problem
+    url: https://github.com/mumbaitrip2022/notchma/security/advisories/new
+    about: Please report security issues privately, not as a public issue
