@@ -38,7 +38,7 @@ NotchBar turns the top of your Mac screen into a control center for coding agent
 
 ## Install
 
-**Requirements:** macOS 14 Sonoma or newer (Sonoma, Sequoia, Tahoe), Apple Silicon or Intel.
+**Requirements:** a Mac with Apple silicon (M1 or newer) on macOS 14 Sonoma or later. Intel Macs aren't supported.
 
 ### Download
 1. Get the latest **[NotchBar.dmg](https://github.com/mumbaitrip2022/notchma/releases/latest)**, open it and drag **NotchBar** into **Applications**.
@@ -201,7 +201,7 @@ If the app is ever deleted without uninstalling, nothing breaks: each hook check
 make run         # build and launch from ./build
 swift test       # unit and integration tests (parsers, safety rules, git, pet, receipt)
 swift build      # debug build (includes test-only socket commands)
-make dist        # universal DMG and zip in ./dist
+make dist        # Apple silicon DMG and zip in ./dist
 ```
 
 ## Contributing

@@ -8,34 +8,194 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
+env:
+  NSUnbufferedIO: "YES"
+
 jobs:
-  build-and-test:
-    name: Build and test
-    runs-on: macos-15
-    timeout-minutes: 30
+  # ── Stage 1 ─────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: House style (no em or en dashes in app text)
+        run: bash scripts/check-copy.sh
+      - name: Workflow files
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
+          ./actionlint -color
+      - name: No leftover merge conflict markers
+        run: |
+          if git grep -nE '^(<{7}|={7}|>{7})( |$)' -- ':!*.md'; then echo "Found conflict markers"; exit 1; fi
+      - name: Summary
+        run: echo "### ✅ Lint passed" >> "$GITHUB_STEP_SUMMARY"
+
+  test:
+    name: Test (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS 14 · Apple silicon
+            os: macos-14
+          - name: macOS 15 · Apple silicon
+            os: macos-15
+          - name: macOS 26 · Apple silicon
+            os: macos-26
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use the newest Xcode on the runner
-        run: |
-          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
-          sudo xcode-select -s "$XCODE"
-          echo "Using $XCODE"
-          swift --version
+      - name: Use the newest Xcode on this runner
+        id: xcode
+        run: ./scripts/select-xcode.sh
 
-      - name: House style (no em or en dashes in app text)
-        run: ./scripts/check-copy.sh
+      - name: Describe the machine
+        run: |
+          {
+            echo "### 🖥️ ${{ matrix.name }}"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Runner | \`${{ matrix.os }}\`, $(uname -m) |"
+            echo "| macOS | $(sw_vers -productVersion) |"
+            echo "| Xcode | ${{ steps.xcode.outputs.xcode }} |"
+            echo "| Swift | ${{ steps.xcode.outputs.swift }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Cache build
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: build-${{ matrix.os }}-${{ steps.xcode.outputs.swift }}-${{ hashFiles('Package.swift', 'Sources/**', 'Tests/**') }}
+          restore-keys: build-${{ matrix.os }}-${{ steps.xcode.outputs.swift }}-
 
       - name: Build
-        run: swift build
+        run: swift build --build-tests
 
       - name: Test
-        run: swift test
+        run: swift test --skip-build --parallel --xunit-output test-results.xml
 
-      - name: Universal release build
-        run: swift build -c release --arch arm64 --arch x86_64
+      - name: Test report
+        if: always()
+        run: |
+          if [ -f test-results.xml ]; then
+            python3 scripts/test-summary.py test-results.xml "${{ matrix.name }}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### ❌ ${{ matrix.name }}: no test results (build failed)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: test-results*.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # ── Stage 2 ─────────────────────────────────────────────────────────────
+  package:
+    name: Package (Apple silicon app)
+    needs: [lint, test]
+    runs-on: macos-15
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use the newest Xcode
+        run: ./scripts/select-xcode.sh
+      - name: Build DMG and zip
+        run: ./scripts/dist.sh
+      - name: Describe the build
+        id: meta
+        run: |
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" dist/NotchBar.app/Contents/Info.plist)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          {
+            echo "### 📦 NotchBar $VERSION (${GITHUB_SHA::7})"
+            echo
+            echo "| File | Size | SHA-256 |"
+            echo "|---|---:|---|"
+            for f in dist/*.dmg dist/*.zip; do
+              echo "| $(basename "$f") | $(du -h "$f" | cut -f1) | \`$(shasum -a 256 "$f" | cut -c1-16)…\` |"
+            done
+            echo
+            echo "Architectures: $(lipo -archs dist/NotchBar.app/Contents/MacOS/NotchBar)"
+            echo
+            echo "Download it from the **Artifacts** section of this run to try this exact build."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload app
+        uses: actions/upload-artifact@v4
+        with:
+          name: NotchBar-${{ steps.meta.outputs.version }}-${{ github.sha }}
+          path: |
+            dist/*.dmg
+            dist/*.zip
+          retention-days: 14
+      - name: Upload app bundle for the smoke test
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-bundle
+          path: dist/NotchBar-*.zip
+          retention-days: 1
+
+  # ── Stage 3 ─────────────────────────────────────────────────────────────
+  smoke:
+    name: Smoke test (${{ matrix.name }})
+    needs: package
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS 14
+            os: macos-14
+          - name: macOS 26
+            os: macos-26
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: app-bundle
+          path: pkg
+      - name: Unpack
+        run: ditto -x -k pkg/NotchBar-*.zip pkg/
+      - name: Install, launch, drive and quit the packaged app
+        run: ./scripts/smoke-test.sh pkg/NotchBar.app
+
+  # ── Gate ────────────────────────────────────────────────────────────────
+  gate:
+    name: All checks passed
+    if: always()
+    needs: [lint, test, package, smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Result
+        run: |
+          {
+            echo "### Pipeline"
+            echo
+            echo "| Stage | Result |"
+            echo "|---|---|"
+            echo "| Lint | ${{ needs.lint.result }} |"
+            echo "| Test matrix | ${{ needs.test.result }} |"
+            echo "| Package | ${{ needs.package.result }} |"
+            echo "| Smoke test | ${{ needs.smoke.result }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for r in "${{ needs.lint.result }}" "${{ needs.test.result }}" "${{ needs.package.result }}" "${{ needs.smoke.result }}"; do
+            [ "$r" = "success" ] || { echo "A stage didn't pass: $r"; exit 1; }
+          done
+          echo "✅ Everything passed"
