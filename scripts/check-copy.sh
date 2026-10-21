@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 # House style: no em or en dashes in text people read in the app.
 # (They read as machine written. Use a period, a comma or "and" instead.)
 set -euo pipefail
