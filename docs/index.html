@@ -3,434 +3,342 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>NotchBar · The notch is now mission control</title>
-<meta name="description" content="NotchBar puts every Claude Code, Codex and Cursor session in your Mac's notch. Approve with one key, catch risky commands, watch your limits, and get a receipt of your day printed by a tiny cat.">
-<meta property="og:title" content="NotchBar · The notch is now mission control">
-<meta property="og:description" content="Every Claude Code, Codex and Cursor session, live in your Mac's notch. Approve with ⌃⌥Y. Free and open source.">
+<title>NotchBar · Dynamic Island for your AI agents</title>
+<meta name="description" content="Approve Claude Code, Codex and Cursor right from your Mac's notch. Free and open source, with a tiny pixel cat.">
+<meta property="og:title" content="NotchBar · Dynamic Island for your AI agents">
+<meta property="og:description" content="Approve Claude Code, Codex and Cursor right from your Mac's notch. Free and open source.">
 <meta property="og:image" content="https://mumbaitrip2022.github.io/notchma/images/social-preview.png">
 <meta property="og:url" content="https://mumbaitrip2022.github.io/notchma/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#f2f0eb">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'><rect width='16' height='16' rx='3' fill='%23000'/><path fill='%23fff' d='M4 3h1v1h1v1h4V4h1V3h1v3h1v5h-1v1H4v-1H3V6h1z'/><path fill='%23000' d='M5 7h2v2H5zM9 7h2v2H9z'/><path fill='%23ff8cb3' d='M4 10h1v1H4zM11 10h1v1h-1z'/></svg>">
+<meta name="theme-color" content="#ff3d8b">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'><rect width='16' height='16' rx='4' fill='%23ff3d8b'/><path fill='%23fff' d='M4 3h1v1h1v1h4V4h1V3h1v3h1v5h-1v1H4v-1H3V6h1z'/><path fill='%23200a14' d='M5 7h2v2H5zM9 7h2v2H9z'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --paper: #f2f0eb;
-  --card: #f8f7f3;
-  --white: #fffefb;
-  --ink: #0c0c0d;
-  --ink2: #4d4b46;
-  --ink3: #8b8880;
-  --line: rgba(12,12,13,.09);
-  --line2: rgba(12,12,13,.16);
-  --pink: #ff8cb3;
-  --claude: #d97757;
-  --codex: #6bccae;
-  --cursor: #9ea8ff;
-  --amber: #f5b942;
-  --green: #34c759;
-  --red: #ff5f57;
-  --sans: "Geist", -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
-  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --serif: "Instrument Serif", "Times New Roman", serif;
-  --spring: cubic-bezier(.2, 1.3, .32, 1);
-  --out: cubic-bezier(.16, 1, .3, 1);
+  --pink: #ff3d8b;
+  --pink2: #ff6aa6;
+  --blush: #ff8cb3;
+  --bg: #fff5f8;
+  --plum: #2a0a19;
+  --plum2: #7a4a60;
+  --line: rgba(42,10,25,.08);
+  --claude: #d97757; --codex: #6bccae; --cursor: #9ea8ff;
+  --amber: #f5b942; --green: #34c759; --red: #ff5f57;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --spring: cubic-bezier(.3, 1.45, .45, 1);
+  --soft: cubic-bezier(.2, .9, .25, 1);
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--paper); }
-body { color: var(--ink); font: 17px/1.5 var(--sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; overflow-x: clip; }
-body::after { /* paper grain */
-  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 200; opacity: .35; mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-::selection { background: var(--ink); color: var(--paper); }
+html { scroll-behavior: smooth; }
+html, body { margin: 0; background: var(--bg); }
+body { color: var(--plum); font: 17px/1.5 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: clip; }
 a { color: inherit; text-decoration: none; }
-canvas.px { image-rendering: pixelated; display: block; }
-.wrap { max-width: 1240px; margin: 0 auto; padding: 0 28px; }
-.mono { font-family: var(--mono); }
-em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spacing: -.01em; }
-.key { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 8px; background: var(--white); border: 1px solid var(--line2); border-bottom-width: 3px; font: 500 14px/1 var(--mono); color: var(--ink); vertical-align: 2px; transition: transform .12s, border-bottom-width .12s; }
-.key.sm { min-width: 24px; height: 24px; font-size: 12px; border-radius: 6px; padding: 0 6px; border-bottom-width: 2px; vertical-align: 1px; }
-.key.down { transform: translateY(2px); border-bottom-width: 1px; }
+canvas.px, canvas.art { image-rendering: pixelated; display: block; }
+canvas.art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
 
-/* ---------- Page notch (fixed, top of the browser) ---------- */
-.pn { position: fixed; top: 0; left: 50%; z-index: 60; transform: translateX(-50%); width: 188px; height: 34px; background: #000; border-radius: 0 0 18px 18px;
-  transition: width .7s var(--spring), height .7s var(--spring), border-radius .7s var(--spring), opacity .4s; }
-.pn::before, .pn::after { content: ""; position: absolute; top: 0; width: 12px; height: 12px; background: radial-gradient(circle at 0 100%, transparent 11.5px, #000 12px); }
-.pn::before { left: -12px; transform: scaleX(-1); }
-.pn::after { right: -12px; }
-.pn.hide { opacity: 0; pointer-events: none; }
-.pn.open { width: 440px; height: 118px; border-radius: 0 0 34px 34px; }
-.pn .in { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
-.pn canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.pn .txt { position: absolute; left: 112px; right: 30px; top: 40px; color: #fff; opacity: 0; transform: translateY(-6px); transition: opacity .25s, transform .5s var(--spring); }
-.pn.open .txt { opacity: 1; transform: none; transition-delay: .22s; }
-.pn .t1 { font-size: 15px; font-weight: 600; white-space: nowrap; }
-.pn .t2 { font: 12px var(--mono); color: rgba(255,255,255,.55); margin-top: 3px; white-space: nowrap; }
-.pn .pb { margin-top: 12px; height: 5px; border-radius: 5px; background: rgba(255,255,255,.14); overflow: hidden; }
-.pn .pb i { display: block; height: 100%; width: 0; border-radius: 5px; background: #fff; }
-.pn.done .pb i { background: var(--green); }
-
-/* ---------- Nav ---------- */
-.nav { position: fixed; inset: 0 0 auto; z-index: 50; height: 64px; display: flex; align-items: center; transition: background .3s, box-shadow .3s; }
-.nav.solid { background: rgba(242,240,235,.82); backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); box-shadow: 0 1px 0 var(--line); }
-.nav .wrap { width: 100%; display: flex; align-items: center; justify-content: space-between; }
-.wordmark { font-weight: 650; font-size: 17px; letter-spacing: -.03em; display: flex; align-items: center; gap: 9px; }
-.wordmark i { width: 9px; height: 9px; border-radius: 2px; background: var(--ink); display: inline-block; }
-.nav .r { display: flex; align-items: center; gap: 26px; font-size: 14.5px; color: var(--ink2); }
-.nav .r a:hover { color: var(--ink); }
-.nav .r .gh { font-variant-numeric: tabular-nums; }
-
-/* ---------- Buttons ---------- */
-.btn { position: relative; isolation: isolate; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 11px; height: 56px; padding: 0 28px; border-radius: 999px; border: 0; cursor: pointer;
-  background: var(--ink); color: var(--paper); font: 500 17px/1 var(--sans); letter-spacing: -.01em; transition: transform .35s var(--spring), background .3s; -webkit-tap-highlight-color: transparent; }
-.btn:hover { transform: translateY(-1px); }
-.btn:active { transform: scale(.97); }
-.btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
-.btn svg { width: 18px; height: 18px; position: relative; }
-.btn .label { position: relative; display: inline-block; transition: opacity .18s, transform .35s var(--spring); }
-.btn .label.swap { opacity: 0; transform: translateY(10px); }
-.btn .fill { position: absolute; inset: 0; z-index: -1; transform-origin: left; transform: scaleX(0); background: #2a2a2c; transition: transform 1.6s cubic-bezier(.45,.05,.2,1); }
-.btn.busy { pointer-events: none; }
-.btn.busy .fill { transform: scaleX(1); }
-.btn.done { background: #1f7a3b; }
-.btn.done .fill { opacity: 0; }
-.btn.light { background: var(--paper); color: var(--ink); }
-.btn.light .fill { background: #dcd9d1; }
-.tlink { font-size: 16px; color: var(--ink2); border-bottom: 1px solid var(--line2); padding-bottom: 2px; transition: color .2s, border-color .2s; }
-.tlink:hover { color: var(--ink); border-color: var(--ink); }
+/* ---------- Notch nav ---------- */
+.nav { position: fixed; top: 0; left: 50%; z-index: 60; transform: translateX(-50%); height: 50px; padding: 0 7px 0 16px; display: flex; align-items: center; gap: 22px;
+  background: #000; color: #fff; border-radius: 0 0 24px 24px; box-shadow: 0 10px 30px -10px rgba(42,10,25,.35);
+  transition: width .7s var(--spring), height .7s var(--spring), border-radius .7s var(--spring), padding .5s; }
+.nav::before, .nav::after { content: ""; position: absolute; top: 0; width: 14px; height: 14px; background: radial-gradient(circle at 0 100%, transparent 13.5px, #000 14px); }
+.nav::before { left: -14px; transform: scaleX(-1); }
+.nav::after { right: -14px; }
+.nav .items { display: flex; align-items: center; gap: 22px; transition: opacity .25s, filter .25s; white-space: nowrap; }
+.nav .brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; letter-spacing: -.01em; }
+.nav .brand canvas { width: 22px; height: 22px; }
+.nav .links { display: flex; gap: 20px; font-size: 14px; color: rgba(255,255,255,.66); }
+.nav .links a:hover { color: #fff; }
+.nav .cta { height: 36px; padding: 0 16px; border-radius: 18px; background: #fff; color: #000; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; transition: transform .3s var(--spring); }
+.nav .cta:hover { transform: scale(1.05); }
+.nav .dl { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity .3s; }
+.nav .dl canvas { position: absolute; left: 22px; bottom: 16px; width: 64px; height: 64px; }
+.nav .dl .t { position: absolute; left: 104px; right: 28px; top: 38px; }
+.nav .dl .t1 { font-size: 15px; font-weight: 600; white-space: nowrap; }
+.nav .dl .t2 { font: 12px var(--mono); color: rgba(255,255,255,.55); margin-top: 3px; white-space: nowrap; }
+.nav .dl .pb { margin-top: 12px; height: 5px; border-radius: 5px; background: rgba(255,255,255,.14); overflow: hidden; }
+.nav .dl .pb i { display: block; height: 100%; width: 0; border-radius: 5px; background: var(--blush); }
+.nav.open { height: 122px; border-radius: 0 0 36px 36px; }
+.nav.open .items { opacity: 0; filter: blur(6px); pointer-events: none; }
+.nav.open .dl { opacity: 1; transition-delay: .2s; }
+.nav.done .dl .pb i { background: var(--green); }
 
 /* ---------- Hero ---------- */
-.hero { padding: 168px 0 70px; }
-.hero .eyebrow { display: flex; align-items: center; gap: 12px; font: 13px var(--mono); color: var(--ink2); letter-spacing: .01em; }
-.hero .eyebrow .gl { display: flex; gap: 6px; }
-.hero .eyebrow .gl span { width: 26px; height: 26px; border-radius: 8px; background: #000; display: grid; place-items: center; }
-.hero .eyebrow .gl svg { width: 14px; height: 14px; overflow: visible; }
-h1 { margin: 26px 0 0; font-size: clamp(52px, 9.2vw, 142px); line-height: .9; letter-spacing: -.058em; font-weight: 600; }
-h1 em { letter-spacing: -.035em; }
-.hero .bottom { margin-top: 44px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: end; }
-.hero .lede { font-size: clamp(18px, 1.7vw, 21px); line-height: 1.45; color: var(--ink2); max-width: 520px; margin: 0; letter-spacing: -.012em; }
-.hero .lede b { color: var(--ink); font-weight: 500; }
-.hero .actions { display: flex; flex-direction: column; align-items: flex-end; gap: 16px; }
-.hero .actions .row { display: flex; align-items: center; gap: 22px; }
-.meta { font: 12.5px var(--mono); color: var(--ink3); display: flex; gap: 14px; flex-wrap: wrap; }
-.notmac { display: none; font: 12.5px var(--mono); color: #c2185b; }
+.hero { position: relative; min-height: 100vh; padding: 120px 24px 300px; text-align: center; color: #fff; background: var(--pink); overflow: hidden; }
+.hero .art { z-index: 0; }
+.hero > *:not(canvas) { position: relative; z-index: 1; }
+.mascot { width: 208px; height: 208px; margin: 0 auto; animation: float 5s ease-in-out infinite; cursor: pointer; }
+.mascot canvas { width: 100%; height: 100%; }
+@keyframes float { 50% { transform: translateY(-14px); } }
+.shadow { width: 150px; height: 14px; margin: 4px auto 0; border-radius: 50%; background: rgba(42,10,25,.18); animation: shadow 5s ease-in-out infinite; }
+@keyframes shadow { 50% { transform: scaleX(.82); opacity: .6; } }
+.badge { display: inline-flex; align-items: center; gap: 8px; margin-top: 30px; font-size: 15px; font-weight: 500; }
+.badge i { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px rgba(255,255,255,.25); }
+h1 { margin: 16px auto 0; max-width: 1000px; font-size: clamp(46px, 7.4vw, 96px); line-height: 1; letter-spacing: -.05em; font-weight: 700; }
+h1 .soft { color: rgba(255,255,255,.62); }
+.hero p.sub { margin: 22px auto 0; max-width: 560px; font-size: clamp(17px, 1.6vw, 20px); line-height: 1.45; color: rgba(255,255,255,.88); }
+.btns { margin-top: 34px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.b { position: relative; isolation: isolate; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 56px; padding: 0 28px; border-radius: 18px; border: 0; cursor: pointer;
+  font: 600 17px/1 var(--sans); letter-spacing: -.01em; transition: transform .35s var(--spring); -webkit-tap-highlight-color: transparent; }
+.b:hover { transform: translateY(-2px) scale(1.02); }
+.b:active { transform: scale(.96); }
+.b svg { width: 18px; height: 18px; position: relative; }
+.b.w { background: #fff; color: var(--pink); }
+.b.g { background: rgba(255,255,255,.18); color: #fff; }
+.b.p { background: var(--pink); color: #fff; }
+.b.l { background: #ffe3ee; color: var(--pink); }
+.b .label { position: relative; display: inline-block; transition: opacity .18s, transform .35s var(--spring); }
+.b .label.swap { opacity: 0; transform: translateY(10px); }
+.b .fill { position: absolute; inset: 0; z-index: -1; transform-origin: left; transform: scaleX(0); background: rgba(255,61,139,.14); transition: transform 1.6s cubic-bezier(.45,.05,.2,1); }
+.b.p .fill { background: rgba(255,255,255,.22); }
+.b.busy { pointer-events: none; }
+.b.busy .fill { transform: scaleX(1); }
+.small { margin-top: 16px; font-size: 13.5px; color: rgba(255,255,255,.75); }
+.notmac { display: none; margin-top: 8px; font-size: 13.5px; font-weight: 600; }
 .notmac.show { display: block; }
-.rise { animation: rise 1.1s var(--out) both; }
-.rise.d1 { animation-delay: .08s; } .rise.d2 { animation-delay: .18s; } .rise.d3 { animation-delay: .28s; }
-@keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 
-/* ---------- Film (scroll-driven) ---------- */
-.film { position: relative; height: 760vh; }
-.stage { position: sticky; top: 0; height: 100vh; overflow: hidden; display: grid; grid-template-columns: 330px 1fr; grid-template-rows: minmax(0, 1fr); gap: 48px; align-items: center; padding: 84px 40px 36px; max-width: 1560px; margin: 0 auto; }
-.chapters { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; align-self: center; }
-.chapters li { padding: 14px 0 14px; border-top: 1px solid var(--line); cursor: pointer; }
-.chapters li:last-child { border-bottom: 1px solid var(--line); }
-.chapters .n { font: 12px var(--mono); color: var(--ink3); transition: color .3s; }
-.chapters h3 { margin: 4px 0 0; font-size: 22px; font-weight: 550; letter-spacing: -.03em; color: var(--ink3); transition: color .3s; }
-.chapters .more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .55s var(--out); }
-.chapters .more > div { overflow: hidden; }
-.chapters p { margin: 8px 0 0; font-size: 15px; line-height: 1.5; color: var(--ink2); }
-.chapters .hint { margin-top: 12px; font: 13px var(--mono); color: var(--ink); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.chapters .bar { margin-top: 14px; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
-.chapters .bar i { display: block; height: 100%; width: 0; background: var(--ink); }
-.chapters li.on .n, .chapters li.on h3 { color: var(--ink); }
-.chapters li.on .more { grid-template-rows: 1fr; }
-.screen-box { position: relative; align-self: stretch; display: grid; place-items: center; min-width: 0; min-height: 0; }
-.screen-fit { position: relative; }
-.screen { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; transform-origin: 0 0; border-radius: 30px; background: #050505; padding: 14px 14px 0; box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 40px 80px -30px rgba(40,30,10,.45), 0 0 0 1px rgba(0,0,0,.6); }
-.display { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 16px 16px 0 0; background: #1c1c1e; color: #fff; font-family: var(--sans); }
-.display::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5; mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
-.menubar { position: absolute; inset: 0 0 auto; height: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 13px; color: rgba(255,255,255,.9); background: rgba(255,255,255,.04); }
+/* ---------- Big demo ---------- */
+.demo { position: relative; z-index: 2; max-width: 1180px; margin: -230px auto 0; padding: 0 24px; }
+.demo-fit { position: relative; width: 100%; border-radius: 30px; overflow: hidden; box-shadow: 0 50px 100px -30px rgba(42,10,25,.45), 0 0 0 1px rgba(42,10,25,.08); background: #100a0d; }
+.screen { position: absolute; left: 0; top: 0; width: 1280px; height: 760px; transform-origin: 0 0; color: #fff; }
+.screen .art { opacity: 1; }
+.menubar { position: absolute; inset: 0 0 auto; height: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-size: 13px; color: rgba(255,255,255,.9); background: rgba(0,0,0,.25); }
 .menubar .l, .menubar .r { display: flex; gap: 18px; align-items: center; }
-.menubar b { font-weight: 650; }
+.menubar b { font-weight: 700; }
 .menubar svg { width: 13px; height: 13px; fill: #fff; }
-.dim { position: absolute; inset: 30px 0 0; background: #000; opacity: 0; pointer-events: none; z-index: 15; transition: opacity .5s; }
-
-.win { position: absolute; border-radius: 12px; overflow: hidden; background: #242426; box-shadow: 0 0 0 1px rgba(255,255,255,.09), 0 24px 50px -12px rgba(0,0,0,.6); }
-.win .tb { height: 32px; display: flex; align-items: center; gap: 7px; padding: 0 12px; background: #2b2b2d; border-bottom: 1px solid rgba(255,255,255,.06); }
+.win { position: absolute; border-radius: 12px; overflow: hidden; background: rgba(30,28,31,.94); box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 24px 50px -12px rgba(0,0,0,.7); }
+.win .tb { height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 12px; background: rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.06); }
 .win .tb i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; }
 .win .tb i:nth-child(2) { background: #febc2e; } .win .tb i:nth-child(3) { background: #28c840; }
-.win .tb span { flex: 1; text-align: center; margin-right: 46px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.5); }
-.w-term { left: 28px; top: 50px; width: 580px; height: 372px; }
-.w-term .body { padding: 14px 16px; font: 12.5px/1.65 var(--mono); color: rgba(255,255,255,.85); }
-.w-term .body div { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
-.w-codex { left: 628px; top: 50px; width: 624px; height: 372px; display: grid; grid-template-rows: 32px 1fr; }
-.w-codex .cx { display: grid; grid-template-columns: 170px 1fr; min-height: 0; }
-.w-codex .side { background: #1f1f21; border-right: 1px solid rgba(255,255,255,.06); padding: 12px 10px; font-size: 12px; color: rgba(255,255,255,.55); }
-.w-codex .side .h { font-weight: 650; color: #fff; font-size: 12.5px; margin: 0 0 10px 4px; display: flex; align-items: center; gap: 7px; }
-.w-codex .side .h svg { width: 13px; height: 13px; }
-.w-codex .side div.t { padding: 6px 8px; border-radius: 7px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.w-codex .side div.t.on { background: rgba(255,255,255,.08); color: #fff; }
-.w-codex .main { padding: 14px 18px; font-size: 12.5px; color: rgba(255,255,255,.82); display: flex; flex-direction: column; gap: 9px; overflow: hidden; }
-.w-codex .ub { align-self: flex-end; background: #3a3a3d; color: #fff; padding: 7px 12px; border-radius: 12px 12px 4px 12px; max-width: 80%; }
-.w-codex .st { color: rgba(255,255,255,.55); font: 12px var(--mono); }
-.w-codex .st b { color: #fff; font-weight: 500; }
-.w-codex pre { margin: 0; padding: 10px 12px; border-radius: 9px; background: #18181a; font: 11.5px/1.6 var(--mono); color: #e7e7e7; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
-.w-codex pre div { white-space: pre; }
-.w-cursor { left: 196px; top: 440px; width: 888px; height: 330px; display: grid; grid-template-rows: 32px 1fr; }
-.w-cursor .cu { display: grid; grid-template-columns: 1fr 260px; min-height: 0; }
-.w-cursor .ed { min-width: 0; }
-.w-cursor .tabs { display: flex; height: 28px; align-items: flex-end; padding: 0 8px; gap: 2px; border-bottom: 1px solid rgba(255,255,255,.06); font-size: 11.5px; }
-.w-cursor .tabs span { padding: 5px 12px; color: rgba(255,255,255,.45); border-radius: 6px 6px 0 0; }
-.w-cursor .tabs span.on { background: rgba(255,255,255,.06); color: #fff; }
-.w-cursor pre { margin: 0; padding: 10px 0; font: 12px/1.72 var(--mono); color: #d4d4d8; counter-reset: ln; }
-.w-cursor pre div { position: relative; padding-left: 44px; white-space: pre; min-height: 1.72em; transition: background .3s; }
-.w-cursor pre div::before { counter-increment: ln; content: counter(ln); position: absolute; left: 0; width: 30px; text-align: right; color: rgba(255,255,255,.22); }
-.w-cursor pre div.add { background: rgba(52,199,89,.13); box-shadow: inset 2px 0 0 #34c759; }
-.w-cursor .agent { border-left: 1px solid rgba(255,255,255,.06); background: #1f1f21; padding: 12px 14px; font-size: 12px; display: flex; flex-direction: column; gap: 9px; overflow: hidden; }
-.w-cursor .agent .h { font-weight: 650; display: flex; align-items: center; gap: 7px; color: #fff; }
-.w-cursor .agent .h svg { width: 12px; height: 12px; }
-.w-cursor .agent .m { color: rgba(255,255,255,.72); line-height: 1.45; }
-.w-cursor .agent .tool { font: 11.5px var(--mono); color: rgba(255,255,255,.5); }
-.k { color: #ff7ab2; } .f { color: #6bdfff; } .s { color: #ffb86b; } .nn { color: #c9a6ff; } .c { color: rgba(255,255,255,.35); } .tg { color: #7ee0b5; }
-.ok { color: #5ad37b; } .bad { color: #ff7b72; } .amb { color: var(--amber); } .dd { color: rgba(255,255,255,.42); } .or { color: var(--claude); }
-[data-t] { display: none; }
-[data-t].on { display: block; }
-span[data-t].on { display: inline; }
-
-/* Island inside the screen */
-.isl { position: absolute; left: 50%; top: 0; z-index: 20; transform: translateX(-50%); width: 210px; height: 32px; background: #000; border-radius: 0 0 16px 16px; overflow: hidden; color: #fff;
-  transition: width .6s var(--spring), height .6s var(--spring), border-radius .6s var(--spring); }
-.isl-ears { position: absolute; left: 50%; top: 0; z-index: 19; transform: translateX(-50%); width: 210px; height: 10px; pointer-events: none; transition: width .6s var(--spring); }
-.isl-ears::before, .isl-ears::after { content: ""; position: absolute; top: 0; width: 10px; height: 10px; background: radial-gradient(circle at 0 100%, transparent 9.5px, #000 10px); }
-.isl-ears::before { left: -10px; transform: scaleX(-1); } .isl-ears::after { right: -10px; }
-.isl > .ly { position: absolute; left: 0; right: 0; top: 0; opacity: 0; transition: opacity .25s, transform .45s var(--spring); pointer-events: none; }
-.isl[data-m="idle"] .ly-idle, .isl[data-m="print"] .ly-idle { opacity: 1; }
-.ly-idle { bottom: 0; }
-.ly-idle canvas { width: 100%; height: 100%; }
-.isl[data-m="row"] .ly-row, .isl[data-m="card"] .ly-row { opacity: 1; }
-.isl[data-m="multi"] .ly-multi { opacity: 1; }
-.isl[data-m="card"] .ly-card { opacity: 1; transition-delay: .1s; }
-.ly-row { height: 32px; display: flex; align-items: center; gap: 9px; padding: 0 16px; font-size: 13.5px; white-space: nowrap; }
-.ly-row .p { font-weight: 650; }
-.ly-row .w { color: rgba(255,255,255,.6); overflow: hidden; text-overflow: ellipsis; }
-.ly-row .r { margin-left: auto; display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,.6); font: 500 12.5px var(--mono); }
-.ly-row.amber .w { color: var(--amber); } .ly-row.red .w { color: #ff7b72; } .ly-row.green .w { color: #5ad37b; }
-.glyph { width: 16px; height: 16px; flex: none; display: grid; place-items: center; }
-.glyph svg { width: 100%; height: 100%; overflow: visible; }
-.glyphs { display: flex; gap: 5px; }
-.isl > .ly-multi { top: 38px; padding: 0 16px; display: grid; gap: 4px; }
-.mrow { display: grid; grid-template-columns: 16px 104px 1fr 60px; align-items: center; gap: 10px; height: 34px; font-size: 13px; padding: 0 2px; border-top: 1px solid rgba(255,255,255,.07); }
-.mrow:first-child { border-top: 0; }
-.mrow .p { font-weight: 650; white-space: nowrap; }
-.mrow .w { color: rgba(255,255,255,.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mrow .w.amber { color: var(--amber); }
-.mrow .w.green { color: #5ad37b; }
-.mrow .rt { display: flex; justify-content: flex-end; align-items: center; }
-.mini-bar { width: 56px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.14); overflow: hidden; }
-.mini-bar i { display: block; height: 100%; background: #fff; border-radius: 4px; }
-.adot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 4px rgba(245,185,66,.18); }
-.check { width: 17px; height: 17px; border-radius: 50%; background: var(--green); display: grid; place-items: center; }
-.check svg { width: 10px; height: 10px; }
-.ring { width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(255,255,255,.18); border-top-color: #fff; animation: spin .9s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.badge { height: 20px; min-width: 20px; padding: 0 6px; border-radius: 10px; background: var(--amber); color: #000; font: 700 11.5px/20px var(--sans); text-align: center; }
-.isl > .ly-card { top: 40px; padding: 0 16px; }
-.code { padding: 10px 12px; border-radius: 10px; background: #111113; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); font: 12.5px/1.5 var(--mono); color: #eee; white-space: pre; overflow: hidden; }
-.peek { margin-top: 8px; display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 9px; background: #151517; font-size: 12px; color: rgba(255,255,255,.6); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
-.peek b { color: #fff; font-weight: 600; }
-.peek .glyph { width: 13px; height: 13px; }
-.cbtns { margin-top: 10px; display: flex; gap: 7px; }
-.cb { height: 32px; padding: 0 13px; border-radius: 9px; display: inline-flex; align-items: center; gap: 7px; background: #2c2c2f; color: #fff; font-size: 12.5px; font-weight: 600; white-space: nowrap; transition: transform .15s var(--spring), background .25s, color .25s; }
-.cb .kk { font: 500 10.5px var(--mono); opacity: .55; }
-.cb.pri { margin-left: auto; background: #fff; color: #000; }
-.cb.redb { background: var(--red); color: #fff; }
-.cb.okb { background: var(--green); color: #fff; }
-.cb.press { transform: scale(.9); }
-
-.ptr { position: absolute; left: 0; top: 0; z-index: 40; width: 22px; height: 22px; pointer-events: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,.45)); will-change: transform; }
+.win .tb span { flex: 1; text-align: center; margin-right: 46px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.5); display: flex; gap: 6px; justify-content: center; align-items: center; }
+.win .tb span .gl { width: 12px; height: 12px; }
+.win .body { padding: 13px 15px; font: 12.5px/1.66 var(--mono); color: rgba(255,255,255,.85); }
+.win .body div { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+.w1 { left: 40px; top: 70px; width: 470px; height: 300px; }
+.w2 { left: 770px; top: 70px; width: 470px; height: 300px; }
+.w3 { left: 270px; top: 404px; width: 740px; height: 320px; }
+.ok { color: #5ad37b; } .bad { color: #ff7b72; } .amb { color: var(--amber); } .dd { color: rgba(255,255,255,.42); } .or { color: var(--claude); } .gr { color: var(--codex); } .vi { color: var(--cursor); }
+.k { color: #ff7ab2; } .f { color: #6bdfff; } .s { color: #ffb86b; } .tg { color: #7ee0b5; }
+.w3 pre { margin: 0; padding: 10px 0; font: 12.5px/1.75 var(--mono); color: #d4d4d8; }
+.w3 pre div { padding-left: 18px; white-space: pre; min-height: 1.75em; }
+.w3 pre div.add { background: rgba(52,199,89,.14); box-shadow: inset 2px 0 0 #34c759; }
+[data-t] { display: none !important; }
+[data-t].on { display: block !important; }
+.dimmer { position: absolute; inset: 30px 0 0; background: #000; opacity: 0; transition: opacity .6s; z-index: 15; pointer-events: none; }
+.ptr { position: absolute; left: 0; top: 0; z-index: 40; width: 22px; height: 22px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.45)); transition: transform 1s cubic-bezier(.45,.05,.2,1); }
 .ptr svg { width: 100%; height: 100%; transform-origin: 20% 10%; transition: transform .12s; }
 .ptr.press svg { transform: scale(.8); }
-.kbflash { position: absolute; left: 50%; top: 230px; z-index: 45; transform: translateX(-50%) scale(.9); display: flex; gap: 8px; opacity: 0; transition: opacity .25s, transform .4s var(--spring); pointer-events: none; }
-.kbflash.on { opacity: 1; transform: translateX(-50%) scale(1); }
-.kbflash span { min-width: 64px; height: 64px; border-radius: 14px; background: rgba(255,255,255,.95); color: #000; display: grid; place-items: center; font: 600 28px var(--mono); box-shadow: 0 4px 0 rgba(0,0,0,.35), 0 20px 40px rgba(0,0,0,.4); }
+.kflash { position: absolute; left: 50%; top: 260px; z-index: 45; transform: translateX(-50%) scale(.85); display: flex; gap: 10px; opacity: 0; transition: opacity .25s, transform .45s var(--spring); pointer-events: none; }
+.kflash.on { opacity: 1; transform: translateX(-50%) scale(1); }
+.kflash span { width: 70px; height: 70px; border-radius: 16px; background: #fff; color: #000; display: grid; place-items: center; font: 600 30px var(--mono); box-shadow: 0 5px 0 rgba(0,0,0,.3), 0 20px 40px rgba(0,0,0,.4); }
+.chips { display: flex; gap: 6px; justify-content: center; margin: 22px auto 0; padding: 6px; border-radius: 999px; background: #ffe3ee; width: max-content; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.chips button { position: relative; overflow: hidden; height: 42px; padding: 0 18px; border-radius: 999px; border: 0; background: transparent; color: var(--plum2); font: 500 15px var(--sans); cursor: pointer; white-space: nowrap; transition: color .3s; }
+.chips button { transition: color .3s, background .3s; }
+.chips button i { position: absolute; left: 18px; right: 18px; bottom: 6px; height: 2px; background: rgba(255,255,255,.85); transform-origin: left; transform: scaleX(0); border-radius: 2px; z-index: 2; }
+.chips button span { position: relative; z-index: 1; }
+.chips button.on { color: #fff; background: var(--plum); }
+.chips button:not(.on) i { opacity: 0; }
+.hint { text-align: center; margin-top: 14px; font-size: 14px; color: var(--plum2); min-height: 22px; }
+.hint .k2 { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 6px; background: #fff; box-shadow: inset 0 0 0 1px var(--line), 0 2px 0 rgba(42,10,25,.15); font: 500 12px var(--mono); color: var(--plum); margin: 0 1px; }
 
-/* Receipt out of the notch */
-.fclip { position: absolute; left: 50%; top: 40px; z-index: 18; width: 300px; height: 0; transform: translateX(-50%); overflow: hidden; }
-.paper { position: relative; width: 300px; padding: 22px 20px 26px; color: #1b1b1b; background: #f4f1ea; font: 500 11.5px/1.66 var(--mono); }
-.paper.torn { -webkit-mask: linear-gradient(#000 0 0) top/100% calc(100% - 9px) no-repeat, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom/14px 9px repeat-x;
+/* ---------- Island (shared) ---------- */
+.isl { position: absolute; left: 50%; top: 0; z-index: 20; transform: translateX(-50%); width: 200px; height: 32px; background: #000; color: #fff; border-radius: 0 0 16px 16px;
+  transition: width .62s var(--spring), height .62s var(--spring), border-radius .62s var(--spring), top .62s var(--spring); }
+.isl::before, .isl::after { content: ""; position: absolute; top: 0; width: 10px; height: 10px; background: radial-gradient(circle at 0 100%, transparent 9.5px, #000 10px); transition: opacity .3s; }
+.isl::before { left: -10px; transform: scaleX(-1); } .isl::after { right: -10px; }
+.isl.float { top: 12px; border-radius: 22px !important; }
+.isl.float::before, .isl.float::after { opacity: 0; }
+.isl .bd { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
+.lay { position: absolute; inset: 0; transition: opacity .32s ease, filter .32s ease, transform .55s var(--spring); }
+.lay.in { opacity: 0; filter: blur(8px); transform: scale(.94); }
+.lay.out { opacity: 0; filter: blur(8px); transform: scale(1.04); }
+.lay canvas.pc { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rw { height: 32px; display: flex; align-items: center; gap: 9px; padding: 0 16px; font-size: 13.5px; white-space: nowrap; }
+.isl.float .rw { height: 36px; }
+.rw .p { font-weight: 650; }
+.rw .wt { color: rgba(255,255,255,.6); overflow: hidden; text-overflow: ellipsis; }
+.rw .r { margin-left: auto; display: flex; gap: 7px; align-items: center; font: 500 12.5px var(--mono); color: rgba(255,255,255,.6); }
+.amber .wt { color: var(--amber); } .red .wt { color: #ff7b72; } .green .wt { color: #5ad37b; }
+.gl { width: 16px; height: 16px; flex: none; display: inline-grid; place-items: center; }
+.gl svg { width: 100%; height: 100%; overflow: visible; }
+.gls { display: inline-flex; gap: 5px; }
+.spin { animation: spin 2.4s linear infinite; }
+.ring { width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(255,255,255,.18); border-top-color: #fff; animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.chk { width: 17px; height: 17px; border-radius: 50%; background: var(--green); display: inline-grid; place-items: center; }
+.chk svg { width: 10px; height: 10px; }
+.bdg { height: 20px; min-width: 20px; padding: 0 6px; border-radius: 10px; background: var(--amber); color: #000; font: 700 11.5px/20px var(--sans); text-align: center; }
+.bdg.redb { background: var(--red); color: #fff; }
+.cd { margin: 8px 16px 0; padding: 10px 12px; border-radius: 10px; background: #141416; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); font: 12.5px/1.5 var(--mono); color: #eee; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+.pk { margin: 7px 16px 0; display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 9px; background: #18181a; font-size: 12px; color: rgba(255,255,255,.6); }
+.pk b { color: #fff; font-weight: 600; }
+.pk .gl { width: 13px; height: 13px; }
+.bt { margin: 10px 16px 0; display: flex; gap: 7px; }
+.cb { height: 32px; padding: 0 13px; border-radius: 10px; display: inline-flex; align-items: center; gap: 7px; background: #2c2c2f; color: #fff; font-size: 12.5px; font-weight: 600; white-space: nowrap; transition: transform .16s var(--spring), background .3s, color .3s; }
+.cb .kk { font: 500 10.5px var(--mono); opacity: .55; }
+.cb.pri { margin-left: auto; background: #fff; color: #000; }
+.cb.rd { background: var(--red); color: #fff; }
+.cb.okb { background: var(--green); color: #fff; }
+.cb.press { transform: scale(.88); }
+.ml { padding: 38px 16px 0; display: grid; }
+.mr { display: grid; grid-template-columns: 16px 98px 1fr 58px; align-items: center; gap: 10px; height: 34px; font-size: 13px; border-top: 1px solid rgba(255,255,255,.07); }
+.mr:first-child { border-top: 0; }
+.mr .p { font-weight: 650; white-space: nowrap; }
+.mr .wt { color: rgba(255,255,255,.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .3s; }
+.mr .rt { display: flex; justify-content: flex-end; }
+.mb { width: 54px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.14); overflow: hidden; }
+.mb i { display: block; height: 100%; width: 0; background: #fff; border-radius: 4px; transition: width .8s var(--soft); }
+.ad { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 4px rgba(245,185,66,.18); }
+.us { padding: 38px 18px 0; display: grid; gap: 11px; }
+.ur .top { display: flex; justify-content: space-between; font-size: 12.5px; color: rgba(255,255,255,.65); margin-bottom: 5px; }
+.ur .top b { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ur .tr { height: 6px; border-radius: 6px; background: rgba(255,255,255,.12); overflow: hidden; }
+.ur .tr i { display: block; height: 100%; width: 0; border-radius: 6px; transition: width 1.4s var(--soft); }
+.fc { font-size: 12.5px; color: rgba(255,255,255,.6); }
+.fc b { color: #fff; }
+
+/* Receipt */
+.rclip { position: absolute; left: 50%; z-index: 18; width: 280px; height: 0; transform: translateX(-50%); overflow: hidden; transition: height .25s linear; }
+.paper { position: relative; width: 280px; padding: 20px 18px 24px; color: #1b1b1b; background: #f6f2ea; font: 500 11px/1.65 var(--mono);
+  -webkit-mask: linear-gradient(#000 0 0) top/100% calc(100% - 9px) no-repeat, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom/14px 9px repeat-x;
   mask: linear-gradient(#000 0 0) top/100% calc(100% - 9px) no-repeat, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom/14px 9px repeat-x; }
 .paper .rl { display: flex; justify-content: space-between; white-space: pre; }
 .paper .rc { text-align: center; color: rgba(0,0,0,.55); }
-.paper .rt { text-align: center; font-weight: 600; font-size: 18px; letter-spacing: .5em; margin-right: -.5em; line-height: 1.4; }
-.paper .rb { display: flex; justify-content: space-between; font-weight: 600; font-size: 16px; margin-top: 4px; }
-.paper .rr { border-top: 1.5px dashed rgba(0,0,0,.32); margin: 8px 0; }
-.paper .gap { height: 8px; }
+.paper .rt { text-align: center; font-weight: 700; font-size: 17px; letter-spacing: .5em; margin-right: -.5em; line-height: 1.4; }
+.paper .rb { display: flex; justify-content: space-between; font-weight: 700; font-size: 15px; margin-top: 3px; }
+.paper .rr { border-top: 1.5px dashed rgba(0,0,0,.3); margin: 7px 0; }
+.paper .gap { height: 7px; }
 .paper .logo { display: flex; justify-content: center; margin-bottom: 4px; }
 .paper .logo canvas { width: 40px; height: 40px; }
-.paper .barcode { height: 40px; margin-top: 4px; display: flex; justify-content: center; }
+.paper .barcode { height: 36px; margin-top: 3px; display: flex; justify-content: center; }
 .paper .barcode i { background: #1b1b1b; flex: none; }
-.paper .bcn { text-align: center; font-size: 10px; color: rgba(0,0,0,.5); letter-spacing: .1em; }
 
 /* ---------- Sections ---------- */
-section { position: relative; }
-.sec { padding: 150px 0; }
-.lbl { font: 13px var(--mono); color: var(--ink3); }
-h2 { margin: 18px 0 0; font-size: clamp(42px, 6.4vw, 96px); line-height: .94; letter-spacing: -.055em; font-weight: 600; }
-.sub { margin: 26px 0 0; font-size: clamp(17px, 1.6vw, 20px); color: var(--ink2); max-width: 560px; line-height: 1.5; letter-spacing: -.01em; }
-.reveal { opacity: 0; transform: translateY(26px); transition: opacity .9s var(--out), transform 1.1s var(--out); }
-.reveal.in { opacity: 1; transform: none; }
-.d1 { transition-delay: .07s; } .d2 { transition-delay: .14s; } .d3 { transition-delay: .21s; } .d4 { transition-delay: .28s; } .d5 { transition-delay: .35s; }
+.sec { padding: 140px 0 0; }
+.head { text-align: center; max-width: 760px; margin: 0 auto; }
+h2 { margin: 0; font-size: clamp(36px, 5.2vw, 64px); line-height: 1.02; letter-spacing: -.045em; font-weight: 700; }
+h2 .soft { color: var(--pink); }
+.head p { margin: 16px auto 0; font-size: 19px; color: var(--plum2); max-width: 560px; }
+.works { margin-top: 90px; display: flex; justify-content: center; gap: 56px; flex-wrap: wrap; color: var(--plum2); font-size: 15px; font-weight: 500; }
+.works .it { display: flex; align-items: center; gap: 10px; }
+.works .it span { width: 36px; height: 36px; border-radius: 11px; background: #000; display: grid; place-items: center; }
+.works .it svg { width: 18px; height: 18px; overflow: visible; }
+.works .lbl { color: rgba(42,10,25,.4); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; align-self: center; }
 
-/* Play with mochi */
-.play { display: grid; grid-template-columns: 1fr 1.25fr; gap: 60px; align-items: center; }
-.pbox { position: relative; height: 560px; border-radius: 40px; background: #000; overflow: hidden; color: #fff; }
-.pbox canvas.big { position: absolute; left: 50%; bottom: 130px; width: 224px; height: 224px; transform: translateX(-50%); cursor: pointer; }
-.pbox .floor { position: absolute; left: 50%; bottom: 118px; width: 200px; height: 14px; transform: translateX(-50%); border-radius: 50%; background: #151515; }
-.pbox .bubble { position: absolute; left: 50%; top: 70px; transform: translate(-50%, 6px); padding: 10px 16px; border-radius: 16px; background: #fff; color: #000; font: 500 14px var(--mono); white-space: nowrap; opacity: 0; transition: opacity .25s, transform .4s var(--spring); }
-.pbox .bubble.on { opacity: 1; transform: translate(-50%, 0); }
-.pbox .bubble::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; background: #fff; transform: translateX(-50%) rotate(45deg); border-radius: 2px; }
-.pbox .ctrls { position: absolute; left: 24px; right: 24px; bottom: 24px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
-.pbox .ctrls button, .chips button { height: 40px; padding: 0 18px; border-radius: 999px; border: 0; background: #1c1c1e; color: #fff; font: 500 14px var(--sans); cursor: pointer; transition: background .2s, transform .25s var(--spring); }
-.pbox .ctrls button:hover { background: #2a2a2d; }
-.pbox .ctrls button:active { transform: scale(.94); }
-.pbox .lvl { position: absolute; left: 24px; top: 22px; font: 12.5px var(--mono); color: rgba(255,255,255,.55); }
-.pbox .lvl b { color: #fff; font-weight: 500; }
-.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 28px; }
-.chips button { background: transparent; color: var(--ink2); box-shadow: inset 0 0 0 1px var(--line2); }
-.chips button.on { background: var(--ink); color: var(--paper); box-shadow: none; }
-.facts { margin-top: 36px; display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
-.facts div { padding: 18px 0; border-bottom: 1px solid var(--line); font-size: 15px; color: var(--ink2); }
-.facts div:nth-child(odd) { padding-right: 20px; }
-.facts b { display: block; color: var(--ink); font-weight: 550; font-size: 16px; margin-bottom: 2px; }
+.grid { margin-top: 60px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { position: relative; border-radius: 30px; overflow: hidden; background: var(--pink); color: #fff; min-height: 400px; transform: translateZ(0); }
+.card.span2 { grid-column: span 2; }
+.card .cap { position: absolute; left: 26px; right: 26px; bottom: 24px; z-index: 5; }
+.card .cap b { display: block; font-size: 21px; font-weight: 650; letter-spacing: -.02em; }
+.card .cap span { display: block; margin-top: 4px; font-size: 15px; color: rgba(255,255,255,.82); }
+.card .stage { position: absolute; inset: 0; z-index: 3; }
+.card .keys { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%); display: flex; gap: 12px; align-items: center; }
+.key { width: 74px; height: 74px; border-radius: 18px; background: #fff; color: var(--plum); display: grid; place-items: center; font: 600 30px var(--mono); box-shadow: 0 6px 0 #e7a3bf, 0 18px 30px -10px rgba(42,10,25,.4); transition: transform .12s, box-shadow .12s; }
+.key.down { transform: translateY(5px); box-shadow: 0 1px 0 #e7a3bf, 0 8px 18px -10px rgba(42,10,25,.4); }
+.key + .key { margin-left: 0; }
+.big-n { position: absolute; left: 26px; top: 64px; z-index: 4; font-size: 84px; font-weight: 800; letter-spacing: -.06em; line-height: .9; }
+.big-n small { font-size: 28px; letter-spacing: -.02em; opacity: .7; margin-left: 4px; }
+.big-n div + div { margin-top: 14px; }
+.gift { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); width: 150px; height: 150px; border-radius: 34px; background: #000; display: grid; place-items: center; box-shadow: 0 30px 50px -20px rgba(42,10,25,.5); }
+.gift canvas { width: 110px; height: 110px; }
 
-/* Bento */
-.bento { margin-top: 70px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
-.cell { position: relative; border-radius: 28px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); padding: 30px; min-height: 330px; overflow: hidden; display: flex; flex-direction: column; }
-.cell h3 { margin: 0; font-size: 22px; font-weight: 550; letter-spacing: -.03em; }
-.cell p { margin: 8px 0 0; font-size: 15px; color: var(--ink2); max-width: 380px; }
-.cell .art { margin-top: auto; padding-top: 26px; }
-.c4 { grid-column: span 4; } .c2 { grid-column: span 2; } .c3 { grid-column: span 3; }
-.keys { display: flex; gap: 12px; align-items: flex-end; }
-.keys .key { min-width: 86px; height: 86px; border-radius: 18px; font-size: 34px; border-bottom-width: 6px; }
-.keys .key.down { transform: translateY(5px); border-bottom-width: 1px; }
-.keys .plus { font: 22px var(--mono); color: var(--ink3); padding-bottom: 30px; }
-.keys .or { margin-left: 18px; font: 14px var(--mono); color: var(--ink3); padding-bottom: 32px; }
-.ringwrap { display: flex; align-items: center; gap: 22px; }
-.ringwrap svg { width: 120px; height: 120px; transform: rotate(-90deg); }
-.ringwrap .tr { fill: none; stroke: var(--line); stroke-width: 9; }
-.ringwrap .vl { fill: none; stroke: var(--ink); stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset 1.8s var(--out); }
-.ringwrap .big { font-size: 48px; font-weight: 600; letter-spacing: -.05em; line-height: 1; font-variant-numeric: tabular-nums; }
-.ringwrap .s { font: 12.5px var(--mono); color: var(--ink3); margin-top: 8px; }
-.spark svg { width: 100%; height: auto; display: block; overflow: visible; }
-.spark .ln { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; }
-.spark .pj { fill: none; stroke: var(--ink3); stroke-width: 2; stroke-dasharray: 4 6; }
-.spark .lim { stroke: #d33; stroke-width: 1.2; stroke-dasharray: 2 5; }
-.spark text { font: 11px var(--mono); fill: var(--ink3); }
-.rules { display: grid; gap: 2px; }
-.rule { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
-.rule code { font: 13px var(--mono); background: rgba(12,12,13,.06); padding: 2px 6px; border-radius: 5px; }
-.sw { width: 44px; height: 26px; border-radius: 13px; background: #d9d6ce; position: relative; flex: none; transition: background .3s; }
-.sw::after { content: ""; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .4s var(--spring); }
-.sw.on { background: var(--ink); }
-.sw.on::after { transform: translateX(18px); }
-.sw.lock { background: #e8b4b4; }
-.macs { display: flex; gap: 16px; align-items: flex-end; }
-.mac { flex: 1; height: 110px; border-radius: 14px 14px 0 0; background: #111; position: relative; overflow: hidden; }
-.mac .bar { position: absolute; inset: 0 0 auto; height: 16px; background: rgba(255,255,255,.07); }
-.mac .nt { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 64px; height: 20px; background: #000; border-radius: 0 0 9px 9px; box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
-.mac .nt.drawn { width: 72px; height: 18px; box-shadow: none; background: #000; outline: 1px dashed rgba(255,255,255,.25); outline-offset: 2px; }
-.mac-l { font: 12px var(--mono); color: var(--ink3); margin-top: 10px; display: flex; justify-content: space-between; }
-.stats { display: grid; gap: 4px; }
-.stat { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid var(--line); padding: 12px 0 8px; }
-.stat b { font-size: 42px; font-weight: 600; letter-spacing: -.05em; line-height: 1; font-variant-numeric: tabular-nums; }
-.stat span { font: 12.5px var(--mono); color: var(--ink3); }
-.giftrow { display: flex; align-items: center; gap: 18px; }
-.giftrow canvas { width: 96px; height: 96px; border-radius: 22px; background: #000; }
-.giftrow .note { font: 13px var(--mono); color: var(--ink2); line-height: 1.6; }
+/* mochi */
+.mochi { position: relative; margin-top: 60px; border-radius: 36px; overflow: hidden; background: var(--pink); height: 560px; color: #fff; }
+.mochi canvas.kit { position: absolute; left: 50%; bottom: 120px; width: 240px; height: 240px; transform: translateX(-50%); cursor: pointer; z-index: 3; }
+.mochi .bubble { position: absolute; left: 50%; bottom: 380px; z-index: 4; transform: translate(-50%, 8px); padding: 11px 18px; border-radius: 18px; background: #fff; color: var(--plum); font: 600 15px var(--sans); white-space: nowrap; opacity: 0; transition: opacity .25s, transform .45s var(--spring); }
+.mochi .bubble.on { opacity: 1; transform: translate(-50%, 0); }
+.mochi .bubble::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 14px; height: 14px; background: #fff; transform: translateX(-50%) rotate(45deg); border-radius: 3px; }
+.mochi .acts { position: absolute; left: 0; right: 0; bottom: 30px; z-index: 4; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 0 16px; }
+.mochi .acts button { height: 44px; padding: 0 20px; border-radius: 999px; border: 0; background: rgba(42,10,25,.88); color: #fff; font: 600 15px var(--sans); cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: background .2s, transform .3s var(--spring); }
+.mochi .acts button:hover { background: var(--plum); }
+.mochi .acts button:active { transform: scale(.93); }
+.mochi .acts button.on { background: #fff; color: var(--pink); }
+.mochi .acts .sep { width: 1px; background: rgba(42,10,25,.2); margin: 8px 4px; }
 
-/* Final */
-.final { background: #000; color: #fff; padding: 170px 0 150px; text-align: center; border-radius: 48px 48px 0 0; overflow: hidden; }
-.final canvas.k { width: 160px; height: 160px; margin: 0 auto 10px; }
-.final h2 { color: #fff; }
-.final .sub { color: rgba(255,255,255,.62); margin: 26px auto 0; }
-.final .cta { margin-top: 44px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
-.final .meta { color: rgba(255,255,255,.45); justify-content: center; }
-.final .links { display: flex; gap: 22px; justify-content: center; margin-top: 8px; font-size: 14px; }
-.final .links a, .final .links button { color: rgba(255,255,255,.55); background: none; border: 0; font: inherit; cursor: pointer; padding: 0; transition: color .2s; }
-.final .links a:hover, .final .links button:hover { color: #fff; }
-footer { background: #000; color: rgba(255,255,255,.4); font: 12.5px var(--mono); padding: 0 0 40px; }
-footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,.1); padding-top: 26px; }
-footer a:hover { color: #fff; }
+/* final */
+.final { padding: 170px 0 120px; text-align: center; }
+.appicon { position: relative; width: 112px; height: 112px; margin: 0 auto 30px; border-radius: 26px; background: #000; box-shadow: 0 24px 50px -16px rgba(255,61,139,.55), inset 0 0 0 1px rgba(255,255,255,.08); }
+.appicon::before { content: ""; position: absolute; left: 50%; top: 0; width: 50px; height: 12px; transform: translateX(-50%); background: #000; border-radius: 0 0 8px 8px; box-shadow: 0 0 0 1px rgba(255,255,255,.12); }
+.appicon canvas { position: absolute; left: 50%; top: 56%; width: 72px; height: 72px; transform: translate(-50%, -50%); }
+.final p { font-size: 19px; color: var(--plum2); margin: 16px 0 0; }
+.final .btns { margin-top: 32px; }
+.final .small { color: var(--plum2); }
+.final .notmac { color: var(--pink); }
+footer { padding: 30px 0 50px; font-size: 13px; color: rgba(42,10,25,.45); }
+footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 26px; }
+footer a:hover { color: var(--plum); }
 
-/* Install sheet */
-.sheet-bg { position: fixed; inset: 0; z-index: 70; background: rgba(12,12,13,.28); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity .4s; }
+/* sheet */
+.sheet-bg { position: fixed; inset: 0; z-index: 70; background: rgba(42,10,25,.25); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); opacity: 0; pointer-events: none; transition: opacity .4s; }
 .sheet-bg.show { opacity: 1; pointer-events: auto; }
-.sheet { position: fixed; left: 50%; bottom: 22px; z-index: 75; width: min(900px, calc(100vw - 32px)); transform: translate(-50%, calc(100% + 40px)); transition: transform .75s var(--spring);
-  border-radius: 32px; padding: 30px; background: var(--white); color: var(--ink); box-shadow: 0 0 0 1px var(--line), 0 40px 90px -20px rgba(30,25,10,.35); }
+.sheet { position: fixed; left: 50%; bottom: 22px; z-index: 75; width: min(880px, calc(100vw - 32px)); transform: translate(-50%, calc(100% + 40px)); transition: transform .75s var(--spring); border-radius: 32px; padding: 28px; background: #fff; box-shadow: 0 40px 90px -20px rgba(42,10,25,.4); }
 .sheet.show { transform: translate(-50%, 0); }
-.sheet .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
-.sheet h3 { margin: 0; font-size: 26px; letter-spacing: -.035em; font-weight: 600; }
-.sheet .head p { margin: 4px 0 0; color: var(--ink2); font-size: 15px; }
-.sheet .x { width: 36px; height: 36px; border-radius: 50%; background: rgba(12,12,13,.06); border: 0; cursor: pointer; display: grid; place-items: center; flex: none; }
-.sheet .x:hover { background: rgba(12,12,13,.1); }
-.sheet .x svg { width: 12px; height: 12px; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
-.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 24px; }
-.step { border-radius: 22px; padding: 16px; background: var(--paper); opacity: 0; transform: translateY(14px); transition: opacity .5s, transform .7s var(--spring); }
+.sheet .hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.sheet h3 { margin: 0; font-size: 26px; letter-spacing: -.03em; }
+.sheet .hd p { margin: 4px 0 0; color: var(--plum2); font-size: 15px; }
+.sheet .x { width: 36px; height: 36px; border-radius: 50%; background: #ffe3ee; border: 0; cursor: pointer; display: grid; place-items: center; flex: none; }
+.sheet .x svg { width: 12px; height: 12px; stroke: var(--pink); stroke-width: 2.2; stroke-linecap: round; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; }
+.step { border-radius: 22px; padding: 14px; background: var(--bg); opacity: 0; transform: translateY(14px); transition: opacity .5s, transform .7s var(--spring); }
 .sheet.show .step { opacity: 1; transform: none; }
-.sheet.show .step:nth-child(1) { transition-delay: .15s; } .sheet.show .step:nth-child(2) { transition-delay: .25s; } .sheet.show .step:nth-child(3) { transition-delay: .35s; }
-.step .vis { height: 96px; border-radius: 14px; background: var(--white); box-shadow: inset 0 0 0 1px var(--line); position: relative; overflow: hidden; margin-bottom: 14px; }
-.step .n { font: 12px var(--mono); color: var(--ink3); }
-.step h4 { margin: 4px 0; font-size: 16px; font-weight: 600; letter-spacing: -.02em; }
-.step p { margin: 0; font-size: 14px; color: var(--ink2); line-height: 1.45; }
-.step p b { color: var(--ink); font-weight: 550; }
-.sheet .foot { margin-top: 16px; text-align: center; font: 12.5px var(--mono); color: var(--ink3); }
-.sheet .foot a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-.v-dmg { position: absolute; left: 50%; top: 50%; width: 48px; height: 58px; transform: translate(-50%, -50%); border-radius: 9px; background: #e9e7e1; box-shadow: inset 0 0 0 1px var(--line2), 0 6px 14px rgba(0,0,0,.12); }
+.sheet.show .step:nth-child(2) { transition-delay: .1s; } .sheet.show .step:nth-child(3) { transition-delay: .2s; }
+.step .vis { height: 96px; border-radius: 15px; background: var(--pink); position: relative; overflow: hidden; margin-bottom: 12px; }
+.step h4 { margin: 0 0 3px; font-size: 16px; letter-spacing: -.02em; }
+.step p { margin: 0; font-size: 14px; color: var(--plum2); }
+.step p b { color: var(--plum); }
+.sheet .ft { margin-top: 14px; text-align: center; font-size: 13.5px; color: var(--plum2); }
+.sheet .ft a { color: var(--pink); font-weight: 600; }
+.v-dmg { position: absolute; left: 50%; top: 50%; width: 48px; height: 58px; transform: translate(-50%, -50%); border-radius: 10px; background: #fff; box-shadow: 0 8px 18px rgba(42,10,25,.25); }
 .v-dmg::before { content: ""; position: absolute; left: 13px; top: 10px; width: 22px; height: 22px; border-radius: 6px; background: #000; }
-.v-dmg::after { content: "DMG"; position: absolute; bottom: 7px; left: 0; right: 0; text-align: center; font: 600 9px var(--mono); color: var(--ink3); }
+.v-dmg::after { content: "DMG"; position: absolute; bottom: 7px; left: 0; right: 0; text-align: center; font: 700 9px var(--mono); color: var(--plum2); }
 .sheet.show .v-dmg { animation: bob 2.2s ease-in-out infinite; }
 @keyframes bob { 50% { transform: translate(-50%, -60%); } }
 .v-app { position: absolute; top: 50%; left: 20%; width: 44px; height: 44px; border-radius: 11px; background: #000; transform: translateY(-50%); }
 .v-app::after { content: ""; position: absolute; left: 50%; top: 4px; width: 22px; height: 7px; transform: translateX(-50%); border-radius: 0 0 5px 5px; background: #fff; }
-.v-folder { position: absolute; top: 50%; right: 16%; width: 54px; height: 40px; border-radius: 7px; transform: translateY(-40%); background: #3d8ef0; }
-.v-folder::before { content: ""; position: absolute; left: 0; top: -6px; width: 22px; height: 10px; border-radius: 4px 4px 0 0; background: #3d8ef0; }
+.v-folder { position: absolute; top: 50%; right: 16%; width: 54px; height: 40px; border-radius: 7px; transform: translateY(-40%); background: #fff; }
+.v-folder::before { content: ""; position: absolute; left: 0; top: -6px; width: 22px; height: 10px; border-radius: 4px 4px 0 0; background: #fff; }
 .sheet.show .v-app { animation: drag 2.4s cubic-bezier(.45,.05,.2,1) infinite; }
 @keyframes drag { 0%, 15% { left: 20%; opacity: 1; transform: translateY(-50%); } 60% { left: 56%; opacity: 1; transform: translateY(-50%) scale(.8); } 75%, 100% { left: 56%; opacity: 0; transform: translateY(-50%) scale(.6); } }
-.v-set { position: absolute; left: 14px; right: 14px; top: 50%; transform: translateY(-50%); height: 42px; border-radius: 10px; background: var(--paper); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font: 11px var(--mono); color: var(--ink2); }
-.v-set i { font-style: normal; height: 26px; padding: 0 10px; border-radius: 7px; background: var(--ink); color: #fff; font-weight: 500; display: grid; place-items: center; }
+.v-set { position: absolute; left: 14px; right: 14px; top: 50%; transform: translateY(-50%); height: 42px; border-radius: 11px; background: rgba(255,255,255,.95); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 11.5px; color: var(--plum2); font-weight: 500; }
+.v-set i { font-style: normal; height: 26px; padding: 0 10px; border-radius: 8px; background: var(--plum); color: #fff; font-weight: 600; display: grid; place-items: center; }
 .sheet.show .v-set i { animation: tap 2.4s ease infinite; }
-@keyframes tap { 0%, 55%, 100% { transform: scale(1); } 62% { transform: scale(.9); } 70%, 90% { transform: scale(1); background: #1f7a3b; } }
+@keyframes tap { 0%, 55%, 100% { transform: scale(1); } 62% { transform: scale(.9); } 70%, 90% { transform: scale(1); background: var(--green); } }
 
 #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90; }
-.toast { position: fixed; left: 50%; bottom: 28px; z-index: 95; transform: translate(-50%, 20px); background: var(--ink); color: var(--paper); font: 500 13.5px var(--sans); padding: 11px 18px; border-radius: 999px; opacity: 0; transition: opacity .25s, transform .45s var(--spring); pointer-events: none; white-space: nowrap; }
+.toast { position: fixed; left: 50%; bottom: 28px; z-index: 95; transform: translate(-50%, 20px); background: var(--plum); color: #fff; font: 600 14px var(--sans); padding: 12px 20px; border-radius: 999px; opacity: 0; transition: opacity .25s, transform .45s var(--spring); pointer-events: none; white-space: nowrap; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+.reveal { opacity: 0; transform: translateY(30px) scale(.985); transition: opacity .9s var(--soft), transform 1.1s var(--soft); }
+.reveal.in { opacity: 1; transform: none; }
 
-@media (max-width: 1080px) {
-  .stage { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); gap: 18px; padding: 76px 20px 20px; }
-  .chapters { display: block; }
-  .chapters li { display: none; border: 0; padding: 0; }
-  .chapters li.on { display: block; }
-  .chapters .bar { display: none; }
-  .play { grid-template-columns: 1fr; }
-  .c4, .c2, .c3 { grid-column: span 6; }
-  .hero .bottom { grid-template-columns: 1fr; }
-  .hero .actions { align-items: flex-start; }
+@media (max-width: 960px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+  .card.span2 { grid-column: span 2; }
 }
 @media (max-width: 640px) {
-  .wrap { padding: 0 18px; }
-  .nav .r a:not(.dlink) { display: none; }
-  .pn { width: 128px; height: 30px; }
-  .pn.open { width: calc(100vw - 20px); }
-  .hero { padding-top: 130px; }
-  .hero .actions .row { flex-direction: column; align-items: stretch; width: 100%; }
-  .btn { width: 100%; }
-  .sec { padding: 100px 0; }
-  .pbox { height: 470px; border-radius: 30px; }
-  .pbox canvas.big { width: 176px; height: 176px; bottom: 136px; }
-  .facts { grid-template-columns: 1fr; }
-  .keys .key { min-width: 64px; height: 64px; font-size: 26px; }
+  .nav .links { display: none; }
+  .nav { gap: 14px; }
+  .nav.open { width: calc(100vw - 16px); }
+  .hero { padding: 104px 18px 240px; }
+  .mascot { width: 156px; height: 156px; }
+  .b { width: 100%; }
+  .demo { padding: 0 12px; margin-top: -190px; }
+  .demo-fit { border-radius: 20px; }
+  .grid { grid-template-columns: 1fr; }
+  .card.span2 { grid-column: span 1; }
+  .card { min-height: 380px; }
+  .key { width: 60px; height: 60px; font-size: 24px; }
+  .mochi { height: 520px; border-radius: 26px; }
+  .mochi canvas.kit { width: 192px; height: 192px; bottom: 150px; }
+  .mochi .bubble { bottom: 360px; }
   .steps { grid-template-columns: 1fr; }
   .step .vis { display: none; }
-  .sheet { padding: 22px; bottom: 10px; }
-  .final { border-radius: 30px 30px 0 0; padding: 120px 0 100px; }
-  .film { height: 640vh; }
-  .chapters h3 { font-size: 20px; }
-  .chapters p { font-size: 14px; }
+  .works { gap: 22px 30px; }
+  .chips button { height: 38px; padding: 0 12px; font-size: 13.5px; }
+  .chips button i { left: 12px; right: 12px; }
+  .sec { padding-top: 100px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; transition-duration: .01s !important; transition-delay: 0s !important; }
@@ -439,225 +347,112 @@ footer a:hover { color: #fff; }
 </head>
 <body>
 
-<div class="pn" id="pn" aria-hidden="true"><div class="in"><canvas class="px" id="pnPet"></canvas><div class="txt"><div class="t1" id="pnT1">Grabbing NotchBar</div><div class="t2" id="pnT2">packing your kitty</div><div class="pb"><i id="pnBar"></i></div></div></div></div>
-
 <header class="nav" id="nav">
-  <div class="wrap">
-    <a class="wordmark" href="#top"><i></i>NotchBar</a>
-    <div class="r">
-      <a href="#film">How it works</a>
-      <a href="#mochi">Mochi</a>
-      <a href="https://github.com/mumbaitrip2022/notchma" class="gh" id="ghLink">GitHub</a>
-      <a class="dlink" href="#get">Download</a>
-    </div>
+  <div class="items">
+    <a class="brand" href="#top"><canvas class="px" id="navKitty"></canvas>NotchBar</a>
+    <nav class="links"><a href="#features">Features</a><a href="#mochi">Mochi</a><a href="https://github.com/mumbaitrip2022/notchma">GitHub</a></nav>
+    <a class="cta" href="#get">Download</a>
   </div>
+  <div class="dl" aria-hidden="true"><canvas class="px" id="dlKitty"></canvas><div class="t"><div class="t1" id="dlT1">Grabbing NotchBar</div><div class="t2" id="dlT2">packing your kitty</div><div class="pb"><i id="dlBar"></i></div></div></div>
 </header>
 
 <main id="top">
-  <!-- ============ HERO ============ -->
   <section class="hero">
+    <canvas class="art" data-scene="hero"></canvas>
+    <div class="mascot" id="mascot" title="Pet me"><canvas class="px" id="heroKitty"></canvas></div>
+    <div class="shadow"></div>
+    <div class="badge"><i></i><span id="badge">New version, cuter kitty</span></div>
+    <h1><span class="soft">Dynamic Island</span><br>for your AI agents</h1>
+    <p class="sub">Approve Claude Code, Codex and Cursor right from your Mac's notch.</p>
+    <div class="btns">
+      <a class="b w" data-dl href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg"><span class="fill"></span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><span class="label">Download for macOS</span></a>
+      <a class="b g" href="https://github.com/mumbaitrip2022/notchma"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.75.11 3.04.74.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>Free and open source</a>
+    </div>
+    <div class="small"><span class="v-ver">Latest version</span> · Apple silicon · macOS 14 or later</div>
+    <div class="notmac">Open this page on your Mac to install.</div>
+  </section>
+
+  <!-- Big demo: all three agents at once -->
+  <div class="demo">
+    <div class="demo-fit reveal" id="demoFit">
+      <div class="screen" id="screen">
+        <canvas class="art" data-scene="wall"></canvas>
+        <div class="menubar"><div class="l"><svg viewBox="0 0 24 24"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><b>Terminal</b><span>Shell</span><span>Edit</span><span>View</span></div><div class="r"><span id="mbDay"></span><span id="mbTime"></span></div></div>
+        <div class="win w1"><div class="tb"><i></i><i></i><i></i><span><i class="gl" data-g="claude"></i>Claude Code · checkout</span></div><div class="body">
+          <div><span>› </span><span id="typed"></span></div>
+          <div data-t="1.6"><span class="or">⏺</span> Bash(npm test)</div>
+          <div data-t="2.4"><span class="dd">  ⎿</span>  <span class="ok">3 passing</span>, <span class="bad">2 failing</span></div>
+          <div data-t="3.4"><span class="or">⏺</span> Update(src/cart/total.ts)</div>
+          <div data-t="4.2"><span class="dd">  ⎿</span>  <span class="ok">+4</span> <span class="bad">-2</span></div>
+          <div data-t="8.2" data-u="10.6"><span class="or">⏺</span> Bash(npm run e2e) <span class="amb">waiting</span></div>
+          <div data-t="10.6"><span class="or">⏺</span> Bash(npm run e2e) <span class="ok">12 passing</span></div>
+          <div data-t="16.6"><span class="or">⏺</span> <span class="ok">All tests pass.</span></div>
+        </div></div>
+        <div class="win w2"><div class="tb"><i></i><i></i><i></i><span><i class="gl" data-g="codex"></i>Codex · api</span></div><div class="body">
+          <div><span class="dd">›</span> add an orders table</div>
+          <div data-t="1.2"><span class="gr">•</span> Reading db/schema.ts</div>
+          <div data-t="2.2"><span class="gr">•</span> Writing 0042_orders.sql</div>
+          <div data-t="3.0"><span class="k">  create table</span> orders (</div>
+          <div data-t="3.4">    id <span class="f">uuid</span> primary key,</div>
+          <div data-t="3.8">    total_cents <span class="f">int</span></div>
+          <div data-t="4.2">  );</div>
+          <div data-t="6.2" data-u="10.6"><span class="amb">• Waiting: npm run migrate</span></div>
+          <div data-t="10.6"><span class="ok">• Ran migrate</span></div>
+          <div data-t="17.6"><span class="ok">• Done.</span></div>
+        </div></div>
+        <div class="win w3"><div class="tb"><i></i><i></i><i></i><span><i class="gl" data-g="cursor"></i>Cursor · landing-page · Hero.tsx</span></div>
+          <pre><div><span class="k">export function</span> <span class="f">Hero</span>() {</div><div>  <span class="k">return</span> (</div><div>    &lt;<span class="tg">section</span>&gt;</div><div data-u="2.2">      &lt;<span class="tg">h1</span>&gt;Ship faster&lt;/<span class="tg">h1</span>&gt;</div><div data-t="2.2" class="add">      &lt;<span class="tg">h1</span>&gt;Ship with agents&lt;/<span class="tg">h1</span>&gt;</div><div data-t="3.0" class="add">      &lt;<span class="tg">p</span>&gt;Three of them, at once.&lt;/<span class="tg">p</span>&gt;</div><div>      &lt;<span class="tg">Button</span> <span class="s">size="lg"</span>&gt;Get started&lt;/<span class="tg">Button</span>&gt;</div><div>    &lt;/<span class="tg">section</span>&gt;</div><div>  )</div><div>}</div><div data-t="12.2" data-u="14.6"><span class="bad">  agent wants: git push --force origin main</span></div><div data-t="14.6"><span class="ok">  agent: pushed hero-refresh instead</span></div></pre>
+        </div>
+        <div class="dimmer" id="dimmer"></div>
+        <div class="rclip" id="demoClip" style="top:44px"><div class="paper" id="demoPaper"></div></div>
+        <div class="isl" id="demoIsl"><div class="bd"></div></div>
+        <div class="kflash" id="kflash"><span>⌃</span><span>⌥</span><span id="kKey">Y</span></div>
+        <div class="ptr" id="ptr"><svg viewBox="0 0 24 24"><path d="M5.5 3.2v16.4l4.1-3.9 2.6 6 3-1.3-2.6-5.9h5.7z" fill="#000" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
+      </div>
+    </div>
+    <div class="chips" id="chips"><button data-c="0"><i></i><span>All three agents</span></button><button data-c="1"><i></i><span>Allow all</span></button><button data-c="2"><i></i><span>Risky stops</span></button><button data-c="3"><i></i><span>Done</span></button><button data-c="4"><i></i><span>Receipt</span></button></div>
+    <div class="hint" id="hint"></div>
+  </div>
+
+  <section class="sec" id="features">
+    <div class="works reveal"><span class="lbl">Works with</span><div class="it"><span data-g="claude"></span>Claude Code</div><div class="it"><span data-g="codex"></span>Codex</div><div class="it"><span data-g="cursor"></span>Cursor</div></div>
     <div class="wrap">
-      <div class="eyebrow rise"><span class="gl"><span data-glyph="claude"></span><span data-glyph="codex"></span><span data-glyph="cursor"></span></span>For Claude Code, Codex and Cursor</div>
-      <h1 class="rise d1">The notch is now<br><em>mission control.</em></h1>
-      <div class="bottom">
-        <p class="lede rise d2">NotchBar puts every agent session in your Mac's notch. <b>Approve with one key, catch risky commands, watch your limits,</b> and get a receipt of your day, printed by a tiny cat.</p>
-        <div class="actions rise d3">
-          <div class="row">
-            <a class="tlink" href="#film">Watch it work</a>
-            <a class="btn" data-dl href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg"><span class="fill"></span><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><span class="label">Download for Mac</span></a>
-          </div>
-          <div class="meta"><span class="v-ver">Latest</span><span class="v-size">2 MB</span><span>Apple silicon</span><span>macOS 14+</span><span>Free, open source</span></div>
-          <div class="notmac">You're not on a Mac. Open this page on your Mac to install.</div>
-        </div>
+      <div class="head reveal" style="margin-top:110px"><h2>Your agents. <span class="soft">One glance away.</span></h2></div>
+      <div class="grid">
+        <div class="card span2 reveal" data-demo="approve"><canvas class="art" data-scene="sky"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div><div class="keys"><span class="key">⌃</span><span class="key">⌥</span><span class="key">Y</span></div></div><div class="cap"><b>One key to say yes.</b><span>From any app, mid-anything.</span></div></div>
+        <div class="card reveal" data-demo="multi"><canvas class="art" data-scene="moon"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div></div><div class="cap"><b>Every agent, live.</b><span>What each one is doing, right now.</span></div></div>
+        <div class="card reveal" data-demo="risky"><canvas class="art" data-scene="sun"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div></div><div class="cap"><b>Risky? It stops.</b><span>Force pushes never auto-approve.</span></div></div>
+        <div class="card reveal" data-demo="usage"><canvas class="art" data-scene="hills"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div></div><div class="cap"><b>Know your limits.</b><span>And when you'll hit them.</span></div></div>
+        <div class="card reveal" data-demo="float"><canvas class="art" data-scene="waves"></canvas><div class="stage"><div class="isl float"><div class="bd"></div></div></div><div class="cap"><b>No notch? No problem.</b><span>It draws its own island.</span></div></div>
+        <div class="card span2 reveal" data-demo="receipt"><canvas class="art" data-scene="stars"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div><div class="rclip" style="top:46px"><div class="paper"></div></div></div><div class="cap"><b>Your day, printed.</b><span>A receipt of everything your agents shipped.</span></div></div>
+        <div class="card reveal" data-demo="update"><canvas class="art" data-scene="clouds"></canvas><div class="stage"><div class="gift"><canvas class="px"></canvas></div></div><div class="cap"><b>Updates in one tap.</b><span>Mochi brings them to you.</span></div></div>
       </div>
     </div>
   </section>
 
-  <!-- ============ FILM ============ -->
-  <section class="film" id="film">
-    <div class="stage">
-      <ol class="chapters" id="chapters">
-        <li data-c="0"><div class="n">01</div><h3>Three agents. One notch.</h3><div class="more"><div><p>Claude Code, Codex and Cursor working at the same time. Every session lives in the notch, with what it's doing right now.</p><div class="bar"><i></i></div></div></div></li>
-        <li data-c="1"><div class="n">02</div><h3>They ask. You answer.</h3><div class="more"><div><p>Requests open in the notch with the exact command. Allow one, or every waiting request at once.</p><div class="hint">Try it now: press <span class="key sm" data-k="ctrl">⌃</span><span class="key sm" data-k="alt">⌥</span><span class="key sm" data-k="y">Y</span></div><div class="bar"><i></i></div></div></div></li>
-        <li data-c="2"><div class="n">03</div><h3>Risky? It stops.</h3><div class="more"><div><p>Force pushes and <span class="mono">rm -rf</span> turn red and never auto-approve. The agent finds another way.</p><div class="hint">Say no: <span class="key sm">⌃</span><span class="key sm">⌥</span><span class="key sm">N</span></div><div class="bar"><i></i></div></div></div></li>
-        <li data-c="3"><div class="n">04</div><h3>All done. Snack time.</h3><div class="more"><div><p>You know the second every agent finishes. Mochi gets a cookie for each one.</p><div class="bar"><i></i></div></div></div></li>
-        <li data-c="4"><div class="n">05</div><h3>Your day, printed.</h3><div class="more"><div><p>Agent time, files, tests, tokens and what it would cost on the API. Printed right out of the notch.</p><div class="bar"><i></i></div></div></div></li>
-      </ol>
-
-      <div class="screen-box" id="screenBox">
-        <div class="screen-fit" id="screenFit">
-          <div class="screen" id="screen">
-            <div class="display">
-              <div class="menubar">
-                <div class="l"><svg viewBox="0 0 24 24"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><b>Cursor</b><span>File</span><span>Edit</span><span>Selection</span><span>View</span></div>
-                <div class="r"><span id="mbDay"></span><span id="mbTime"></span></div>
-              </div>
-
-              <!-- Claude Code in a terminal -->
-              <div class="win w-term">
-                <div class="tb"><i></i><i></i><i></i><span>claude · checkout</span></div>
-                <div class="body">
-                  <div><span style="color:#fff">› </span><span id="typed"></span><span id="caret" style="display:inline-block;width:7px;height:14px;background:#fff;vertical-align:-2px"></span></div>
-                  <div data-t="1.8"><span class="or">⏺</span> Bash(npm test)</div>
-                  <div data-t="2.6"><span class="dd">  ⎿</span>  <span class="ok">3 passing</span>, <span class="bad">2 failing</span></div>
-                  <div data-t="3.4"><span class="or">⏺</span> Read(src/cart/total.ts)</div>
-                  <div data-t="4.2"><span class="or">⏺</span> Update(src/cart/total.ts)</div>
-                  <div data-t="5.0"><span class="dd">  ⎿</span>  Updated with <span class="ok">4 additions</span> and <span class="bad">2 removals</span></div>
-                  <div data-t="8.4" data-u="10.6"><span class="or">⏺</span> Bash(npm run e2e)  <span class="amb">waiting for you</span></div>
-                  <div data-t="10.6"><span class="or">⏺</span> Bash(npm run e2e)</div>
-                  <div data-t="11.2"><span class="dd">  ⎿</span>  <span class="ok">12 passing</span></div>
-                  <div data-t="16.6"><span class="or">⏺</span> Bash(npm test)</div>
-                  <div data-t="17.1"><span class="dd">  ⎿</span>  <span class="ok">5 passing</span></div>
-                  <div data-t="17.4"><span class="or">⏺</span> All tests pass. Fixed rounding in cartTotal().</div>
-                </div>
-              </div>
-
-              <!-- Codex app -->
-              <div class="win w-codex">
-                <div class="tb"><i></i><i></i><i></i><span>Codex</span></div>
-                <div class="cx">
-                  <div class="side">
-                    <div class="h"><span class="glyph" data-glyph="codex"></span>Codex</div>
-                    <div class="t on">api · orders table</div><div class="t">web · fix the navbar</div><div class="t">docs · changelog</div><div class="t">infra · bump node</div>
-                  </div>
-                  <div class="main">
-                    <div class="ub" data-t="0.3">add an orders table with a migration</div>
-                    <div class="st" data-t="1.4">Read <b>db/schema.ts</b></div>
-                    <div class="st" data-t="2.4">Write <b>migrations/0042_orders.sql</b></div>
-                    <pre data-t="2.6"><div><span class="k">create table</span> orders (</div><div data-t="3.0">  id <span class="f">uuid</span> <span class="k">primary key</span>,</div><div data-t="3.4">  user_id <span class="f">uuid</span> <span class="k">not null</span>,</div><div data-t="3.8">  total_cents <span class="f">int</span> <span class="k">not null</span>,</div><div data-t="4.2">  created_at <span class="f">timestamptz</span> <span class="k">default</span> now()</div><div data-t="4.5">);</div></pre>
-                    <div class="st" data-t="6.4" data-u="10.6"><span class="amb">Waiting for approval:</span> <b>npm run migrate</b></div>
-                    <div class="st" data-t="10.6"><span class="ok">Ran</span> <b>npm run migrate</b> · 1 table created</div>
-                    <div class="st" data-t="18.0"><span class="ok">Done.</span> Orders table is live on staging.</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Cursor -->
-              <div class="win w-cursor">
-                <div class="tb"><i></i><i></i><i></i><span>Cursor · landing-page</span></div>
-                <div class="cu">
-                  <div class="ed">
-                    <div class="tabs"><span class="on">Hero.tsx</span><span>Button.tsx</span><span>globals.css</span></div>
-                    <pre><div><span class="k">export function</span> <span class="f">Hero</span>() {</div><div>  <span class="k">return</span> (</div><div>    &lt;<span class="tg">section</span> <span class="nn">className</span>=<span class="s">"hero"</span>&gt;</div><div data-u="2.4">      &lt;<span class="tg">h1</span>&gt;Ship faster&lt;/<span class="tg">h1</span>&gt;</div><div data-t="2.4" class="add">      &lt;<span class="tg">h1</span>&gt;Ship with agents&lt;/<span class="tg">h1</span>&gt;</div><div data-t="3.2" class="add">      &lt;<span class="tg">p</span>&gt;Three of them, at once.&lt;/<span class="tg">p</span>&gt;</div><div data-u="5.6">      &lt;<span class="tg">Button</span>&gt;Start&lt;/<span class="tg">Button</span>&gt;</div><div data-t="5.6" class="add">      &lt;<span class="tg">Button</span> <span class="nn">size</span>=<span class="s">"lg"</span>&gt;Get started&lt;/<span class="tg">Button</span>&gt;</div><div>    &lt;/<span class="tg">section</span>&gt;</div><div>  )</div><div>}</div></pre>
-                  </div>
-                  <div class="agent">
-                    <div class="h"><span class="glyph" data-glyph="cursor"></span>Agent</div>
-                    <div class="m" data-t="0.6">Refreshing the hero copy and the main button.</div>
-                    <div class="tool" data-t="2.4">Edited Hero.tsx  <span class="ok">+3</span> <span class="bad">-2</span></div>
-                    <div class="m" data-t="12.2"><span class="bad">Wants to run:</span> git push --force origin main</div>
-                    <div class="m" data-t="14.8">Okay, not forcing it. Pushing a new branch instead.</div>
-                    <div class="tool" data-t="15.6">Ran git push origin hero-refresh  <span class="ok">done</span></div>
-                    <div class="m" data-t="16.6"><span class="ok">Done.</span> Opened a pull request.</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="dim" id="dim"></div>
-              <div class="fclip" id="fclip"><div class="paper torn" id="fpaper"></div></div>
-
-              <div class="isl-ears" id="islEars"></div>
-              <div class="isl" id="isl" data-m="idle">
-                <div class="ly ly-idle"><canvas class="px" id="islPet"></canvas></div>
-                <div class="ly ly-row" id="islRow"><span class="glyph"></span><span class="p"></span><span class="w"></span><span class="r"></span></div>
-                <div class="ly ly-multi" id="islMulti"></div>
-                <div class="ly ly-card" id="islCard"><div class="code" id="cardCode"></div><div class="peek" id="cardPeek"><span class="glyph" data-glyph="claude"></span><b>checkout</b> wants to run <span class="mono">npm run e2e</span></div><div class="cbtns" id="cardBtns"></div></div>
-              </div>
-
-              <div class="kbflash" id="kbflash"><span>⌃</span><span>⌥</span><span id="kbKey">Y</span></div>
-              <div class="ptr" id="ptr"><svg viewBox="0 0 24 24"><path d="M5.5 3.2v16.4l4.1-3.9 2.6 6 3-1.3-2.6-5.9h5.7z" fill="#000" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ MOCHI ============ -->
   <section class="sec" id="mochi">
-    <div class="wrap play">
-      <div>
-        <div class="lbl reveal">Meet mochi</div>
-        <h2 class="reveal d1">A tiny cat<br><em>lives in there.</em></h2>
-        <p class="sub reveal d2">When your agents rest, mochi takes over the notch. It eats a cookie for every finished task, levels up, and unlocks things to wear. Go on, say hi.</p>
-        <div class="chips reveal d3" id="outfits"><button class="on" data-o="">Lvl 1</button><button data-o="sprout">Lvl 3 sprout</button><button data-o="headphones">Lvl 6 headphones</button><button data-o="crown">Lvl 10 crown</button></div>
-        <div class="facts reveal d4">
-          <div><b>Click it</b>Heart eyes, every time.</div>
-          <div><b>Finish a task</b>It gets a cookie.</div>
-          <div><b>Leave it alone</b>It curls up and naps.</div>
-          <div><b>Ship all week</b>It earns sunglasses.</div>
-        </div>
-      </div>
-      <div class="pbox reveal d2" id="pbox">
-        <div class="lvl"><b>mochi</b> · <span id="lvlTxt">lvl 1</span></div>
-        <div class="bubble" id="bubble">hi bestie</div>
-        <div class="floor"></div>
-        <canvas class="px big" id="bigPet" aria-label="mochi the cat. Click to pet."></canvas>
-        <div class="ctrls"><button data-a="pet">Pet</button><button data-a="feed">Feed</button><button data-a="party">Ship it</button><button data-a="nap">Nap</button></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ DETAILS ============ -->
-  <section class="sec" style="padding-top:40px">
     <div class="wrap">
-      <div class="lbl reveal">The details</div>
-      <h2 class="reveal d1">Small things,<br><em>done right.</em></h2>
-      <div class="bento">
-        <div class="cell c4 reveal">
-          <h3>One shortcut, from anywhere.</h3>
-          <p>Allow or deny without leaving the app you're in. Works mid-sentence, mid-meeting, mid-anything.</p>
-          <div class="art keys" id="bigKeys"><span class="key">⌃</span><span class="plus">+</span><span class="key">⌥</span><span class="plus">+</span><span class="key" id="kY">Y</span><span class="or">or N to deny</span></div>
-        </div>
-        <div class="cell c2 reveal d1">
-          <h3>Limits, before they bite.</h3>
-          <p>Claude and Codex windows, live.</p>
-          <div class="art ringwrap"><svg viewBox="0 0 120 120"><circle class="tr" cx="60" cy="60" r="50"/><circle class="vl" data-ring="62" cx="60" cy="60" r="50"/></svg><div><div class="big" data-count="62" data-suffix="%">0%</div><div class="s">5 hour window<br>resets in 1h 48m</div></div></div>
-        </div>
-        <div class="cell c2 reveal">
-          <h3>A forecast.</h3>
-          <p>When you'll hit the limit at today's pace.</p>
-          <div class="art spark"><svg viewBox="0 0 300 130"><line class="lim" x1="0" x2="300" y1="16" y2="16"/><text x="0" y="10">limit</text><path class="ln" id="spLn" d="M0 120 C30 117 50 104 80 96 S130 76 160 64 S196 52 212 48"/><path class="pj" d="M212 48 L270 16"/><circle cx="270" cy="16" r="4" fill="none" stroke="#d33" stroke-width="1.6"/><text x="236" y="40">4:40 pm</text></svg></div>
-        </div>
-        <div class="cell c4 reveal d1">
-          <h3>Rules that remember.</h3>
-          <p>Say yes once, and it stays yes. Dangerous stuff always asks.</p>
-          <div class="art rules" id="rules">
-            <div class="rule"><span>Always allow <code>npm test</code> in checkout</span><span class="sw on"></span></div>
-            <div class="rule"><span>Trust Codex for 10 minutes in api</span><span class="sw" id="swTrust"></span></div>
-            <div class="rule"><span>Ask before <code>git push --force</code>, every time</span><span class="sw lock"></span></div>
-          </div>
-        </div>
-        <div class="cell c2 reveal">
-          <h3>Any Mac.</h3>
-          <p>Wraps the camera on MacBooks. Draws its own island everywhere else.</p>
-          <div class="art"><div class="macs"><div class="mac"><div class="bar"></div><div class="nt"></div></div><div class="mac"><div class="bar"></div><div class="nt drawn"></div></div></div><div class="mac-l"><span>MacBook</span><span>Any display</span></div></div>
-        </div>
-        <div class="cell c2 reveal d1">
-          <h3>Feather light.</h3>
-          <p>Native Swift. No Electron, no account, no tracking.</p>
-          <div class="art stats"><div class="stat"><b data-count="20">0</b><span>MB of memory</span></div><div class="stat"><b data-count="0" data-suffix="%">0%</b><span>CPU when idle</span></div></div>
-        </div>
-        <div class="cell c2 reveal d2">
-          <h3>Updates in one tap.</h3>
-          <p>When there's a new version, mochi brings it to you.</p>
-          <div class="art giftrow"><canvas class="px" id="giftPet"></canvas><div class="note">Update ready<br>tap, check, restart</div></div>
-        </div>
+      <div class="head reveal"><h2>Meet mochi. <span class="soft">Say hi.</span></h2><p>It lives in your notch, eats a cookie for every finished task, and levels up as you ship.</p></div>
+      <div class="mochi reveal">
+        <canvas class="art" data-scene="meadow"></canvas>
+        <div class="bubble" id="bubble">hi bestie</div>
+        <canvas class="px kit" id="bigKitty" aria-label="Mochi. Click to pet."></canvas>
+        <div class="acts" id="acts"><button data-a="pet">Pet</button><button data-a="feed">Feed</button><button data-a="party">Ship it</button><button data-a="nap">Nap</button><span class="sep"></span><button data-o="sprout">Sprout</button><button data-o="headphones">Headphones</button><button data-o="crown">Crown</button></div>
       </div>
     </div>
   </section>
 
-  <!-- ============ FINAL ============ -->
   <section class="final" id="get">
     <div class="wrap">
-      <canvas class="px k reveal" id="finalPet"></canvas>
-      <h2 class="reveal d1">Put your notch<br><em>to work.</em></h2>
-      <p class="sub reveal d2">Free and open source. Connect your agents in one click.</p>
-      <div class="cta reveal d3">
-        <a class="btn light" data-dl href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg"><span class="fill"></span><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><span class="label">Download for Mac</span></a>
-        <div class="meta"><span class="v-ver">Latest</span><span class="v-size">2 MB</span><span>Apple silicon</span><span>macOS 14+</span></div>
-        <div class="notmac">You're not on a Mac. Open this page on your Mac to install.</div>
-        <div class="links"><button type="button" id="copy">Copy download link</button><a id="notes" href="https://github.com/mumbaitrip2022/notchma/releases/latest">What's new</a><a href="https://github.com/mumbaitrip2022/notchma">Source</a></div>
+      <div class="appicon reveal"><canvas class="px" id="iconKitty"></canvas></div>
+      <h2 class="reveal">Ready to give your<br>notch a job?</h2>
+      <p class="reveal">Free and open source. Connect your agents in one click.</p>
+      <div class="btns reveal">
+        <a class="b p" data-dl href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg"><span class="fill"></span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><span class="label">Download for macOS</span></a>
+        <button class="b l" id="copy" type="button">Copy link</button>
       </div>
+      <div class="small reveal"><span class="v-ver">Latest version</span> · <span class="v-size">2 MB</span> · Apple silicon · macOS 14+</div>
+      <div class="notmac">Open this page on your Mac to install.</div>
     </div>
   </section>
 </main>
@@ -665,13 +460,13 @@ footer a:hover { color: #fff; }
 
 <div class="sheet-bg" id="sheetBg"></div>
 <div class="sheet" id="sheet" role="dialog" aria-labelledby="shT" aria-hidden="true">
-  <div class="head"><div><h3 id="shT">Almost there</h3><p>Three quick steps and mochi moves into your notch.</p></div><button class="x" id="shX" type="button" aria-label="Close"><svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11"/></svg></button></div>
+  <div class="hd"><div><h3 id="shT">Almost there</h3><p>Three steps and mochi moves into your notch.</p></div><button class="x" id="shX" type="button" aria-label="Close"><svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11"/></svg></button></div>
   <div class="steps">
-    <div class="step"><div class="vis"><div class="v-dmg"></div></div><div class="n">01</div><h4>Open the download</h4><p>Double click <b>NotchBar.dmg</b> in Downloads.</p></div>
-    <div class="step"><div class="vis"><div class="v-app"></div><div class="v-folder"></div></div><div class="n">02</div><h4>Drag to Applications</h4><p>Drop NotchBar on the folder, then open it.</p></div>
-    <div class="step"><div class="vis"><div class="v-set">Privacy &amp; Security<i>Open Anyway</i></div></div><div class="n">03</div><h4>Say yes once</h4><p>If macOS asks: <b>System Settings › Privacy &amp; Security › Open Anyway</b>.</p></div>
+    <div class="step"><div class="vis"><div class="v-dmg"></div></div><h4>Open the download</h4><p>Double click <b>NotchBar.dmg</b>.</p></div>
+    <div class="step"><div class="vis"><div class="v-app"></div><div class="v-folder"></div></div><h4>Drag to Applications</h4><p>Then open NotchBar.</p></div>
+    <div class="step"><div class="vis"><div class="v-set">Privacy &amp; Security<i>Open Anyway</i></div></div><h4>Say yes once</h4><p>If macOS asks, click <b>Open Anyway</b>.</p></div>
   </div>
-  <div class="foot">Download didn't start? <a href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg">Try again</a></div>
+  <div class="ft">Download didn't start? <a href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg">Try again</a></div>
 </div>
 <canvas id="fx" aria-hidden="true"></canvas>
 <div class="toast" id="toast"></div>
@@ -685,38 +480,93 @@ const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
-const ease = (k) => (k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
-const sleep = (ms) => new Promise((r) => setTimeout(r, reduce ? Math.min(ms, 60) : ms));
-const PINK = "#ff8cb3";
+const PINK = "#ff8cb3", HOLE = "#1d0812";
 
-/* ============ Agent glyphs (same shapes as the app) ============ */
-function spark(c) {
-  let s = "";
-  for (let i = 0; i < 12; i++) { const a = (i * 30 - 90) * Math.PI / 180, r2 = i % 2 ? 7.2 : 10.6; s += `<line x1="${(12 + Math.cos(a) * 2.2).toFixed(2)}" y1="${(12 + Math.sin(a) * 2.2).toFixed(2)}" x2="${(12 + Math.cos(a) * r2).toFixed(2)}" y2="${(12 + Math.sin(a) * r2).toFixed(2)}"/>`; }
-  return `<svg viewBox="0 0 24 24" stroke="${c}" stroke-width="2.4" stroke-linecap="round">${s}</svg>`;
+/* ================= Dithered pixel art (1-bit, Bayer 8x8) ================= */
+const BAYER = [0,32,8,40,2,34,10,42,48,16,56,24,50,18,58,26,12,44,4,36,14,46,6,38,60,28,52,20,62,30,54,22,3,35,11,43,1,33,9,41,51,19,59,27,49,17,57,25,15,47,7,39,13,45,5,37,63,31,55,23,61,29,53,21];
+const hash = (x, y) => { let h = (x * 374761393 + y * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function vnoise(x, y) { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, s = (t) => t * t * (3 - 2 * t);
+  const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+  return a + (b - a) * s(xf) + (c - a) * s(yf) + (a - b - c + d) * s(xf) * s(yf); }
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+function puffs(u, v, A, list) { // list of [cx, cy, r]; returns 0..1 coverage with a lit top and shaded underside
+  let c = 0;
+  for (const [cx, cy, rr] of list) {
+    const d = Math.hypot((u - cx) * A, v - cy) / rr;
+    if (d < 1) c = Math.max(c, (1 - d) * 1.6 - Math.max(0, (v - cy) / rr) * .55);
+  }
+  return clamp(c);
 }
+function bank(y, seed, n = 10, x0 = -0.05, x1 = 1.05, rmin = .07, rmax = .14) {
+  const out = [];
+  for (let i = 0; i < n; i++) out.push([x0 + (x1 - x0) * (i / (n - 1)) + (hash(i, seed) - .5) * .05, y + (hash(i + 7, seed) - .5) * .05, rmin + hash(i + 3, seed) * (rmax - rmin)]);
+  return out;
+}
+const cloudI = (c) => (c > .42 ? 1 : c * 1.9);
+const SCENES = {
+  hero: (u, v, A) => Math.max(cloudI(puffs(u, v, A, bank(.98, 3, 14, -.04, 1.04, .05, .11))), cloudI(puffs(u, v, A, [[.06, .42, .07], [.12, .45, .05], [.0, .47, .05]])), cloudI(puffs(u, v, A, [[.92, .3, .06], [.97, .33, .05], [.87, .33, .04]]))),
+  sky: (u, v, A) => Math.max(cloudI(puffs(u, v, A, [[.84, .52, .07], [.91, .5, .06], [.78, .55, .05], [.96, .55, .045]])), cloudI(puffs(u, v, A, [[.12, .3, .05], [.17, .28, .04], [.08, .32, .035]]))),
+  moon: (u, v, A) => { const d = Math.hypot((u - .62) * A, v - .45); if (d < .2) { const s = Math.hypot((u - .55) * A, v - .4); return s < .17 ? .08 : 1; } return d < .3 ? .12 * (1 - (d - .2) / .1) : 0; },
+  sun: (u, v, A) => { const dx = (u - .82) * A, dy = v - .82, d = Math.hypot(dx, dy); if (d < .17) return 1; if (d < .2) return 0; const ray = Math.cos(Math.atan2(dy, dx) * 12) > .93 ? 1 : 0; return d < .42 ? ray : 0; },
+  hills: (u, v) => { const h1 = .6 + .07 * Math.sin(u * 5 + 1), h2 = .7 + .05 * Math.sin(u * 8 + 2.5); if (v > h2) return 1; if (v > h1) return .16; return 0; },
+  waves: (u, v) => { for (let i = 5; i >= 0; i--) { const y = .5 + i * .09 + .02 * Math.sin(u * 8 + i * 1.9); if (v > y && v < y + .018) return 1; } return 0; },
+  stars: (u, v, A) => Math.max(cloudI(puffs(u, v, A, [[.12, .5, .07], [.19, .47, .055], [.06, .53, .05]])), cloudI(puffs(u, v, A, [[.86, .3, .06], [.92, .32, .05], [.8, .33, .04]]))),
+  clouds: (u, v, A) => Math.max(cloudI(puffs(u, v, A, [[.2, .25, .1], [.3, .22, .08], [.12, .28, .07]])), cloudI(puffs(u, v, A, [[.85, .6, .09], [.93, .58, .07], [.78, .63, .06]]))),
+  meadow: (u, v, A) => { const g = .78 + .03 * Math.sin(u * 6); if (v > g) return v > g + .04 ? 1 : .5; return Math.max(cloudI(puffs(u, v, A, [[.15, .25, .08], [.23, .22, .06], [.08, .28, .05]])), cloudI(puffs(u, v, A, [[.82, .18, .07], [.9, .2, .06]]))); },
+  wall: (u, v, A) => { const d = Math.hypot((u - .5) * A, v - 1.3); return d < 1.1 ? .5 * (1 - d / 1.1) : 0; },
+};
+// Keep captions and headlines on clean color.
+const SAFE = {
+  hero: (u, v, A) => (A < 1 ? (v > .22 && v < .9 ? 0 : 1) : (Math.abs(u - .5) < .34 && v > .3 && v < .9 ? 0 : 1)),
+  card: (u, v) => (u < .75 && v > .74 ? 0 : 1),
+  none: () => 1,
+};
+const COLORS = { pink: [[255, 61, 139], [255, 236, 244]], wall: [[16, 10, 13], [84, 30, 56]] };
+function paint(c) {
+  const scene = c.dataset.scene, pal = scene === "wall" ? COLORS.wall : COLORS.pink;
+  const W = c.clientWidth || c.parentElement.clientWidth, H = c.clientHeight || c.parentElement.clientHeight;
+  if (!W || !H) return;
+  const cell = scene === "wall" ? 4 : W < 500 ? 5 : 6;
+  const w = Math.ceil(W / cell), h = Math.ceil(H / cell);
+  if (c.dataset.sz === `${w}x${h}`) return;
+  c.dataset.sz = `${w}x${h}`; c.width = w; c.height = h;
+  const ctx = c.getContext("2d"), img = ctx.createImageData(w, h), d = img.data, A = w / h, f = SCENES[scene];
+  const safe = SAFE[scene === "hero" ? "hero" : c.closest(".card") ? "card" : "none"];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const I = f(x / w, y / h, A) * safe(x / w, y / h, A), on = I > (BAYER[(y & 7) * 8 + (x & 7)] + .5) / 64, col = on ? pal[1] : pal[0], i = (y * w + x) * 4;
+    d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  // a few twinkly pixel stars
+  ctx.fillStyle = `rgb(${pal[1].join(",")})`;
+  const n = scene === "wall" ? 24 : 12;
+  for (let i = 0; i < n; i++) {
+    const sx = Math.floor(hash(i, w) * w), sy = Math.floor(hash(i, h + 7) * h * .55);
+    if (safe(sx / w, sy / h, A) === 0) continue;
+    ctx.fillRect(sx, sy, 1, 1); if (i % 3 === 0) { ctx.fillRect(sx - 1, sy, 3, 1); ctx.fillRect(sx, sy - 1, 1, 3); }
+  }
+}
+const arts = $$("canvas.art");
+function paintAll() { arts.forEach(paint); }
+
+/* ================= Agent glyphs ================= */
+function spark(c) { let s = ""; for (let i = 0; i < 12; i++) { const a = (i * 30 - 90) * Math.PI / 180, r2 = i % 2 ? 7.2 : 10.6; s += `<line x1="${(12 + Math.cos(a) * 2.2).toFixed(2)}" y1="${(12 + Math.sin(a) * 2.2).toFixed(2)}" x2="${(12 + Math.cos(a) * r2).toFixed(2)}" y2="${(12 + Math.sin(a) * r2).toFixed(2)}"/>`; } return `<svg viewBox="0 0 24 24" stroke="${c}" stroke-width="2.4" stroke-linecap="round">${s}</svg>`; }
 const G = {
   claude: () => spark("#d97757"),
   codex: () => `<svg viewBox="0 0 24 24" fill="none" stroke="#6bccae" stroke-width="2.5" stroke-linejoin="round"><path d="M12 2.6 20.2 7.3v9.4L12 21.4 3.8 16.7V7.3Z"/></svg>`,
   cursor: () => `<svg viewBox="0 0 24 24"><path d="M5.5 3.4v16.2l4-3.9 2.6 5.9 2.9-1.3-2.6-5.8h5.6z" fill="#9ea8ff" stroke="#9ea8ff" stroke-width="1.2" stroke-linejoin="round"/></svg>`,
 };
-const CHECK = `<span class="check"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.6-5"/></svg></span>`;
-$$("[data-glyph]").forEach((el) => { el.innerHTML = G[el.dataset.glyph](); });
+const CHK = `<span class="chk"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.6-5"/></svg></span>`;
+$$("[data-g]").forEach((el) => { el.innerHTML = G[el.dataset.g](); });
 
-/* ============ The kitty: the app's 16 x 16 pixel art ============ */
+/* ================= Mochi: the app's pixel art ================= */
 const FEET = { stand: "...##....##...", stepA: "..##.....##...", stepB: "...##.....##..", tucked: "...########..." };
-const OUTFIT = {
-  sprout: { y: 1, rows: ["......#.##....", ".......##.....", ".......#......", ".......#......", ".......#......"] },
-  headphones: { y: 3, rows: ["...########...", "..............", "..............", ".#..........#.", "##..........##"] },
-  crown: { y: 3, rows: ["....#.##.#....", "....######....", "....######...."] },
-};
+const OUTFIT = { sprout: { y: 1, rows: ["......#.##....", ".......##.....", ".......#......", ".......#......", ".......#......"] }, headphones: { y: 3, rows: ["...########...", "..............", "..............", ".#..........#.", "##..........##"] }, crown: { y: 3, rows: ["....#.##.#....", "....######....", "....######...."] } };
 function kitty(p = {}) {
   const g = Array.from({ length: 16 }, () => Array(16).fill(0));
   const up = !p.squash && p.ears !== false;
-  const r = [up ? "..#........#.." : "..............", up ? "..#P......P#.." : "..............", up ? "..#P#....#P#.." : ".##........##.",
-    "..##########..", ".############.", "##############", "##############", "##############", "##############", "##############",
-    ".############.", "..##########..", FEET[p.squash ? "tucked" : (p.feet || "stand")]].map((s) => s.split(""));
-  const set = (row, cols, ch = ".") => cols.forEach((c) => { if (c >= 0 && c < 14) r[row][c] = ch; });
+  const r = [up ? "..#........#.." : "..............", up ? "..#P......P#.." : "..............", up ? "..#P#....#P#.." : ".##........##.", "..##########..", ".############.", "##############", "##############", "##############", "##############", "##############", ".############.", "..##########..", FEET[p.squash ? "tucked" : (p.feet || "stand")]].map((s) => s.split(""));
+  const set = (row, cols, ch = "o") => cols.forEach((c) => { if (c >= 0 && c < 14 && r[row][c] !== ".") r[row][c] = ch; });
   const d = Math.max(-1, Math.min(1, p.dx || 0));
   switch (p.eyes || "open") {
     case "open": [6, 7].forEach((y) => set(y, [3 + d, 4 + d, 9 + d, 10 + d])); break;
@@ -734,531 +584,418 @@ function kitty(p = {}) {
     case "blep": set(8, [5, 6, 7, 8]); set(9, [7], "P"); break;
   }
   const rows = p.squash ? r.slice(0, 4).concat(r.slice(5)) : r, top = p.squash ? 4 : 3;
-  rows.forEach((row, y) => row.forEach((ch, x) => { if (ch === "#") g[top + y][2 + x] = 1; else if (ch === "P") g[top + y][2 + x] = 2; }));
+  rows.forEach((row, y) => row.forEach((ch, x) => { g[top + y][2 + x] = ch === "#" ? 1 : ch === "P" ? 2 : ch === "o" ? 3 : 0; }));
   (p.squash ? [[11, 2], [11, 3]] : p.tail === "curl" ? [[7, 0], [8, 1]] : [[6, 0], [7, 1]]).forEach(([y, x]) => { g[3 + y][x] = 1; });
   const o = OUTFIT[p.outfit];
   if (o) o.rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === "#") g[o.y + (p.squash ? 1 : 0) + y][2 + x] = 1; }));
   if (p.flip) g.forEach((row) => row.reverse());
   return g;
 }
-const SPR = {
-  heart: [".P.P.", "PPPPP", ".PPP.", "..P.."], sparkle: [".#.", "###", ".#."], gift: ["PP.PP", ".PPP.", "#####", "##P##", "##P##"],
-  cookie: [".##.", "#P##", "##P#", ".##."], z: ["###", ".#.", "###"], crumb: ["#"], note: [".##", ".#.", "##."],
-};
+const SPR = { heart: [".P.P.", "PPPPP", ".PPP.", "..P.."], sparkle: [".#.", "###", ".#."], gift: ["PP.PP", ".PPP.", "#####", "##P##", "##P##"], cookie: [".##.", "#P##", "##P#", ".##."], z: ["###", ".#.", "###"], crumb: ["#"], note: [".##", ".#.", "##."] };
 function fit(c) {
   const dpr = Math.max(1, Math.round(window.devicePixelRatio || 1)), w = c.clientWidth, h = c.clientHeight;
   if (!w || !h) return null;
   if (c.width !== w * dpr || c.height !== h * dpr) { c.width = w * dpr; c.height = h * dpr; }
-  const ctx = c.getContext("2d");
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, w, h);
+  const ctx = c.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, w, h);
   return ctx;
 }
-function drawGrid(ctx, g, ox, oy, px, ink = "#fff") {
+function drawGrid(ctx, g, ox, oy, px, ink = "#fff", hole = HOLE) {
   for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
     const c = g[y][x]; if (!c) continue;
-    ctx.fillStyle = c === 2 ? PINK : ink;
+    ctx.fillStyle = c === 2 ? PINK : c === 3 ? hole : ink;
     ctx.fillRect(Math.round(ox + x * px), Math.round(oy + y * px), Math.ceil(px), Math.ceil(px));
   }
 }
 function drawSpr(ctx, rows, ox, oy, px, a = 1, ink = "#fff") {
   ctx.globalAlpha = clamp(a);
-  rows.forEach((row, y) => [...row].forEach((ch, x) => {
-    if (ch === ".") return;
-    ctx.fillStyle = ch === "P" ? PINK : ink;
-    ctx.fillRect(Math.round(ox + x * px), Math.round(oy + y * px), Math.ceil(px), Math.ceil(px));
-  }));
+  rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === ".") return; ctx.fillStyle = ch === "P" ? PINK : ink; ctx.fillRect(Math.round(ox + x * px), Math.round(oy + y * px), Math.ceil(px), Math.ceil(px)); }));
   ctx.globalAlpha = 1;
 }
 const blinkAt = (f) => f % 23 === 0 || f % 69 === 2;
 const sway = (f) => ((f / 6 | 0) % 3 === 2 ? "curl" : "up");
 const wag = (f) => (f % 2 ? "up" : "curl");
+let mx = innerWidth / 2;
+addEventListener("pointermove", (e) => { mx = e.clientX; }, { passive: true });
+const lookAt = (c) => { const r = c.getBoundingClientRect(), cx = r.left + r.width / 2; return mx < cx - 90 ? -1 : mx > cx + 90 ? 1 : 0; };
 
-/* A live pet on a canvas, ticking at 8 fps while visible. */
-const pets = [];
+const pets = new Set();
 class Pet {
-  constructor(c, o) { Object.assign(this, { c, px: 4, ground: 0, x: null, parts: [], t: 0, visible: false }, o); pets.push(this); }
+  constructor(c, o) { Object.assign(this, { c, px: 4, ground: 0, x: null, parts: [], t: 0, hole: HOLE }, o); pets.add(this); }
   spawn(kind, x, y, vx = 0, vy = -0.6, life = 8) { if (this.parts.length < 16) this.parts.push({ kind, x, y, vx, vy, life }); }
   step() {
+    if (!this.c.isConnected) { pets.delete(this); return; }
     this.t++;
+    const r = this.c.getBoundingClientRect(); if (r.bottom < -50 || r.top > innerHeight + 50 || !r.width) return;
     const ctx = fit(this.c); if (!ctx) return;
     const W = this.c.clientWidth, H = this.c.clientHeight, px = typeof this.px === "function" ? this.px(W, H) : this.px;
     const pose = this.brain(this.t, this, W, H) || {};
     const ox = this.x != null ? this.x : Math.round((W - 16 * px) / 2), base = H - 16 * px - this.ground;
     if (pose.under) pose.under(ctx, ox, base, px);
-    drawGrid(ctx, kitty(pose), ox, base - (pose.lift || 0) * px, px);
-    this.parts = this.parts.filter((p) => {
-      p.x += p.vx; p.y += p.vy; p.life--; if (p.kind === "crumb") p.vy += 0.45;
-      drawSpr(ctx, SPR[p.kind], ox + p.x * px, base + p.y * px, px * 0.75, p.life / 3);
-      return p.life > 0;
-    });
+    drawGrid(ctx, kitty(pose), ox, base - (pose.lift || 0) * px, px, "#fff", this.hole);
+    this.parts = this.parts.filter((p) => { p.x += p.vx; p.y += p.vy; p.life--; if (p.kind === "crumb") p.vy += .45; drawSpr(ctx, SPR[p.kind], ox + p.x * px, base + p.y * px, px * .75, p.life / 3); return p.life > 0; });
   }
 }
-const petIO = new IntersectionObserver((es) => es.forEach((e) => { const p = pets.find((q) => q.c === e.target); if (p) p.visible = e.isIntersecting; }), { rootMargin: "80px" });
-let mx = innerWidth / 2;
-addEventListener("pointermove", (e) => { mx = e.clientX; }, { passive: true });
-const lookAt = (c) => { const r = c.getBoundingClientRect(), cx = r.left + r.width / 2; return mx < cx - 90 ? -1 : mx > cx + 90 ? 1 : 0; };
+const idleBrain = (t, p) => ({ eyes: blinkAt(t) ? "blink" : "open", dx: lookAt(p.c), tail: sway(t) });
 
-/* ============ Page notch: mochi roams the top of your browser ============ */
-const pn = $("#pn");
-let dlMode = "idle", gift = null;
-const roam = { x: 40, target: 40, face: 1, walk: false, at: 0 };
-new Pet($("#pnPet"), { px: (W, H) => (H > 60 ? 4 : 2), brain: (t, p, W, H) => {
-  const open = H > 60;
-  if (open) {
-    p.x = 30; p.ground = 16;
-    const pose = { tail: wag(t), blush: true };
-    if (dlMode === "busy") Object.assign(pose, { eyes: gift ? "wide" : (t % 8 < 5 ? "love" : "happy"), mouth: "open", lift: !gift && t % 4 < 2 ? 1 : 0 });
-    else Object.assign(pose, { eyes: "happy", mouth: t % 10 < 4 ? "blep" : "open", lift: t % 4 < 2 ? 1.5 : 0 });
-    pose.feet = pose.lift ? "tucked" : "stand";
-    pose.under = (ctx, ox, base) => {
-      if (!gift) return;
-      gift.vy += 1.1; gift.y += gift.vy;
-      const land = base - 2;
-      drawSpr(ctx, SPR.gift, ox + 22, Math.min(gift.y, land), 4);
-      if (gift.y >= land) { const r = pn.getBoundingClientRect(); burst(r.left + 70, r.top + 50, 16); gift = null; }
-    };
-    return pose;
+/* ================= Island component ================= */
+class Island {
+  constructor(el) { this.el = el; this.bd = $(".bd", el); this.cur = null; }
+  size(w, h, r) {
+    const max = this.el.parentElement.clientWidth - 24;
+    w = Math.min(w, max || w);
+    this.el.style.width = w + "px"; this.el.style.height = h + "px";
+    if (!this.el.classList.contains("float")) this.el.style.borderRadius = `0 0 ${r ?? (h > 40 ? 28 : 16)}px ${r ?? (h > 40 ? 28 : 16)}px`;
+    return w;
   }
-  p.ground = 1;
-  const maxX = W - 40;
-  roam.at++;
-  const pose = { tail: sway(t) };
-  if (roam.walk) {
-    roam.face = roam.target < roam.x ? -1 : 1;
-    roam.x += Math.sign(roam.target - roam.x) * Math.min(3, Math.abs(roam.target - roam.x));
-    Object.assign(pose, { feet: t % 2 ? "stepA" : "stepB", dx: roam.face, tail: t % 4 < 2 ? "up" : "curl" });
-    if (roam.x === roam.target) { roam.walk = false; roam.at = 0; }
-  } else {
-    pose.eyes = blinkAt(t) ? "blink" : "open";
-    pose.dx = lookAt(p.c);
-    if (roam.at > 16 && Math.random() < 0.06) { roam.target = 8 + Math.random() * (maxX - 8) | 0; if (Math.abs(roam.target - roam.x) > 20) roam.walk = true; }
+  show(w, h, html, r) {
+    this.size(w, h, r);
+    const lay = document.createElement("div"); lay.className = "lay in"; lay.innerHTML = html; this.bd.appendChild(lay);
+    requestAnimationFrame(() => requestAnimationFrame(() => lay.classList.remove("in")));
+    if (this.cur) { const old = this.cur; old.classList.add("out"); setTimeout(() => old.remove(), 420); }
+    this.cur = lay;
+    return lay;
   }
-  roam.x = clamp(roam.x, 8, maxX); p.x = roam.x; pose.flip = roam.walk ? roam.face < 0 : false;
-  return pose;
-} });
+  kitty(w = 200, h = 32, extra = {}) {
+    const lay = this.show(w, h, '<canvas class="px pc"></canvas>');
+    const roam = { x: 40, tgt: 40, walk: false, face: 1 };
+    new Pet($("canvas", lay), Object.assign({ px: 2, ground: this.el.classList.contains("float") ? 2 : 0, brain: (t, p, W) => {
+      if (extra.brain) return extra.brain(t, p, W);
+      const pose = { tail: sway(t) }, maxX = W - 40;
+      if (roam.walk) { roam.face = roam.tgt < roam.x ? -1 : 1; roam.x += Math.sign(roam.tgt - roam.x) * Math.min(3, Math.abs(roam.tgt - roam.x)); Object.assign(pose, { feet: t % 2 ? "stepA" : "stepB", dx: roam.face, flip: roam.face < 0 }); if (roam.x === roam.tgt) roam.walk = false; }
+      else { pose.eyes = blinkAt(t) ? "blink" : "open"; if (t > 8 && Math.random() < .07) { roam.tgt = 10 + Math.random() * (maxX - 10) | 0; roam.walk = Math.abs(roam.tgt - roam.x) > 16; } }
+      roam.x = clamp(roam.x, 10, maxX); p.x = roam.x; return pose;
+    } }, extra.opts || {}));
+    return lay;
+  }
+}
+const row = (agent, proj, what, right = "", tone = "") => `<div class="rw ${tone}"><span class="gl${!tone && agent === "claude" ? " spin" : ""}">${agent === "all" ? "" : G[agent]()}</span>${agent === "all" ? `<span class="gls"><span class="gl">${G.claude()}</span><span class="gl">${G.codex()}</span><span class="gl">${G.cursor()}</span></span>` : ""}<span class="p">${proj}</span><span class="wt">${what}</span><span class="r">${right}</span></div>`;
+const ring = '<span class="ring"></span>';
 
-/* ============ The film: one timeline, driven by scroll ============ */
-const film = $("#film"), screen = $("#screen"), fitBox = $("#screenFit"), box = $("#screenBox");
-const T_END = 29;
-const CH = [0, 6.2, 12.2, 15.8, 21.2, T_END];
+/* Small helpers for looping demos that pause off screen */
+const visible = new Map();
+const vis = new IntersectionObserver((es) => es.forEach((e) => visible.set(e.target, e.isIntersecting)), { rootMargin: "60px" });
+function sleepFor(el) { return (ms) => new Promise((res) => { const go = () => { if (visible.get(el) && !document.hidden) setTimeout(res, reduce ? Math.min(ms, 80) : ms); else setTimeout(go, 300); }; go(); }); }
+function press(el) { if (!el) return; el.classList.add("press"); setTimeout(() => el.classList.remove("press"), 170); }
+
+/* ================= Card demos ================= */
+const DEMOS = {
+  async approve(card, isl, w) {
+    const keys = $$(".key", card);
+    for (;;) {
+      isl.kitty(200, 32); await w(1600);
+      isl.show(470, 32, row("claude", "checkout", "wants to run a command", '<span class="bdg">1</span>', "amber")); await w(1100);
+      const lay = isl.show(500, 140, row("claude", "checkout", "wants to run a command", '<span class="bdg">1</span>', "amber") + `<div class="cd">$ git push origin main</div><div class="bt"><span class="cb">Deny <span class="kk">⌃⌥N</span></span><span class="cb">Always allow</span><span class="cb pri">Allow <span class="kk">⌃⌥Y</span></span></div>`);
+      await w(1300);
+      for (const k of keys) { k.classList.add("down"); await w(120); }
+      const b = $(".pri", lay); press(b); b.className = "cb pri okb"; b.textContent = "Allowed";
+      await w(380); keys.forEach((k) => k.classList.remove("down"));
+      await w(700);
+      isl.show(400, 32, row("claude", "checkout", "Pushing to main", ring)); await w(1500);
+      isl.show(360, 32, row("claude", "checkout", "Pushed", CHK, "green")); await w(1500);
+    }
+  },
+  async multi(card, isl, w) {
+    const A = [["claude", "checkout", ["Running the tests", "Editing total.ts", "Running e2e", "Done"]], ["codex", "api", ["Reading schema", "Writing migration", "Running migrate", "Done"]], ["cursor", "landing-page", ["Editing Hero.tsx", "Styling buttons", "Pushing a branch", "Done"]]];
+    for (;;) {
+      isl.show(330, 32, row("all", "", "3 agents working", ring)); await w(1300);
+      const lay = isl.show(460, 146, `<div class="ml">${A.map(([a, p, s]) => `<div class="mr"><span class="gl">${G[a]()}</span><span class="p">${p}</span><span class="wt">${s[0]}</span><span class="rt"><span class="mb"><i></i></span></span></div>`).join("")}</div>`);
+      const rows = $$(".mr", lay);
+      for (let step = 0; step < 4; step++) {
+        await w(step ? 1100 : 400);
+        rows.forEach((r, i) => {
+          const st = Math.min(3, step + (i === 2 ? 1 : 0) - (i === 1 && step > 0 ? 1 : 0));
+          $(".wt", r).textContent = A[i][2][Math.max(0, st)];
+          if (st >= 3) { $(".rt", r).innerHTML = CHK; $(".wt", r).style.color = "#5ad37b"; } else $(".mb i", r).style.width = (25 + st * 25 + i * 6) + "%";
+        });
+      }
+      await w(900);
+      rows.forEach((r, i) => { $(".wt", r).textContent = "Done"; $(".wt", r).style.color = "#5ad37b"; $(".rt", r).innerHTML = CHK; });
+      await w(1400);
+      isl.show(330, 32, row("all", "", "All 3 done", CHK + CHK + CHK, "green")); await w(1500);
+      isl.kitty(200, 32); await w(1800);
+    }
+  },
+  async risky(card, isl, w) {
+    for (;;) {
+      isl.kitty(200, 32); await w(1400);
+      isl.show(420, 32, row("cursor", "landing-page", "risky command", '<span class="bdg redb">!</span>', "red")); await w(1000);
+      const lay = isl.show(460, 140, row("cursor", "landing-page", "wants to force push", "", "red") + `<div class="cd">$ git push <span class="bad">--force</span> origin main</div><div class="bt"><span class="cb pri">Deny <span class="kk">⌃⌥N</span></span><span class="cb rd">Allow anyway</span></div>`);
+      await w(1800);
+      const b = $(".pri", lay); press(b); b.textContent = "Denied"; b.style.background = "#2c2c2f"; b.style.color = "#fff";
+      await w(900);
+      isl.show(420, 32, row("cursor", "landing-page", "Pushing a branch instead", ring)); await w(1700);
+    }
+  },
+  async usage(card, isl, w) {
+    for (;;) {
+      isl.show(320, 32, row("claude", "Claude", "5 hour limit", "62%", "")); await w(1300);
+      const lay = isl.show(440, 196, `<div class="us"><div class="ur"><div class="top"><span>Claude · 5 hour</span><b>62%</b></div><div class="tr"><i style="background:#d97757"></i></div></div><div class="ur"><div class="top"><span>Claude · weekly</span><b>38%</b></div><div class="tr"><i style="background:#fff"></i></div></div><div class="ur"><div class="top"><span>Codex · 5 hour</span><b>24%</b></div><div class="tr"><i style="background:#6bccae"></i></div></div><div class="fc">At this pace you hit the limit at <b>4:40 pm</b></div></div>`);
+      await w(250);
+      const fills = $$(".tr i", lay); [62, 38, 24].forEach((v, i) => { fills[i].style.width = v + "%"; });
+      await w(3600);
+      isl.kitty(200, 32); await w(1600);
+    }
+  },
+  async float(card, isl, w) {
+    for (;;) {
+      isl.kitty(190, 36); await w(1500);
+      isl.show(400, 36, row("codex", "api", "Writing migration", ring)); await w(1500);
+      const lay = isl.show(440, 132, row("codex", "api", "wants to run a command", '<span class="bdg">1</span>', "amber") + `<div class="cd">$ npm run migrate</div><div class="bt"><span class="cb">Deny</span><span class="cb pri">Allow <span class="kk">⌃⌥Y</span></span></div>`);
+      await w(1700);
+      const b = $(".pri", lay); press(b); b.className = "cb pri okb"; b.textContent = "Allowed";
+      await w(900);
+      isl.show(360, 36, row("codex", "api", "Done", CHK, "green")); await w(1500);
+    }
+  },
+  async receipt(card, isl, w) {
+    const clip = $(".rclip", card), paper = $(".paper", card);
+    buildReceipt(paper, true);
+    for (;;) {
+      clip.style.height = "0px";
+      isl.kitty(200, 32); await w(1300);
+      isl.show(330, 32, row("all", "", "All 3 done today", CHK + CHK + CHK, "green")); await w(1300);
+      isl.kitty(300, 40, { brain: (t) => ({ eyes: t % 8 < 6 ? "happy" : "love", mouth: "open", blush: true, lift: t % 4 < 2 ? 1 : 0, feet: t % 4 < 2 ? "tucked" : "stand", tail: wag(t) }), opts: { ground: 4 } });
+      await w(500);
+      const full = Math.min(paper.offsetHeight, card.clientHeight - 60);
+      for (let hgt = 0; hgt <= full; hgt += 22) { clip.style.height = hgt + "px"; await w(110); }
+      await w(3000);
+    }
+  },
+};
+function buildReceipt(el) {
+  const now = new Date();
+  const R = [["logo"], ["title", "NOTCHBAR"], ["c", "agent receipt"], ["gap"], ["r", "#0128", now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase()], ["r", "served by mochi", now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase()], ["rule"], ["r", "CLAUDE CODE", "1h 52m"], ["r", "CODEX", "31m"], ["r", "CURSOR", "22m"], ["rule"], ["r", "tasks shipped", "14"], ["r", "tests", "148 ✓"], ["r", "you approved", "23"], ["r", "tokens", "2.0M"], ["rule"], ["b", "TOTAL", "$4.30"], ["c", "api value. your plan covers it"], ["gap"], ["bar"], ["gap"], ["c", "full squad showed up today"], ["c", "thank you for shipping"]];
+  el.innerHTML = R.map(([k, a, b]) => k === "logo" ? '<div class="logo"><canvas class="px"></canvas></div>' : k === "title" ? `<div class="rt">${a}</div>` : k === "c" ? `<div class="rc">${a}</div>` : k === "r" ? `<div class="rl"><span>${a}</span><span>${b}</span></div>` : k === "b" ? `<div class="rb"><span>${a}</span><span>${b}</span></div>` : k === "rule" ? '<div class="rr"></div>' : k === "gap" ? '<div class="gap"></div>' : `<div class="barcode">${Array.from({ length: 48 }, (_, i) => { const s = hash(i, 128); return `<i style="width:${1 + (s * 3 | 0)}px;margin-right:${1 + (hash(i, 9) * 3 | 0)}px"></i>`; }).join("")}</div>`).join("");
+  requestAnimationFrame(() => { const ctx = fit($(".logo canvas", el)); if (ctx) drawGrid(ctx, kitty({ eyes: "happy" }), 0, 0, 2.5, "#1b1b1b", "#f6f2ea"); });
+}
+$$("[data-demo]").forEach((card) => {
+  vis.observe(card);
+  const kind = card.dataset.demo;
+  if (kind === "update") { new Pet($(".gift canvas", card), { px: 5, ground: 8, hole: "#000", brain: (t, p) => ({ eyes: blinkAt(t) ? "blink" : "open", tail: sway(t), mouth: t % 40 < 8 ? "blep" : "small", under: (ctx, ox, base) => drawSpr(ctx, SPR.gift, ox + 64, base + 52 + (t % 8 < 4 ? 0 : -3), 4) }) }); return; }
+  const isl = new Island($(".isl", card));
+  DEMOS[kind](card, isl, sleepFor(card));
+});
+
+/* ================= Big demo: three agents, one loop ================= */
+const fitBox = $("#demoFit"), screen = $("#screen");
 let scale = 1;
-function layoutScreen() {
-  const w = box.clientWidth, h = box.clientHeight;
-  if (w < 760) {
-    // Phones: zoom into the top middle of the screen, where the notch does its thing.
-    const cw = 720, ch = 660;
-    scale = Math.min(w / cw, h / ch);
-    screen.style.transform = `translateX(${-((1280 - cw) / 2) * scale}px) scale(${scale})`;
-    fitBox.style.width = cw * scale + "px"; fitBox.style.height = ch * scale + "px";
-    fitBox.style.overflow = "hidden"; fitBox.style.borderRadius = "20px 20px 0 0";
-  } else {
-    scale = Math.min(w / 1280, h / 800);
-    screen.style.transform = `scale(${scale})`;
-    fitBox.style.width = 1280 * scale + "px"; fitBox.style.height = 800 * scale + "px";
-    fitBox.style.overflow = ""; fitBox.style.borderRadius = "";
-  }
+function layout() {
+  const w = fitBox.clientWidth;
+  if (w < 700) { const cw = 720, ch = 560; scale = w / cw; screen.style.transform = `translateX(${-((1280 - cw) / 2) * scale}px) scale(${scale})`; fitBox.style.height = ch * scale + "px"; }
+  else { scale = w / 1280; screen.style.transform = `scale(${scale})`; fitBox.style.height = 760 * scale + "px"; }
 }
-layoutScreen(); addEventListener("resize", layoutScreen);
+layout();
 const now = new Date();
 $("#mbDay").textContent = now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).replace(",", "");
 $("#mbTime").textContent = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-
-const timed = $$("#screen [data-t], #screen [data-u]").map((el) => ({ el, t: el.dataset.t != null ? +el.dataset.t : -1, u: el.dataset.u != null ? +el.dataset.u : 1e9 }));
-timed.forEach((o) => { if (o.el.dataset.t == null) o.el.setAttribute("data-t", "-1"); });
-const PROMPT = "run the checkout tests and fix what fails";
-const isl = $("#isl"), ears = $("#islEars"), row = $("#islRow"), multi = $("#islMulti"), card = $("#islCard");
-const ptr = $("#ptr"), dim = $("#dim"), fclip = $("#fclip"), fpaper = $("#fpaper");
-
-const AG = {
-  claude: { proj: "checkout", done: 17.4, st: [[0, "Running the tests"], [3.4, "Reading total.ts"], [4.2, "Editing total.ts"], [5.2, "Running e2e"], [8.4, "Waiting for you", "amber"], [10.6, "Running e2e"], [16.6, "Running the tests"], [17.4, "Done", "green"]] },
-  codex: { proj: "api", done: 18.0, st: [[0, "Reading schema"], [2.4, "Writing migration"], [6.2, "Waiting for you", "amber"], [10.6, "Running migrate"], [11.4, "Seeding staging"], [18.0, "Done", "green"]] },
-  cursor: { proj: "landing-page", done: 16.6, st: [[0, "Editing Hero.tsx"], [5.6, "Styling the button"], [12.2, "Waiting for you", "amber"], [14.6, "Pushing a branch"], [16.6, "Done", "green"]] },
-};
-multi.innerHTML = Object.keys(AG).map((k) => `<div class="mrow" data-a="${k}"><span class="glyph">${G[k]()}</span><span class="p">${AG[k].proj}</span><span class="w"></span><span class="rt"></span></div>`).join("");
-const mrows = Object.keys(AG).map((k) => ({ k, el: $(`[data-a="${k}"]`, multi) }));
-
-let kbApproved = false, kbDenied = false;
-let lastKey = "", islKey = "";
-
-function stateAt(arr, t) { let s = arr[0]; for (const x of arr) if (t >= x[0]) s = x; return s; }
-function sizeIsl(w, h, m) {
-  const key = `${w}|${h}|${m}`; if (key === islKey) return; islKey = key;
-  isl.style.width = w + "px"; isl.style.height = h + "px"; ears.style.width = w + "px";
-  isl.style.borderRadius = h > 40 ? "0 0 28px 28px" : "0 0 16px 16px"; isl.dataset.m = m;
+const timed = $$("#screen [data-t], #screen [data-u]").map((el) => { if (el.dataset.t == null) el.setAttribute("data-t", "-1"); return { el, t: +el.dataset.t, u: el.dataset.u != null ? +el.dataset.u : 1e9 }; });
+const PROMPT = "fix the failing checkout tests";
+const dIsl = new Island($("#demoIsl"));
+const ptr = $("#ptr");
+const T_END = 27, CH = [0, 6.0, 12.0, 15.6, 19.4, T_END];
+const HINTS = ["Claude Code, Codex and Cursor working at once.", 'Two requests waiting. Try it: press <span class="k2">⌃</span><span class="k2">⌥</span><span class="k2">Y</span>', "A force push. NotchBar stops it cold.", "All done. Mochi gets a cookie for each one.", "And your day, printed right out of the notch."];
+buildReceipt($("#demoPaper"));
+let T = 0, lastState = "", kbOK = false, kbNo = false;
+const A3 = { claude: ["checkout", 16.6, [[0, "Running the tests"], [3.4, "Editing total.ts"], [5, "Running e2e"], [8.2, "Waiting for you", "a"], [10.6, "Running e2e"], [16.6, "Done", "d"]]], codex: ["api", 17.6, [[0, "Reading schema"], [2.2, "Writing migration"], [6.2, "Waiting for you", "a"], [10.6, "Running migrate"], [17.6, "Done", "d"]]], cursor: ["landing-page", 15.8, [[0, "Editing Hero.tsx"], [12.0, "Waiting for you", "a"], [14.6, "Pushing a branch"], [15.8, "Done", "d"]]] };
+const st = (arr, t) => { let s = arr[0]; for (const x of arr) if (t >= x[0]) s = x; return s; };
+let multiLay = null;
+function demoState(t) {
+  const ok = t >= 10.6 || (kbOK && t >= 7.0), no = t >= 14.6 || (kbNo && t >= 13.0);
+  if (t < 1.4) return "idle";
+  if (t < 2.0) return "three";
+  if (t < 6.0 || (t >= 11.4 && t < 12.0) || (t >= 15.6 && t < 17.8)) return "multi";
+  if (t < 7.0) return "ask";
+  if (t < 11.4) return (t >= 8.2 ? "card2" : "card1") + (ok ? "ok" : "");
+  if (t < 13.0) return "risky";
+  if (t < 15.6) return "rcard" + (no ? "no" : "");
+  if (t < 18.4) return "done";
+  if (t < 19.6) return "eat";
+  return "print";
 }
-function setRow(agent, proj, what, right, tone = "") {
-  const key = [agent, proj, what, right, tone].join("|"); if (row.dataset.k === key) return; row.dataset.k = key;
-  row.className = "ly ly-row " + tone;
-  $(".glyph", row).innerHTML = agent === "all" ? `<span class="glyphs">${G.claude()}${G.codex()}${G.cursor()}</span>` : agent ? G[agent]() : "";
-  $(".glyph", row).style.width = agent === "all" ? "58px" : "16px";
-  $(".p", row).textContent = proj; $(".w", row).textContent = what; $(".r", row).innerHTML = right;
-}
-function setCard(kind, approved, denied) {
-  const key = kind + approved + denied; if (card.dataset.k === key) return; card.dataset.k = key;
-  const peek = $("#cardPeek");
-  if (kind === "risky") {
-    $("#cardCode").innerHTML = `$ git push <span class="bad">--force</span> origin main`;
-    peek.style.display = "none";
-    $("#cardBtns").innerHTML = denied ? `<span class="cb pri" style="background:#2c2c2f;color:#fff">Denied</span>` : `<span class="cb pri" id="bDeny">Deny <span class="kk">⌃⌥N</span></span><span class="cb redb">Allow anyway</span>`;
-  } else {
-    $("#cardCode").innerHTML = `$ npm run migrate <span class="dd">--env=staging</span>`;
-    peek.style.display = kind === "two" ? "flex" : "none";
-    const allowTxt = kind === "two" ? "Allow all 2" : "Allow";
-    $("#cardBtns").innerHTML = approved ? `<span class="cb">Deny</span><span class="cb pri okb">Allowed${kind === "two" ? " 2" : ""}</span>` : `<span class="cb">Deny <span class="kk">⌃⌥N</span></span><span class="cb">Always allow</span><span class="cb pri" id="bAllow">${allowTxt} <span class="kk">⌃⌥Y</span></span>`;
-  }
-}
-const ptrKeys = [[0, 1080, 720], [9.0, 1080, 720], [10.3, "allow"], [11.2, "allow"], [12.0, 940, 640], [13.6, 940, 640], [14.4, "deny"], [15.1, "deny"], [15.9, 1100, 700], [T_END, 1100, 700]];
-function targetXY(v) {
-  if (typeof v !== "string") return null;
-  const el = v === "allow" ? $("#bAllow") || $("#cardBtns .pri") : $("#bDeny") || $("#cardBtns .pri");
-  if (!el) return [600, 120];
-  const s = screen.getBoundingClientRect(), r = el.getBoundingClientRect();
-  return [(r.left - s.left + r.width * .5) / scale - 6, (r.top - s.top + r.height * .55) / scale - 5];
-}
-const ptrCache = {};
-function ptrAt(t) {
-  let i = 0; while (i < ptrKeys.length - 1 && t > ptrKeys[i + 1][0]) i++;
-  const a = ptrKeys[i], b = ptrKeys[Math.min(i + 1, ptrKeys.length - 1)];
-  const pa = typeof a[1] === "string" ? (ptrCache[a[1]] || [600, 120]) : [a[1], a[2]];
-  const pb = typeof b[1] === "string" ? (ptrCache[b[1]] || [600, 120]) : [b[1], b[2]];
-  const k = b[0] === a[0] ? 1 : ease(clamp((t - a[0]) / (b[0] - a[0])));
-  return [pa[0] + (pb[0] - pa[0]) * k, pa[1] + (pb[1] - pa[1]) * k];
-}
-
-/* Receipt content, shared by the film */
-const RC = [
-  ["logo"], ["title", "NOTCHBAR"], ["c", "agent receipt"], ["gap"],
-  ["r", "#0128", now.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" }).replace(/,/g, "").toUpperCase()],
-  ["r", "served by mochi", now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase()], ["rule"],
-  ["r", "CLAUDE CODE", "1h 52m"], ["r", "CODEX", "31m"], ["r", "CURSOR", "22m"], ["rule"],
-  ["r", "tasks shipped", "14"], ["r", "files touched", "41"], ["r", "lines", "+1,280  −318"], ["r", "tests", "148 ✓"],
-  ["r", "you approved", "23  denied 2"], ["r", "tokens", "2.0M"], ["rule"],
-  ["b", "TOTAL", "$4.30"], ["c", "api value. your plan covers it"], ["rule"], ["r", "streak", "5 days"], ["gap"],
-  ["bar"], ["bcn", "0128 83893848"], ["gap"], ["c", "full squad showed up today"], ["c", "thank you for shipping"],
-];
-function buildReceipt(el, inkPx) {
-  el.innerHTML = "";
-  for (const [k, a, b] of RC) {
-    const d = document.createElement("div");
-    if (k === "logo") { d.className = "logo"; d.innerHTML = '<canvas class="px"></canvas>'; }
-    else if (k === "title") { d.className = "rt"; d.textContent = a; }
-    else if (k === "c") { d.className = "rc"; d.textContent = a; }
-    else if (k === "r") { d.className = "rl"; d.innerHTML = `<span>${a}</span><span>${b}</span>`; }
-    else if (k === "b") { d.className = "rb"; d.innerHTML = `<span>${a}</span><span>${b}</span>`; }
-    else if (k === "rule") d.className = "rr";
-    else if (k === "gap") d.className = "gap";
-    else if (k === "bcn") { d.className = "bcn"; d.textContent = a; }
-    else if (k === "bar") { d.className = "barcode"; let s = 128, h = ""; for (let i = 0; i < 52; i++) { s = (s * 9301 + 49297) % 233280; h += `<i style="width:${1 + (s % 3)}px;margin-right:${1 + ((s >> 4) % 3)}px"></i>`; } d.innerHTML = h; }
-    el.appendChild(d);
-  }
-  requestAnimationFrame(() => { const ctx = fit($(".logo canvas", el)); if (ctx) drawGrid(ctx, kitty({ eyes: "happy" }), 0, 0, inkPx, "#1b1b1b"); });
-}
-buildReceipt(fpaper, 2.5);
-
-/* The kitty inside the film's notch: a pure function of t */
-const islPetC = $("#islPet");
-function drawIslPet(t, m) {
-  const ctx = fit(islPetC); if (!ctx) return;
-  const W = islPetC.clientWidth, H = islPetC.clientHeight, px = 2, f = Math.floor(performance.now() / 125);
-  const pose = { tail: sway(f), eyes: blinkAt(f) ? "blink" : "open" };
-  let x = (W - 32) / 2, lift = 0;
-  if (m === "print") {
-    Object.assign(pose, { eyes: f % 8 < 6 ? "happy" : "love", mouth: "open", blush: true, tail: wag(f) });
-    lift = t < 26.6 && f % 4 < 2 ? 2 : 0;
-    if (t >= 26.6) Object.assign(pose, { eyes: "happy", mouth: f % 12 < 5 ? "blep" : "small" });
-  } else {
-    for (const c of [19.3, 19.9, 20.5]) {
-      if (t >= c && t < c + 0.32) { const k = (t - c) / 0.32; drawSpr(ctx, SPR.cookie, x + 12, -8 + k * 18, 2); Object.assign(pose, { eyes: "wide", mouth: "open" }); }
-      if (t >= c + 0.32 && t < c + 0.6) Object.assign(pose, { eyes: "happy", mouth: f % 2 ? "open" : "small", blush: true, tail: wag(f) });
-    }
-    if (t >= 20.9) Object.assign(pose, { eyes: "happy", blush: true, mouth: "small", tail: wag(f) });
-    if (t < 1.6) { x = 30 + (W - 92) * (t / 1.6); pose.feet = f % 2 ? "stepA" : "stepB"; pose.dx = 1; }
-  }
-  drawGrid(ctx, kitty(pose), x, H - 32 - (m === "print" ? 6 : 0) - lift, px);
-}
-
-function render(t) {
-  // Chapters
+let eatAt = 0;
+function renderDemo(t) {
   let ci = 0; for (let i = 0; i < 5; i++) if (t >= CH[i]) ci = i;
-  $$("#chapters li").forEach((li, i) => { li.classList.toggle("on", i === ci); const b = $(".bar i", li); if (b) b.style.width = (i < ci ? 100 : i > ci ? 0 : clamp((t - CH[i]) / (CH[i + 1] - CH[i])) * 100) + "%"; });
-
-  // Windows
-  $("#typed").textContent = PROMPT.slice(0, Math.round(clamp((t - 0.15) / 1.5) * PROMPT.length));
-  $("#caret").style.visibility = t < 1.8 ? "visible" : "hidden";
+  $$("#chips button").forEach((b, i) => { b.classList.toggle("on", i === ci); $("i", b).style.transform = `scaleX(${i < ci ? 0 : i > ci ? 0 : clamp((t - CH[i]) / (CH[i + 1] - CH[i]))})`; });
+  const hint = $("#hint"); if (hint.dataset.i !== String(ci)) { hint.dataset.i = ci; hint.innerHTML = HINTS[ci]; }
+  $("#typed").textContent = PROMPT.slice(0, Math.round(clamp(t / 1.3) * PROMPT.length));
   for (const o of timed) o.el.classList.toggle("on", t >= o.t && t < o.u);
-
-  // Approvals can also come from your keyboard
-  const approved = t >= 10.6 || (kbApproved && t >= 7.2);
-  const denied = t >= 14.6 || (kbDenied && t >= 13.0);
-
-  // The notch
-  let m = "idle";
-  if (t < 1.6) { sizeIsl(210, 32, "idle"); }
-  else if (t < 2.2) { setRow("all", "", "3 agents working", '<span class="ring"></span>'); sizeIsl(330, 32, "row"); m = "row"; }
-  else if (t < 6.2 || (t >= 11.4 && t < 12.2) || (t >= 15.8 && t < 18.2)) { m = "multi"; sizeIsl(500, 152, "multi"); }
-  else if (t < 7.2) { setRow("codex", "api", "wants to run a command", '<span class="badge">1</span>', "amber"); sizeIsl(460, 32, "row"); m = "row"; }
-  else if (t < 11.4) {
-    const two = t >= 8.4;
-    setRow("codex", "api", two ? "and 1 more waiting" : "wants to run a command", `<span class="badge">${two ? 2 : 1}</span>`, approved ? "green" : "amber");
-    setCard(two ? "two" : "one", approved, false);
-    sizeIsl(520, two ? 186 : 148, "card"); m = "card";
-  }
-  else if (t < 13.0) { setRow("cursor", "landing-page", "risky command", '<span class="badge" style="background:#ff5f57;color:#fff">!</span>', "red"); sizeIsl(460, 32, "row"); m = "row"; }
-  else if (t < 15.8) {
-    setRow("cursor", "landing-page", denied ? "Denied. Finding another way" : "wants to force push", "", denied ? "" : "red");
-    setCard("risky", false, denied);
-    sizeIsl(520, 148, "card"); m = "card";
-  }
-  else if (t < 19.0) { setRow("all", "", "All 3 agents done", CHECK + CHECK + CHECK, "green"); sizeIsl(400, 32, "row"); m = "row"; }
-  else if (t < 21.4) { sizeIsl(210, 32, "idle"); m = "idle"; }
-  else { sizeIsl(360, 44, "print"); m = "print"; }
-  if (t >= 18.2 && t < 19.0) { /* row set above */ }
-  if (m === "multi") {
-    for (const { k, el } of mrows) {
-      const a = AG[k], s = stateAt(a.st, t);
-      const w = $(".w", el); if (w.textContent !== s[1]) w.textContent = s[1];
-      w.className = "w " + (s[2] || "");
-      const rt = $(".rt", el), want = s[2] === "green" ? "c" : s[2] === "amber" ? "a" : "b";
-      if (rt.dataset.v !== want) { rt.dataset.v = want; rt.innerHTML = want === "c" ? CHECK : want === "a" ? '<span class="adot"></span>' : '<span class="mini-bar"><i></i></span>'; }
-      if (want === "b") $("i", rt).style.width = clamp(t / a.done) * 100 + "%";
+  const s = demoState(t);
+  if (s !== lastState) {
+    lastState = s;
+    if (s === "idle") dIsl.kitty(210, 32);
+    else if (s === "three") dIsl.show(330, 32, row("all", "", "3 agents working", ring));
+    else if (s === "multi") { multiLay = dIsl.show(500, 146, `<div class="ml">${Object.keys(A3).map((k) => `<div class="mr" data-k="${k}"><span class="gl">${G[k]()}</span><span class="p">${A3[k][0]}</span><span class="wt"></span><span class="rt"></span></div>`).join("")}</div>`); }
+    else if (s === "ask") dIsl.show(460, 32, row("codex", "api", "wants to run a command", '<span class="bdg">1</span>', "amber"));
+    else if (s.startsWith("card")) {
+      const two = s.startsWith("card2"), ok = s.endsWith("ok");
+      dIsl.show(520, two ? 178 : 140, row("codex", "api", two ? "and 1 more waiting" : "wants to run a command", `<span class="bdg">${two ? 2 : 1}</span>`, ok ? "green" : "amber") + `<div class="cd">$ npm run migrate <span class="dd">--env=staging</span></div>` + (two ? `<div class="pk"><span class="gl">${G.claude()}</span><b>checkout</b> wants to run npm run e2e</div>` : "") + `<div class="bt">${ok ? `<span class="cb">Deny</span><span class="cb pri okb">Allowed${two ? " 2" : ""}</span>` : `<span class="cb">Deny <span class="kk">⌃⌥N</span></span><span class="cb">Always allow</span><span class="cb pri" id="bAllow">${two ? "Allow all 2" : "Allow"} <span class="kk">⌃⌥Y</span></span>`}</div>`);
     }
+    else if (s === "risky") dIsl.show(440, 32, row("cursor", "landing-page", "risky command", '<span class="bdg redb">!</span>', "red"));
+    else if (s.startsWith("rcard")) { const no = s.endsWith("no"); dIsl.show(500, 140, row("cursor", "landing-page", no ? "Denied. Finding another way" : "wants to force push", "", no ? "" : "red") + `<div class="cd">$ git push <span class="bad">--force</span> origin main</div><div class="bt">${no ? '<span class="cb pri" style="background:#2c2c2f;color:#fff">Denied</span>' : '<span class="cb pri" id="bDeny">Deny <span class="kk">⌃⌥N</span></span><span class="cb rd">Allow anyway</span>'}</div>`); }
+    else if (s === "done") dIsl.show(380, 32, row("all", "", "All 3 agents done", CHK + CHK + CHK, "green"));
+    else if (s === "eat") { eatAt = performance.now(); dIsl.kitty(210, 32, { brain: (tt, p) => { const k = (performance.now() - eatAt) / 1000, f = tt; const cyc = k % .5; if (k < 1.5 && cyc < .2) p.spawn("cookie", 6, -3, 0, 1.2, 2); return k < 1.6 ? { eyes: cyc < .2 ? "wide" : "happy", mouth: f % 2 ? "open" : "small", blush: true, tail: wag(f) } : { eyes: "happy", blush: true, tail: wag(f) }; } }); }
+    else if (s === "print") dIsl.kitty(340, 42, { brain: (tt) => ({ eyes: tt % 8 < 6 ? "happy" : "love", mouth: "open", blush: true, lift: T < 24 && tt % 4 < 2 ? 1 : 0, feet: "stand", tail: wag(tt) }), opts: { ground: 5 } });
   }
-  if (m === "idle" || m === "print") drawIslPet(t, m);
-
-  // Pointer, clicks and keyboard flashes
-  if (t >= 9.6 && t < 11.3) { const p = targetXY("allow"); if (p) ptrCache.allow = p; }
-  if (t >= 13.4 && t < 15.2) { const p = targetXY("deny"); if (p) ptrCache.deny = p; }
-  const [px, py] = ptrAt(t);
-  ptr.style.transform = `translate(${px}px, ${py}px)`;
-  const pressing = Math.abs(t - 10.55) < 0.12 || Math.abs(t - 14.55) < 0.12;
-  ptr.classList.toggle("press", pressing);
-  const pb = $("#cardBtns .pri"); if (pb) pb.classList.toggle("press", pressing);
-
-  // Receipt out of the notch
-  dim.style.opacity = t >= 21.2 ? 0.5 : 0;
-  const full = fpaper.offsetHeight || 640;
-  fclip.style.height = Math.round(clamp((t - 21.8) / 4.8) * full) + "px";
+  if (s === "multi" && multiLay) for (const r of $$(".mr", multiLay)) {
+    const k = r.dataset.k, [, done, arr] = A3[k], cur = st(arr, t), wt = $(".wt", r), rt = $(".rt", r);
+    if (wt.textContent !== cur[1]) wt.textContent = cur[1];
+    wt.style.color = cur[2] === "a" ? "#f5b942" : cur[2] === "d" ? "#5ad37b" : "";
+    const want = cur[2] || "b"; if (rt.dataset.v !== want) { rt.dataset.v = want; rt.innerHTML = want === "d" ? CHK : want === "a" ? '<span class="ad"></span>' : '<span class="mb"><i></i></span>'; }
+    if (want === "b") $("i", rt).style.width = clamp(t / done) * 100 + "%";
+  }
+  // pointer
+  let target = [1080, 640], click = false;
+  const el = s.startsWith("card2") && !s.endsWith("ok") ? $("#bAllow") : s === "rcard" ? $("#bDeny") : null;
+  if (el && ((s.startsWith("card2") && t > 9.2) || (s === "rcard" && t > 13.6))) {
+    const sr = screen.getBoundingClientRect(), r = el.getBoundingClientRect();
+    target = [(r.left - sr.left + r.width / 2) / scale - 6, (r.top - sr.top + r.height / 2) / scale - 4];
+  } else if (s.startsWith("card2ok") && !kbOK) target = ptr.dataset.last ? JSON.parse(ptr.dataset.last) : target;
+  ptr.dataset.last = JSON.stringify(target);
+  ptr.style.transform = `translate(${target[0]}px, ${target[1]}px)`;
+  click = Math.abs(t - 10.5) < .12 || Math.abs(t - 14.5) < .12;
+  ptr.classList.toggle("press", click);
+  if (click) press($("#bAllow") || $("#bDeny"));
+  // receipt
+  $("#dimmer").style.opacity = t >= 19.4 ? .55 : 0;
+  const clip = $("#demoClip"), full = Math.min($("#demoPaper").offsetHeight, 690);
+  clip.style.height = Math.round(clamp((t - 20) / 4.5) * full) + "px";
 }
-
-let tT = 0, tC = -1;
-function readScroll() {
-  const r = film.getBoundingClientRect(), total = film.offsetHeight - innerHeight;
-  tT = clamp(-r.top / total) * T_END;
-  pn.classList.toggle("hide", r.top < innerHeight * 0.4 && r.bottom > innerHeight * 0.6 && dlMode === "idle");
-}
-addEventListener("scroll", readScroll, { passive: true });
-addEventListener("resize", readScroll);
-readScroll();
-$$("#chapters li").forEach((li) => li.addEventListener("click", () => {
-  const i = +li.dataset.c, total = film.offsetHeight - innerHeight;
-  scrollTo({ top: film.offsetTop + ((CH[i] + 0.4) / T_END) * total, behavior: "smooth" });
-}));
-
-// Keyboard: ⌃⌥Y / ⌃⌥N (or just Y / N) answer the film's requests.
-function flashKeys(k) {
-  const f = $("#kbflash"); $("#kbKey").textContent = k; f.classList.add("on");
-  clearTimeout(flashKeys.t); flashKeys.t = setTimeout(() => f.classList.remove("on"), 900);
-  $$('.chapters .key').forEach((el) => { el.classList.add("down"); setTimeout(() => el.classList.remove("down"), 160); });
-}
+let demoVisible = false, lastTs = 0;
+new IntersectionObserver((es) => { demoVisible = es[0].isIntersecting; }, { threshold: .15 }).observe(fitBox);
+$$("#chips button").forEach((b) => b.addEventListener("click", () => { T = CH[+b.dataset.c] + .01; kbOK = kbNo = false; }));
+function flash(k) { const f = $("#kflash"); $("#kKey").textContent = k; f.classList.add("on"); setTimeout(() => f.classList.remove("on"), 900); }
 addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeSheet();
-  const code = e.code;
-  if (code !== "KeyY" && code !== "KeyN") return;
-  if (e.metaKey || ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
-  if (code === "KeyY" && tC >= 7.2 && tC < 10.6 && !kbApproved) {
-    e.preventDefault(); kbApproved = true; flashKeys("Y"); tC = -2; burstFromScreen();
-    toast("Approved from your keyboard. That's the whole idea.");
-  } else if (code === "KeyN" && tC >= 13.0 && tC < 14.6 && !kbDenied) {
-    e.preventDefault(); kbDenied = true; flashKeys("N"); tC = -2;
-    toast("Denied. The agent will find another way.");
-  }
+  if (e.metaKey || !demoVisible) return;
+  if (e.code === "KeyY" && T >= 7.0 && T < 10.6 && !kbOK) { e.preventDefault(); kbOK = true; T = Math.max(T, 10.62); flash("Y"); const r = $("#demoIsl").getBoundingClientRect(); burst(r.left + r.width / 2, r.bottom, 22); toast("Approved from your keyboard. That's the whole idea."); }
+  if (e.code === "KeyN" && T >= 13.0 && T < 14.6 && !kbNo) { e.preventDefault(); kbNo = true; T = Math.max(T, 14.62); flash("N"); toast("Denied. The agent will find another way."); }
 });
-function burstFromScreen() { const r = isl.getBoundingClientRect(); burst(r.left + r.width / 2, r.bottom, 18); }
 
-/* ============ Play with mochi ============ */
-const big = $("#bigPet"), bubble = $("#bubble");
+/* ================= Hero mascot, nav, final, mochi ================= */
+let dlMode = "idle", hoverDl = false, gift = null, heroMood = 0;
+new Pet($("#navKitty"), { px: 1.375, hole: "#000", brain: (t) => ({ eyes: blinkAt(t) ? "blink" : "open", tail: sway(t) }) });
+new Pet($("#iconKitty"), { px: 4.5, hole: "#000", brain: (t, p) => (hoverDl ? { eyes: "wide", mouth: "open", blush: true, tail: wag(t) } : { eyes: blinkAt(t) ? "blink" : "open", dx: lookAt(p.c), tail: sway(t) }) });
+const heroPet = new Pet($("#heroKitty"), { px: (W) => W / 16, brain: (t, p) => {
+  if (heroMood > 0) { heroMood--; if (heroMood % 5 === 0) p.spawn("heart", 2 + (heroMood * 7) % 10, 2, heroMood % 2 ? .2 : -.2, -.5, 10); return { eyes: "love", mouth: "open", blush: true, tail: wag(t), lift: heroMood % 4 < 2 ? .5 : 0 }; }
+  if (hoverDl) return { eyes: "wide", mouth: "open", blush: true, tail: wag(t) };
+  return { eyes: blinkAt(t) ? "blink" : "open", dx: lookAt(p.c), tail: sway(t), mouth: t % 90 < 10 ? "blep" : "small" };
+} });
+$("#mascot").addEventListener("click", () => { heroMood = 26; });
+
+const big = $("#bigKitty"), bubble = $("#bubble");
 let mood = "idle", moodT = 0, outfit = "";
-const LINES = { pet: ["pets accepted. more pls", "ok you're my favorite", "purring at max volume"], feed: ["cookie secured. nom", "5 stars, would eat again", "crumbs everywhere. no regrets"], party: ["we shipped!!", "agents ate today", "absolute cinema"], nap: ["eepy. 5 more min", "do not disturb", "zzz"] };
-function say(kind) {
-  const l = LINES[kind]; bubble.textContent = l[(Math.random() * l.length) | 0]; bubble.classList.add("on");
-  clearTimeout(say.t); say.t = setTimeout(() => bubble.classList.remove("on"), 2200);
-}
-function act(kind) { mood = kind; moodT = 0; say(kind); }
-const bigPet = new Pet(big, { px: (W) => W / 16, brain: (t, p) => {
+const LINES = { pet: ["pets accepted. more pls", "ok you're my favorite", "purring at max volume"], feed: ["cookie secured. nom", "5 stars, would eat again"], party: ["we shipped!!", "agents ate today"], nap: ["eepy. 5 more min", "do not disturb"], sprout: ["lvl 3 unlocked"], headphones: ["lvl 6. vibes only"], crown: ["lvl 10. bow down"] };
+function say(k) { const l = LINES[k]; bubble.textContent = l[(Math.random() * l.length) | 0]; bubble.classList.add("on"); clearTimeout(say.t); say.t = setTimeout(() => bubble.classList.remove("on"), 2200); }
+function act(k) { mood = k; moodT = 0; say(k); }
+new Pet(big, { px: (W) => W / 16, brain: (t, p) => {
   moodT++;
-  const f = t;
-  const pose = { outfit, tail: sway(f), eyes: blinkAt(f) ? "blink" : "open", dx: lookAt(p.c) };
-  if (mood === "pet") {
-    if (moodT % 5 === 1) p.spawn("heart", 2 + (moodT * 5) % 10, 1, (moodT % 2 ? .2 : -.2), -0.5, 10);
-    const hop = moodT < 14 && moodT % 4 === 1;
-    Object.assign(pose, { eyes: moodT < 18 ? "love" : "happy", mouth: "open", blush: true, lift: hop ? 1 : 0, feet: hop ? "tucked" : "stand", tail: wag(f) });
-    if (moodT > 26) mood = "idle";
-  } else if (mood === "feed") {
-    if (moodT === 1) p.spawn("cookie", 6, -6, 0, 1.1, 8);
-    const chew = moodT >= 8 && moodT < 20;
-    if (chew && moodT % 3 === 0) p.spawn("crumb", 5 + (moodT % 5), 12, moodT % 2 ? .4 : -.4, -.7, 3);
-    Object.assign(pose, { eyes: moodT < 8 ? "wide" : chew ? "happy" : "open", mouth: moodT < 8 ? "open" : chew ? (f % 2 ? "open" : "small") : "blep", blush: chew || moodT >= 20, tail: wag(f) });
-    if (moodT > 30) mood = "idle";
-  } else if (mood === "party") {
-    if (moodT % 4 === 0) p.spawn(moodT % 8 ? "sparkle" : "note", (moodT * 5) % 13, 3, (moodT % 2 ? .3 : -.3), -.45, 6);
-    const up = f % 4 < 2;
-    Object.assign(pose, { eyes: moodT % 10 < 7 ? "happy" : "shades", mouth: up ? "open" : "small", blush: true, lift: up ? 1.5 : 0, feet: up ? "tucked" : "stand", tail: wag(f) });
-    if (moodT > 34) mood = "idle";
-  } else if (mood === "nap") {
-    if (moodT % 9 === 0) p.spawn("z", 12, 7, .2, -.35, 10);
-    Object.assign(pose, { eyes: "closed", squash: true });
-    if (moodT > 70) mood = "idle";
-  }
+  const pose = { outfit, tail: sway(t), eyes: blinkAt(t) ? "blink" : "open", dx: lookAt(p.c) };
+  if (mood === "pet") { if (moodT % 5 === 1) p.spawn("heart", 2 + (moodT * 5) % 10, 1, moodT % 2 ? .2 : -.2, -.5, 10); const hop = moodT < 14 && moodT % 4 === 1; Object.assign(pose, { eyes: moodT < 18 ? "love" : "happy", mouth: "open", blush: true, lift: hop ? 1 : 0, feet: hop ? "tucked" : "stand", tail: wag(t) }); if (moodT > 26) mood = "idle"; }
+  else if (mood === "feed") { if (moodT === 1) p.spawn("cookie", 6, -6, 0, 1.1, 8); const chew = moodT >= 8 && moodT < 20; if (chew && moodT % 3 === 0) p.spawn("crumb", 5 + (moodT % 5), 12, moodT % 2 ? .4 : -.4, -.7, 3); Object.assign(pose, { eyes: moodT < 8 ? "wide" : chew ? "happy" : "open", mouth: moodT < 8 ? "open" : chew ? (t % 2 ? "open" : "small") : "blep", blush: chew || moodT >= 20, tail: wag(t) }); if (moodT > 30) mood = "idle"; }
+  else if (mood === "party") { if (moodT % 4 === 0) p.spawn(moodT % 8 ? "sparkle" : "note", (moodT * 5) % 13, 3, moodT % 2 ? .3 : -.3, -.45, 6); const up = t % 4 < 2; Object.assign(pose, { eyes: moodT % 10 < 7 ? "happy" : "shades", mouth: up ? "open" : "small", blush: true, lift: up ? 1.5 : 0, feet: up ? "tucked" : "stand", tail: wag(t) }); if (moodT > 34) mood = "idle"; }
+  else if (mood === "nap") { if (moodT % 9 === 0) p.spawn("z", 12, 7, .2, -.35, 10); Object.assign(pose, { eyes: "closed", squash: true }); if (moodT > 70) mood = "idle"; }
   return pose;
 } });
 big.addEventListener("click", () => act("pet"));
-$$("#pbox .ctrls button").forEach((b) => b.addEventListener("click", () => act(b.dataset.a)));
-$$("#outfits button").forEach((b) => b.addEventListener("click", () => {
-  $$("#outfits button").forEach((x) => x.classList.toggle("on", x === b));
-  outfit = b.dataset.o; $("#lvlTxt").textContent = b.textContent.split(" ").slice(0, 2).join(" ").toLowerCase(); act("party");
+$$("#acts button").forEach((b) => b.addEventListener("click", () => {
+  if (b.dataset.a) return act(b.dataset.a);
+  const on = !b.classList.contains("on");
+  $$("#acts [data-o]").forEach((x) => x.classList.remove("on"));
+  if (on) b.classList.add("on");
+  outfit = on ? b.dataset.o : ""; act("party"); if (on) say(b.dataset.o);
 }));
 
-/* ============ Details ============ */
-new Pet($("#giftPet"), { px: 4, ground: 8, brain: (t, p) => ({ eyes: blinkAt(t) ? "blink" : "open", tail: sway(t), mouth: "small", under: (ctx, ox, base) => drawSpr(ctx, SPR.gift, ox + 46, base + 44 + (t % 8 < 4 ? 0 : -2), 3) }) });
-async function keysLoop() {
-  const keys = $$("#bigKeys .key");
-  for (;;) {
-    for (const k of keys) { k.classList.add("down"); await sleep(110); }
-    await sleep(500); keys.forEach((k) => k.classList.remove("down")); await sleep(1900);
-  }
-}
-setInterval(() => $("#swTrust").classList.toggle("on"), 2200);
-
-/* ============ Final kitty ============ */
-let dlHover = false;
-new Pet($("#finalPet"), { px: 10, brain: (t, p) => {
-  if (dlMode === "busy") return { eyes: "love", mouth: "open", blush: true, lift: t % 4 < 2 ? 1 : 0, feet: t % 4 < 2 ? "tucked" : "stand", tail: wag(t) };
-  if (dlMode === "done") return { eyes: "happy", mouth: t % 12 < 5 ? "blep" : "small", blush: true, tail: wag(t) };
-  if (dlHover) return { eyes: "wide", mouth: "open", blush: true, tail: wag(t) };
-  return { eyes: blinkAt(t) ? "blink" : "open", dx: lookAt(p.c), tail: sway(t) };
-} });
-
-/* ============ Reveal, counters ============ */
-const RING = 2 * Math.PI * 50;
-$$("[data-ring]").forEach((c) => { c.style.strokeDasharray = RING; c.style.strokeDashoffset = RING; });
-const spLn = $("#spLn"), spLen = spLn.getTotalLength(); spLn.style.strokeDasharray = spLen; spLn.style.strokeDashoffset = spLen;
-function countUp(el) {
-  const to = parseFloat(el.dataset.count), suf = el.dataset.suffix || "", t0 = performance.now(), dur = reduce ? 1 : 1500;
-  const f = (t) => { const k = clamp((t - t0) / dur); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))) + suf; if (k < 1) requestAnimationFrame(f); };
-  requestAnimationFrame(f);
-}
-const io = new IntersectionObserver((es) => es.forEach((e) => {
-  if (!e.isIntersecting) return;
-  const el = e.target; el.classList.add("in");
-  [el, ...$$("*", el)].forEach((x) => {
-    if (x.dataset && x.dataset.count != null) countUp(x);
-    if (x.dataset && x.dataset.ring) x.style.strokeDashoffset = RING * (1 - x.dataset.ring / 100);
-  });
-  if (el.contains(spLn)) { spLn.style.transition = "stroke-dashoffset 1.6s cubic-bezier(.16,1,.3,1)"; spLn.style.strokeDashoffset = 0; }
-  io.unobserve(el);
-}), { threshold: 0.2 });
-$$(".reveal").forEach((el) => io.observe(el));
-const nav = $("#nav");
-addEventListener("scroll", () => nav.classList.toggle("solid", scrollY > 30), { passive: true });
-
-/* ============ Confetti ============ */
+/* ================= Confetti + toast ================= */
 const fx = $("#fx"), bits = [];
 let fxOn = false;
 function burst(x, y, n, spread = 10) {
   if (reduce) return;
-  for (let i = 0; i < n; i++) bits.push({ k: Math.random() < 0.6 ? "heart" : "sparkle", x, y, vx: (Math.random() - .5) * spread, vy: -Math.random() * 7 - 2, px: Math.random() < .5 ? 3 : 4, life: 80 + Math.random() * 40 | 0, t: 0, ink: Math.random() < .5 ? "#0c0c0d" : "#fff" });
+  for (let i = 0; i < n; i++) bits.push({ k: Math.random() < .6 ? "heart" : "sparkle", x, y, vx: (Math.random() - .5) * spread, vy: -Math.random() * 7 - 2, px: Math.random() < .5 ? 3 : 4, life: 80 + Math.random() * 40 | 0, t: 0, ink: Math.random() < .5 ? "#ff3d8b" : "#2a0a19" });
   if (!fxOn) { fxOn = true; requestAnimationFrame(fxFrame); }
 }
 function fxFrame() {
   const ctx = fit(fx);
-  for (let i = bits.length - 1; i >= 0; i--) {
-    const b = bits[i]; b.t++; b.vy += .2; b.vx *= .985; b.x += b.vx; b.y += b.vy;
-    drawSpr(ctx, SPR[b.k], b.x, b.y, b.px, (b.life - b.t) / 25, b.ink);
-    if (b.t > b.life || b.y > innerHeight + 40) bits.splice(i, 1);
-  }
+  for (let i = bits.length - 1; i >= 0; i--) { const b = bits[i]; b.t++; b.vy += .2; b.vx *= .985; b.x += b.vx; b.y += b.vy; drawSpr(ctx, SPR[b.k], b.x, b.y, b.px, (b.life - b.t) / 25, b.ink); if (b.t > b.life || b.y > innerHeight + 40) bits.splice(i, 1); }
   if (bits.length) requestAnimationFrame(fxFrame); else { fxOn = false; fit(fx); }
 }
-function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 2600); }
+function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 2600); }
 
-/* ============ The download moment ============ */
-const sheet = $("#sheet"), sheetBg = $("#sheetBg");
+/* ================= Download: the nav notch becomes the island ================= */
+const nav = $("#nav"), sheet = $("#sheet"), sheetBg = $("#sheetBg");
 let version = "";
-function setLabel(btn, text) { const l = $(".label", btn); l.classList.add("swap"); setTimeout(() => { l.textContent = text; l.classList.remove("swap"); }, 170); }
-function progress(ms) {
-  const el = $("#pnBar"), t0 = performance.now();
-  return new Promise((res) => { const f = (t) => { const k = clamp((t - t0) / ms); el.style.width = (100 * (1 - Math.pow(1 - k, 2.4))).toFixed(1) + "%"; k < 1 ? requestAnimationFrame(f) : res(); }; requestAnimationFrame(f); });
-}
+new Pet($("#dlKitty"), { px: 4, hole: "#000", brain: (t, p) => {
+  const pose = { tail: wag(t), blush: true };
+  if (dlMode === "busy") Object.assign(pose, { eyes: gift ? "wide" : (t % 8 < 5 ? "love" : "happy"), mouth: "open", lift: !gift && t % 4 < 2 ? 1 : 0 });
+  else Object.assign(pose, { eyes: "happy", mouth: t % 10 < 4 ? "blep" : "open", lift: t % 4 < 2 ? 1 : 0 });
+  pose.feet = pose.lift ? "tucked" : "stand";
+  pose.under = (ctx, ox, base) => { if (!gift) return; gift.vy += 1.1; gift.y += gift.vy; const land = base - 2; drawSpr(ctx, SPR.gift, ox + 22, Math.min(gift.y, land), 4); if (gift.y >= land) { const r = nav.getBoundingClientRect(); burst(r.left + 60, r.top + 60, 16); gift = null; } };
+  return pose;
+} });
+function setLabel(b, txt) { const l = $(".label", b); if (!l) return; l.classList.add("swap"); setTimeout(() => { l.textContent = txt; l.classList.remove("swap"); }, 170); }
+function progress(ms) { const el = $("#dlBar"), t0 = performance.now(); return new Promise((res) => { const f = (t) => { const k = clamp((t - t0) / ms); el.style.width = (100 * (1 - Math.pow(1 - k, 2.4))).toFixed(1) + "%"; k < 1 ? requestAnimationFrame(f) : res(); }; requestAnimationFrame(f); }); }
 function closeSheet() { sheet.classList.remove("show"); sheetBg.classList.remove("show"); sheet.setAttribute("aria-hidden", "true"); }
-$("#shX").addEventListener("click", closeSheet);
-sheetBg.addEventListener("click", closeSheet);
-const LINES_DL = ["packing your kitty", "fluffing the pixels", "tying the bow", "almost there"];
-async function download(btn, auto) {
+$("#shX").addEventListener("click", closeSheet); sheetBg.addEventListener("click", closeSheet);
+const DLL = ["packing your kitty", "fluffing the pixels", "tying the bow", "almost there"];
+const wait = (ms) => new Promise((r) => setTimeout(r, reduce ? Math.min(ms, 60) : ms));
+async function download(auto) {
   if (dlMode !== "idle") return;
   dlMode = "busy";
-  pn.classList.remove("hide");
   const btns = $$("[data-dl]");
   btns.forEach((b) => { b.classList.add("busy"); setLabel(b, "Downloading"); });
-  pn.classList.remove("done"); $("#pnBar").style.width = "0";
-  $("#pnT1").textContent = version ? `Grabbing NotchBar ${version}` : "Grabbing NotchBar";
-  $("#pnT2").textContent = LINES_DL[0];
-  pn.classList.add("open");
+  nav.style.width = nav.offsetWidth + "px";
+  requestAnimationFrame(() => { nav.style.width = Math.min(440, innerWidth - 16) + "px"; nav.classList.add("open"); });
+  nav.classList.remove("done"); $("#dlBar").style.width = "0";
+  $("#dlT1").textContent = version ? `Grabbing NotchBar ${version}` : "Grabbing NotchBar"; $("#dlT2").textContent = DLL[0];
   gift = { y: -40, vy: 0 };
-  let li = 0; const lt = setInterval(() => { $("#pnT2").textContent = LINES_DL[++li % LINES_DL.length]; }, 420);
+  let li = 0; const lt = setInterval(() => { $("#dlT2").textContent = DLL[++li % DLL.length]; }, 420);
   setTimeout(() => { window.location.href = LATEST; }, auto ? 900 : 350);
-  await Promise.all([progress(reduce ? 1 : 1700), sleep(1800)]);
+  await Promise.all([progress(reduce ? 1 : 1700), wait(1800)]);
   clearInterval(lt);
-  pn.classList.add("done");
-  $("#pnT1").textContent = "On its way";
-  $("#pnT2").textContent = "check your Downloads folder";
+  nav.classList.add("done"); $("#dlT1").textContent = "On its way"; $("#dlT2").textContent = "check your Downloads folder";
   dlMode = "done";
-  btns.forEach((b) => { b.classList.remove("busy"); b.classList.add("done"); setLabel(b, "Downloaded"); });
-  const r = pn.getBoundingClientRect(); burst(r.left + r.width / 2, r.bottom, 34, 12);
-  await sleep(500);
+  btns.forEach((b) => { b.classList.remove("busy"); setLabel(b, "Downloaded"); });
+  const r = nav.getBoundingClientRect(); burst(r.left + r.width / 2, r.bottom, 34, 12);
+  await wait(500);
   sheet.classList.add("show"); sheetBg.classList.add("show"); sheet.setAttribute("aria-hidden", "false");
-  await sleep(3000);
-  pn.classList.remove("open");
-  await sleep(1500);
+  await wait(2800);
+  nav.classList.remove("open"); nav.style.width = "";
+  await wait(1200);
   dlMode = "idle";
-  btns.forEach((b) => { b.classList.remove("done"); setLabel(b, "Download again"); });
-  readScroll();
+  btns.forEach((b) => setLabel(b, "Download again"));
 }
 $$("[data-dl]").forEach((b) => {
-  b.addEventListener("pointerenter", () => { dlHover = true; });
-  b.addEventListener("pointerleave", () => { dlHover = false; });
-  b.addEventListener("click", (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); download(b, false); });
+  b.addEventListener("pointerenter", () => { hoverDl = true; }); b.addEventListener("pointerleave", () => { hoverDl = false; });
+  b.addEventListener("click", (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); download(false); });
 });
 
-/* ============ Release facts, platform, copy link ============ */
+/* ================= Facts, platform, copy, reveal ================= */
 fetch(`https://api.github.com/repos/${REPO}/releases/latest`).then((r) => (r.ok ? r.json() : Promise.reject())).then((rel) => {
   version = (rel.tag_name || "").replace(/^v/, "");
   const dmg = (rel.assets || []).find((a) => a.name === "NotchBar.dmg") || (rel.assets || []).find((a) => /\.dmg$/.test(a.name));
-  if (version) $$(".v-ver").forEach((e) => { e.textContent = `v${version}`; });
+  const when = rel.published_at ? new Date(rel.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "";
+  if (version) { $$(".v-ver").forEach((e) => { e.textContent = `Version ${version}`; }); $("#badge").textContent = `Version ${version}${when ? ` · ${when}` : ""}`; }
   if (dmg) $$(".v-size").forEach((e) => { e.textContent = `${(dmg.size / 1048576).toFixed(1)} MB`; });
-  if (rel.html_url) $("#notes").href = rel.html_url;
 }).catch(() => {});
 const ua = navigator.userAgent;
 if (!(/Macintosh|Mac OS X/.test(ua) && !/iPhone|iPad/.test(ua) && navigator.maxTouchPoints < 2)) $$(".notmac").forEach((e) => e.classList.add("show"));
-$("#copy").addEventListener("click", async () => {
-  const link = location.origin + location.pathname.replace(/index\.html$/, "") + "download/";
-  try { await navigator.clipboard.writeText(link); toast("Link copied"); } catch { prompt("Copy this link", link); }
-});
+$("#copy").addEventListener("click", async () => { const link = location.origin + location.pathname.replace(/index\.html$/, "") + "download/"; try { await navigator.clipboard.writeText(link); toast("Link copied"); } catch { prompt("Copy this link", link); } });
+const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .12 });
+$$(".reveal").forEach((el) => io.observe(el));
 
-/* ============ One loop ============ */
-pets.forEach((p) => petIO.observe(p.c));
-let last = 0;
+/* ================= Loop ================= */
+paintAll();
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { layout(); paintAll(); }, 120); });
+let lastPet = 0;
 function loop(ts) {
+  const dt = Math.min(.1, (ts - (lastTs || ts)) / 1000); lastTs = ts;
   if (!document.hidden) {
-    // Film: ease toward the scroll position for a buttery scrub.
-    const next = tC < 0 ? tT : tC + (tT - tC) * (reduce ? 1 : 0.14);
-    if (Math.abs(next - tC) > 0.0005 || tC < 0) { tC = Math.abs(tT - next) < 0.001 ? tT : next; render(tC); }
-    else if ((tC < 1.6 || (tC >= 19 && tC < 21.4) || tC >= 21.2) && ts - last > 125) render(tC);
-    if (ts - last > 125) { last = ts; for (const p of pets) if (p.visible) p.step(); }
+    if (demoVisible) { T += dt; if (T >= T_END) { T = 0; kbOK = kbNo = false; } renderDemo(T); }
+    if (ts - lastPet > 125) { lastPet = ts; pets.forEach((p) => p.step()); }
   }
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
-keysLoop();
-if (new URLSearchParams(location.search).has("download") || location.hash === "#download") setTimeout(() => download(null, true), reduce ? 0 : 900);
+if (new URLSearchParams(location.search).has("download") || location.hash === "#download") setTimeout(() => download(true), reduce ? 0 : 900);
 })();
 </script>
 </body>
