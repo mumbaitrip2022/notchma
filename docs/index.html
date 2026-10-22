@@ -4,27 +4,27 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>NotchBar · Dynamic Island for your AI agents</title>
-<meta name="description" content="Approve Claude Code, Codex and Cursor right from your Mac's notch. Free and open source, with a tiny pixel cat.">
+<meta name="description" content="Approve Claude Code, Codex and Cursor right from your Mac's notch. Free and open source.">
 <meta property="og:title" content="NotchBar · Dynamic Island for your AI agents">
 <meta property="og:description" content="Approve Claude Code, Codex and Cursor right from your Mac's notch. Free and open source.">
 <meta property="og:image" content="https://mumbaitrip2022.github.io/notchma/images/social-preview.png">
 <meta property="og:url" content="https://mumbaitrip2022.github.io/notchma/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#ff3d8b">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'><rect width='16' height='16' rx='4' fill='%23ff3d8b'/><path fill='%23fff' d='M4 3h1v1h1v1h4V4h1V3h1v3h1v5h-1v1H4v-1H3V6h1z'/><path fill='%23200a14' d='M5 7h2v2H5zM9 7h2v2H9z'/></svg>">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'><rect width='16' height='16' rx='4' fill='%23000'/><path fill='%23fff' d='M4 3h1v1h1v1h4V4h1V3h1v3h1v5h-1v1H4v-1H3V6h1z'/><path fill='%23000' d='M5 7h2v2H5zM9 7h2v2H9z'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --pink: #ff3d8b;
-  --pink2: #ff6aa6;
+  --bg: #000;
+  --ink: #f4f4f5;
+  --ink2: rgba(244,244,245,.6);
+  --ink3: rgba(244,244,245,.38);
+  --line: rgba(255,255,255,.09);
+  --line2: rgba(255,255,255,.16);
+  --card: #060606;
   --blush: #ff8cb3;
-  --bg: #fff5f8;
-  --plum: #2a0a19;
-  --plum2: #7a4a60;
-  --line: rgba(42,10,25,.08);
-  --claude: #d97757; --codex: #6bccae; --cursor: #9ea8ff;
   --amber: #f5b942; --green: #34c759; --red: #ff5f57;
   --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
@@ -34,23 +34,24 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 html, body { margin: 0; background: var(--bg); }
-body { color: var(--plum); font: 17px/1.5 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+body { color: var(--ink); font: 17px/1.5 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: clip; }
 a { color: inherit; text-decoration: none; }
 canvas.px, canvas.art { image-rendering: pixelated; display: block; }
 canvas.art { position: absolute; inset: 0; width: 100%; height: 100%; }
 .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+.ico { display: inline-block; flex: none; border-radius: 22%; object-fit: cover; }
 
 /* ---------- Notch nav ---------- */
 .nav { position: fixed; top: 0; left: 50%; z-index: 60; transform: translateX(-50%); height: 50px; padding: 0 7px 0 16px; display: flex; align-items: center; gap: 22px;
-  background: #000; color: #fff; border-radius: 0 0 24px 24px; box-shadow: 0 10px 30px -10px rgba(42,10,25,.35);
-  transition: width .7s var(--spring), height .7s var(--spring), border-radius .7s var(--spring), padding .5s; }
+  background: #000; color: #fff; border-radius: 0 0 24px 24px; box-shadow: 0 0 0 1px var(--line), 0 20px 40px -10px rgba(0,0,0,.9);
+  transition: width .7s var(--spring), height .7s var(--spring), border-radius .7s var(--spring); }
 .nav::before, .nav::after { content: ""; position: absolute; top: 0; width: 14px; height: 14px; background: radial-gradient(circle at 0 100%, transparent 13.5px, #000 14px); }
 .nav::before { left: -14px; transform: scaleX(-1); }
 .nav::after { right: -14px; }
 .nav .items { display: flex; align-items: center; gap: 22px; transition: opacity .25s, filter .25s; white-space: nowrap; }
-.nav .brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; letter-spacing: -.01em; }
+.nav .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
 .nav .brand canvas { width: 22px; height: 22px; }
-.nav .links { display: flex; gap: 20px; font-size: 14px; color: rgba(255,255,255,.66); }
+.nav .links { display: flex; gap: 20px; font-size: 14px; color: var(--ink2); }
 .nav .links a:hover { color: #fff; }
 .nav .cta { height: 36px; padding: 0 16px; border-radius: 18px; background: #fff; color: #000; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; transition: transform .3s var(--spring); }
 .nav .cta:hover { transform: scale(1.05); }
@@ -58,135 +59,127 @@ canvas.art { position: absolute; inset: 0; width: 100%; height: 100%; }
 .nav .dl canvas { position: absolute; left: 22px; bottom: 16px; width: 64px; height: 64px; }
 .nav .dl .t { position: absolute; left: 104px; right: 28px; top: 38px; }
 .nav .dl .t1 { font-size: 15px; font-weight: 600; white-space: nowrap; }
-.nav .dl .t2 { font: 12px var(--mono); color: rgba(255,255,255,.55); margin-top: 3px; white-space: nowrap; }
-.nav .dl .pb { margin-top: 12px; height: 5px; border-radius: 5px; background: rgba(255,255,255,.14); overflow: hidden; }
-.nav .dl .pb i { display: block; height: 100%; width: 0; border-radius: 5px; background: var(--blush); }
+.nav .dl .t2 { font: 12px var(--mono); color: var(--ink3); margin-top: 3px; white-space: nowrap; }
+.nav .dl .pb { margin-top: 12px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
+.nav .dl .pb i { display: block; height: 100%; width: 0; border-radius: 4px; background: #fff; }
 .nav.open { height: 122px; border-radius: 0 0 36px 36px; }
 .nav.open .items { opacity: 0; filter: blur(6px); pointer-events: none; }
 .nav.open .dl { opacity: 1; transition-delay: .2s; }
 .nav.done .dl .pb i { background: var(--green); }
 
 /* ---------- Hero ---------- */
-.hero { position: relative; min-height: 100vh; padding: 120px 24px 300px; text-align: center; color: #fff; background: var(--pink); overflow: hidden; }
+.hero { position: relative; min-height: 100vh; padding: 0 24px 260px; text-align: center; overflow: hidden; }
 .hero .art { z-index: 0; }
-.hero > *:not(canvas) { position: relative; z-index: 1; }
-.mascot { width: 208px; height: 208px; margin: 0 auto; animation: float 5s ease-in-out infinite; cursor: pointer; }
-.mascot canvas { width: 100%; height: 100%; }
-@keyframes float { 50% { transform: translateY(-14px); } }
-.shadow { width: 150px; height: 14px; margin: 4px auto 0; border-radius: 50%; background: rgba(42,10,25,.18); animation: shadow 5s ease-in-out infinite; }
-@keyframes shadow { 50% { transform: scaleX(.82); opacity: .6; } }
-.badge { display: inline-flex; align-items: center; gap: 8px; margin-top: 30px; font-size: 15px; font-weight: 500; }
-.badge i { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px rgba(255,255,255,.25); }
-h1 { margin: 16px auto 0; max-width: 1000px; font-size: clamp(46px, 7.4vw, 96px); line-height: 1; letter-spacing: -.05em; font-weight: 700; }
-h1 .soft { color: rgba(255,255,255,.62); }
-.hero p.sub { margin: 22px auto 0; max-width: 560px; font-size: clamp(17px, 1.6vw, 20px); line-height: 1.45; color: rgba(255,255,255,.88); }
+.hero .stage { position: relative; height: 62vh; min-height: 460px; z-index: 1; }
+.hero .stage canvas.kit { position: absolute; left: 50%; top: 61%; transform: translate(-50%, -50%); cursor: pointer; }
+.hero .copy { position: relative; z-index: 2; }
+.badge { display: inline-flex; align-items: center; gap: 9px; font: 13px var(--mono); color: var(--ink2); letter-spacing: .02em; }
+.badge i { width: 6px; height: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px #fff; animation: pulse 2.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+h1 { margin: 18px auto 0; max-width: 980px; font-size: clamp(44px, 7vw, 92px); line-height: 1; letter-spacing: -.055em; font-weight: 600; }
+h1 .soft { color: var(--ink3); }
+.hero p.sub { margin: 22px auto 0; max-width: 540px; font-size: clamp(17px, 1.6vw, 20px); line-height: 1.45; color: var(--ink2); }
 .btns { margin-top: 34px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.b { position: relative; isolation: isolate; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 56px; padding: 0 28px; border-radius: 18px; border: 0; cursor: pointer;
-  font: 600 17px/1 var(--sans); letter-spacing: -.01em; transition: transform .35s var(--spring); -webkit-tap-highlight-color: transparent; }
-.b:hover { transform: translateY(-2px) scale(1.02); }
+.b { position: relative; isolation: isolate; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 54px; padding: 0 26px; border-radius: 999px; border: 0; cursor: pointer;
+  font: 600 16px/1 var(--sans); letter-spacing: -.01em; transition: transform .35s var(--spring), background .3s, box-shadow .3s; -webkit-tap-highlight-color: transparent; }
+.b:hover { transform: translateY(-2px); }
 .b:active { transform: scale(.96); }
 .b svg { width: 18px; height: 18px; position: relative; }
-.b.w { background: #fff; color: var(--pink); }
-.b.g { background: rgba(255,255,255,.18); color: #fff; }
-.b.p { background: var(--pink); color: #fff; }
-.b.l { background: #ffe3ee; color: var(--pink); }
+.b.w { background: #fff; color: #000; box-shadow: 0 0 40px -6px rgba(255,255,255,.45); }
+.b.w:hover { box-shadow: 0 0 60px -4px rgba(255,255,255,.6); }
+.b.o { background: transparent; color: #fff; box-shadow: inset 0 0 0 1px var(--line2); }
+.b.o:hover { box-shadow: inset 0 0 0 1px rgba(255,255,255,.4); }
 .b .label { position: relative; display: inline-block; transition: opacity .18s, transform .35s var(--spring); }
 .b .label.swap { opacity: 0; transform: translateY(10px); }
-.b .fill { position: absolute; inset: 0; z-index: -1; transform-origin: left; transform: scaleX(0); background: rgba(255,61,139,.14); transition: transform 1.6s cubic-bezier(.45,.05,.2,1); }
-.b.p .fill { background: rgba(255,255,255,.22); }
+.b .fill { position: absolute; inset: 0; z-index: -1; transform-origin: left; transform: scaleX(0); background: #d6d6d8; transition: transform 1.6s cubic-bezier(.45,.05,.2,1); }
 .b.busy { pointer-events: none; }
 .b.busy .fill { transform: scaleX(1); }
-.small { margin-top: 16px; font-size: 13.5px; color: rgba(255,255,255,.75); }
-.notmac { display: none; margin-top: 8px; font-size: 13.5px; font-weight: 600; }
+.small { margin-top: 18px; font: 12.5px var(--mono); color: var(--ink3); }
+.notmac { display: none; margin-top: 8px; font: 12.5px var(--mono); color: var(--blush); }
 .notmac.show { display: block; }
 
 /* ---------- Big demo ---------- */
-.demo { position: relative; z-index: 2; max-width: 1180px; margin: -230px auto 0; padding: 0 24px; }
-.demo-fit { position: relative; width: 100%; border-radius: 30px; overflow: hidden; box-shadow: 0 50px 100px -30px rgba(42,10,25,.45), 0 0 0 1px rgba(42,10,25,.08); background: #100a0d; }
+.demo { position: relative; z-index: 2; max-width: 1180px; margin: -180px auto 0; padding: 0 24px; }
+.demo-fit { position: relative; width: 100%; border-radius: 28px; overflow: hidden; background: #000; box-shadow: 0 0 0 1px var(--line), 0 60px 120px -40px rgba(255,255,255,.12); }
 .screen { position: absolute; left: 0; top: 0; width: 1280px; height: 760px; transform-origin: 0 0; color: #fff; }
-.screen .art { opacity: 1; }
-.menubar { position: absolute; inset: 0 0 auto; height: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-size: 13px; color: rgba(255,255,255,.9); background: rgba(0,0,0,.25); }
+.menubar { position: absolute; inset: 0 0 auto; height: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-size: 13px; color: rgba(255,255,255,.85); background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.05); }
 .menubar .l, .menubar .r { display: flex; gap: 18px; align-items: center; }
-.menubar b { font-weight: 700; }
+.menubar b { font-weight: 600; }
 .menubar svg { width: 13px; height: 13px; fill: #fff; }
-.win { position: absolute; border-radius: 12px; overflow: hidden; background: rgba(30,28,31,.94); box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 24px 50px -12px rgba(0,0,0,.7); }
-.win .tb { height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 12px; background: rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.06); }
-.win .tb i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; }
-.win .tb i:nth-child(2) { background: #febc2e; } .win .tb i:nth-child(3) { background: #28c840; }
-.win .tb span { flex: 1; text-align: center; margin-right: 46px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.5); display: flex; gap: 6px; justify-content: center; align-items: center; }
-.win .tb span .gl { width: 12px; height: 12px; }
+.win { position: absolute; border-radius: 12px; overflow: hidden; background: rgba(18,18,20,.92); box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 30px 60px -20px rgba(0,0,0,.9); }
+.win .tb { height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 12px; background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.06); }
+.win .tb i { width: 11px; height: 11px; border-radius: 50%; background: #3a3a3d; }
+.win .tb span { flex: 1; text-align: center; margin-right: 46px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.55); display: flex; gap: 7px; justify-content: center; align-items: center; }
+.win .tb .ico { width: 15px; height: 15px; }
 .win .body { padding: 13px 15px; font: 12.5px/1.66 var(--mono); color: rgba(255,255,255,.85); }
 .win .body div { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
 .w1 { left: 40px; top: 70px; width: 470px; height: 300px; }
 .w2 { left: 770px; top: 70px; width: 470px; height: 300px; }
 .w3 { left: 270px; top: 404px; width: 740px; height: 320px; }
-.ok { color: #5ad37b; } .bad { color: #ff7b72; } .amb { color: var(--amber); } .dd { color: rgba(255,255,255,.42); } .or { color: var(--claude); } .gr { color: var(--codex); } .vi { color: var(--cursor); }
-.k { color: #ff7ab2; } .f { color: #6bdfff; } .s { color: #ffb86b; } .tg { color: #7ee0b5; }
+.ok { color: #5ad37b; } .bad { color: #ff7b72; } .amb { color: var(--amber); } .dd { color: rgba(255,255,255,.4); } .or { color: #d97757; } .gr { color: #8fa6ff; }
+.k { color: #c9c9ff; } .f { color: #9fe7ff; } .s { color: #ffd1a6; } .tg { color: #b5f0d4; }
 .w3 pre { margin: 0; padding: 10px 0; font: 12.5px/1.75 var(--mono); color: #d4d4d8; }
 .w3 pre div { padding-left: 18px; white-space: pre; min-height: 1.75em; }
-.w3 pre div.add { background: rgba(52,199,89,.14); box-shadow: inset 2px 0 0 #34c759; }
+.w3 pre div.add { background: rgba(52,199,89,.12); box-shadow: inset 2px 0 0 #34c759; }
 [data-t] { display: none !important; }
 [data-t].on { display: block !important; }
 .dimmer { position: absolute; inset: 30px 0 0; background: #000; opacity: 0; transition: opacity .6s; z-index: 15; pointer-events: none; }
-.ptr { position: absolute; left: 0; top: 0; z-index: 40; width: 22px; height: 22px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.45)); transition: transform 1s cubic-bezier(.45,.05,.2,1); }
+.ptr { position: absolute; left: 0; top: 0; z-index: 40; width: 22px; height: 22px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); transition: transform 1s cubic-bezier(.45,.05,.2,1); }
 .ptr svg { width: 100%; height: 100%; transform-origin: 20% 10%; transition: transform .12s; }
 .ptr.press svg { transform: scale(.8); }
 .kflash { position: absolute; left: 50%; top: 260px; z-index: 45; transform: translateX(-50%) scale(.85); display: flex; gap: 10px; opacity: 0; transition: opacity .25s, transform .45s var(--spring); pointer-events: none; }
 .kflash.on { opacity: 1; transform: translateX(-50%) scale(1); }
-.kflash span { width: 70px; height: 70px; border-radius: 16px; background: #fff; color: #000; display: grid; place-items: center; font: 600 30px var(--mono); box-shadow: 0 5px 0 rgba(0,0,0,.3), 0 20px 40px rgba(0,0,0,.4); }
-.chips { display: flex; gap: 6px; justify-content: center; margin: 22px auto 0; padding: 6px; border-radius: 999px; background: #ffe3ee; width: max-content; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
-.chips button { position: relative; overflow: hidden; height: 42px; padding: 0 18px; border-radius: 999px; border: 0; background: transparent; color: var(--plum2); font: 500 15px var(--sans); cursor: pointer; white-space: nowrap; transition: color .3s; }
-.chips button { transition: color .3s, background .3s; }
-.chips button i { position: absolute; left: 18px; right: 18px; bottom: 6px; height: 2px; background: rgba(255,255,255,.85); transform-origin: left; transform: scaleX(0); border-radius: 2px; z-index: 2; }
-.chips button span { position: relative; z-index: 1; }
-.chips button.on { color: #fff; background: var(--plum); }
+.kflash span { width: 70px; height: 70px; border-radius: 16px; background: #fff; color: #000; display: grid; place-items: center; font: 600 30px var(--mono); box-shadow: 0 5px 0 #8a8a8f, 0 0 60px rgba(255,255,255,.35); }
+.chips { display: flex; gap: 4px; justify-content: center; margin: 22px auto 0; padding: 5px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); width: max-content; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.chips button { position: relative; overflow: hidden; height: 40px; padding: 0 18px; border-radius: 999px; border: 0; background: transparent; color: var(--ink3); font: 500 14.5px var(--sans); cursor: pointer; white-space: nowrap; transition: color .3s, background .3s; }
+.chips button i { position: absolute; left: 18px; right: 18px; bottom: 6px; height: 2px; background: #000; transform-origin: left; transform: scaleX(0); border-radius: 2px; }
+.chips button.on { color: #000; background: #fff; }
 .chips button:not(.on) i { opacity: 0; }
-.hint { text-align: center; margin-top: 14px; font-size: 14px; color: var(--plum2); min-height: 22px; }
-.hint .k2 { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 6px; background: #fff; box-shadow: inset 0 0 0 1px var(--line), 0 2px 0 rgba(42,10,25,.15); font: 500 12px var(--mono); color: var(--plum); margin: 0 1px; }
+.hint { text-align: center; margin-top: 14px; font-size: 14px; color: var(--ink2); min-height: 22px; }
+.hint .k2 { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 6px; background: #fff; color: #000; box-shadow: 0 2px 0 #8a8a8f; font: 500 12px var(--mono); margin: 0 1px; }
 
-/* ---------- Island (shared) ---------- */
+/* ---------- Island ---------- */
 .isl { position: absolute; left: 50%; top: 0; z-index: 20; transform: translateX(-50%); width: 200px; height: 32px; background: #000; color: #fff; border-radius: 0 0 16px 16px;
-  transition: width .62s var(--spring), height .62s var(--spring), border-radius .62s var(--spring), top .62s var(--spring); }
+  box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 10px 40px rgba(0,0,0,.8);
+  transition: width .62s var(--spring), height .62s var(--spring), border-radius .62s var(--spring); }
 .isl::before, .isl::after { content: ""; position: absolute; top: 0; width: 10px; height: 10px; background: radial-gradient(circle at 0 100%, transparent 9.5px, #000 10px); transition: opacity .3s; }
 .isl::before { left: -10px; transform: scaleX(-1); } .isl::after { right: -10px; }
-.isl.float { top: 12px; border-radius: 22px !important; }
+.isl.float { top: 14px; border-radius: 22px !important; }
 .isl.float::before, .isl.float::after { opacity: 0; }
 .isl .bd { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
 .lay { position: absolute; inset: 0; transition: opacity .32s ease, filter .32s ease, transform .55s var(--spring); }
 .lay.in { opacity: 0; filter: blur(8px); transform: scale(.94); }
 .lay.out { opacity: 0; filter: blur(8px); transform: scale(1.04); }
 .lay canvas.pc { position: absolute; inset: 0; width: 100%; height: 100%; }
-.rw { height: 32px; display: flex; align-items: center; gap: 9px; padding: 0 16px; font-size: 13.5px; white-space: nowrap; }
+.rw { height: 32px; display: flex; align-items: center; gap: 9px; padding: 0 14px; font-size: 13.5px; white-space: nowrap; }
 .isl.float .rw { height: 36px; }
-.rw .p { font-weight: 650; }
+.rw .p { font-weight: 600; }
 .rw .wt { color: rgba(255,255,255,.6); overflow: hidden; text-overflow: ellipsis; }
 .rw .r { margin-left: auto; display: flex; gap: 7px; align-items: center; font: 500 12.5px var(--mono); color: rgba(255,255,255,.6); }
 .amber .wt { color: var(--amber); } .red .wt { color: #ff7b72; } .green .wt { color: #5ad37b; }
-.gl { width: 16px; height: 16px; flex: none; display: inline-grid; place-items: center; }
-.gl svg { width: 100%; height: 100%; overflow: visible; }
-.gls { display: inline-flex; gap: 5px; }
-.spin { animation: spin 2.4s linear infinite; }
+.rw .ico, .mr .ico, .pk .ico { width: 18px; height: 18px; border-radius: 5px; }
+.icos { display: inline-flex; gap: 4px; }
 .ring { width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(255,255,255,.18); border-top-color: #fff; animation: spin .9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .chk { width: 17px; height: 17px; border-radius: 50%; background: var(--green); display: inline-grid; place-items: center; }
 .chk svg { width: 10px; height: 10px; }
 .bdg { height: 20px; min-width: 20px; padding: 0 6px; border-radius: 10px; background: var(--amber); color: #000; font: 700 11.5px/20px var(--sans); text-align: center; }
 .bdg.redb { background: var(--red); color: #fff; }
-.cd { margin: 8px 16px 0; padding: 10px 12px; border-radius: 10px; background: #141416; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); font: 12.5px/1.5 var(--mono); color: #eee; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
-.pk { margin: 7px 16px 0; display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 9px; background: #18181a; font-size: 12px; color: rgba(255,255,255,.6); }
+.cd { margin: 8px 16px 0; padding: 10px 12px; border-radius: 10px; background: #111113; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); font: 12.5px/1.5 var(--mono); color: #eee; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+.pk { margin: 7px 16px 0; display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 9px; background: #141416; font-size: 12px; color: rgba(255,255,255,.6); }
 .pk b { color: #fff; font-weight: 600; }
-.pk .gl { width: 13px; height: 13px; }
+.pk .ico { width: 14px; height: 14px; border-radius: 4px; }
 .bt { margin: 10px 16px 0; display: flex; gap: 7px; }
-.cb { height: 32px; padding: 0 13px; border-radius: 10px; display: inline-flex; align-items: center; gap: 7px; background: #2c2c2f; color: #fff; font-size: 12.5px; font-weight: 600; white-space: nowrap; transition: transform .16s var(--spring), background .3s, color .3s; }
+.cb { height: 32px; padding: 0 13px; border-radius: 10px; display: inline-flex; align-items: center; gap: 7px; background: #262628; color: #fff; font-size: 12.5px; font-weight: 600; white-space: nowrap; transition: transform .16s var(--spring), background .3s, color .3s; }
 .cb .kk { font: 500 10.5px var(--mono); opacity: .55; }
 .cb.pri { margin-left: auto; background: #fff; color: #000; }
 .cb.rd { background: var(--red); color: #fff; }
 .cb.okb { background: var(--green); color: #fff; }
 .cb.press { transform: scale(.88); }
 .ml { padding: 38px 16px 0; display: grid; }
-.mr { display: grid; grid-template-columns: 16px 98px 1fr 58px; align-items: center; gap: 10px; height: 34px; font-size: 13px; border-top: 1px solid rgba(255,255,255,.07); }
+.mr { display: grid; grid-template-columns: 18px 98px 1fr 58px; align-items: center; gap: 10px; height: 34px; font-size: 13px; border-top: 1px solid rgba(255,255,255,.07); }
 .mr:first-child { border-top: 0; }
-.mr .p { font-weight: 650; white-space: nowrap; }
+.mr .p { font-weight: 600; white-space: nowrap; }
 .mr .wt { color: rgba(255,255,255,.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .3s; }
 .mr .rt { display: flex; justify-content: flex-end; }
 .mb { width: 54px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.14); overflow: hidden; }
@@ -199,10 +192,8 @@ h1 .soft { color: rgba(255,255,255,.62); }
 .ur .tr i { display: block; height: 100%; width: 0; border-radius: 6px; transition: width 1.4s var(--soft); }
 .fc { font-size: 12.5px; color: rgba(255,255,255,.6); }
 .fc b { color: #fff; }
-
-/* Receipt */
 .rclip { position: absolute; left: 50%; z-index: 18; width: 280px; height: 0; transform: translateX(-50%); overflow: hidden; transition: height .25s linear; }
-.paper { position: relative; width: 280px; padding: 20px 18px 24px; color: #1b1b1b; background: #f6f2ea; font: 500 11px/1.65 var(--mono);
+.paper { position: relative; width: 280px; padding: 20px 18px 24px; color: #1b1b1b; background: #f2f0eb; font: 500 11px/1.65 var(--mono);
   -webkit-mask: linear-gradient(#000 0 0) top/100% calc(100% - 9px) no-repeat, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom/14px 9px repeat-x;
   mask: linear-gradient(#000 0 0) top/100% calc(100% - 9px) no-repeat, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom/14px 9px repeat-x; }
 .paper .rl { display: flex; justify-content: space-between; white-space: pre; }
@@ -217,128 +208,116 @@ h1 .soft { color: rgba(255,255,255,.62); }
 .paper .barcode i { background: #1b1b1b; flex: none; }
 
 /* ---------- Sections ---------- */
-.sec { padding: 140px 0 0; }
+.sec { padding: 150px 0 0; }
 .head { text-align: center; max-width: 760px; margin: 0 auto; }
-h2 { margin: 0; font-size: clamp(36px, 5.2vw, 64px); line-height: 1.02; letter-spacing: -.045em; font-weight: 700; }
-h2 .soft { color: var(--pink); }
-.head p { margin: 16px auto 0; font-size: 19px; color: var(--plum2); max-width: 560px; }
-.works { margin-top: 90px; display: flex; justify-content: center; gap: 56px; flex-wrap: wrap; color: var(--plum2); font-size: 15px; font-weight: 500; }
-.works .it { display: flex; align-items: center; gap: 10px; }
-.works .it span { width: 36px; height: 36px; border-radius: 11px; background: #000; display: grid; place-items: center; }
-.works .it svg { width: 18px; height: 18px; overflow: visible; }
-.works .lbl { color: rgba(42,10,25,.4); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; align-self: center; }
+h2 { margin: 0; font-size: clamp(34px, 5vw, 62px); line-height: 1.04; letter-spacing: -.045em; font-weight: 600; }
+h2 .soft { color: var(--ink3); }
+.head p { margin: 16px auto 0; font-size: 18px; color: var(--ink2); max-width: 540px; }
+.works { margin-top: 100px; display: flex; justify-content: center; align-items: center; gap: 48px; flex-wrap: wrap; color: var(--ink2); font-size: 15px; font-weight: 500; }
+.works .it { display: flex; align-items: center; gap: 12px; }
+.works .it .ico { width: 40px; height: 40px; border-radius: 10px; }
+.works .lbl { color: var(--ink3); font: 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; }
 
-.grid { margin-top: 60px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.card { position: relative; border-radius: 30px; overflow: hidden; background: var(--pink); color: #fff; min-height: 400px; transform: translateZ(0); }
+.grid { margin-top: 60px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.card { position: relative; border-radius: 28px; overflow: hidden; background: var(--card); color: #fff; min-height: 400px; box-shadow: inset 0 0 0 1px var(--line); transform: translateZ(0); }
 .card.span2 { grid-column: span 2; }
 .card .cap { position: absolute; left: 26px; right: 26px; bottom: 24px; z-index: 5; }
-.card .cap b { display: block; font-size: 21px; font-weight: 650; letter-spacing: -.02em; }
-.card .cap span { display: block; margin-top: 4px; font-size: 15px; color: rgba(255,255,255,.82); }
+.card .cap b { display: block; font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+.card .cap span { display: block; margin-top: 4px; font-size: 15px; color: var(--ink2); }
 .card .stage { position: absolute; inset: 0; z-index: 3; }
-.card .keys { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%); display: flex; gap: 12px; align-items: center; }
-.key { width: 74px; height: 74px; border-radius: 18px; background: #fff; color: var(--plum); display: grid; place-items: center; font: 600 30px var(--mono); box-shadow: 0 6px 0 #e7a3bf, 0 18px 30px -10px rgba(42,10,25,.4); transition: transform .12s, box-shadow .12s; }
-.key.down { transform: translateY(5px); box-shadow: 0 1px 0 #e7a3bf, 0 8px 18px -10px rgba(42,10,25,.4); }
-.key + .key { margin-left: 0; }
-.big-n { position: absolute; left: 26px; top: 64px; z-index: 4; font-size: 84px; font-weight: 800; letter-spacing: -.06em; line-height: .9; }
-.big-n small { font-size: 28px; letter-spacing: -.02em; opacity: .7; margin-left: 4px; }
-.big-n div + div { margin-top: 14px; }
-.gift { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); width: 150px; height: 150px; border-radius: 34px; background: #000; display: grid; place-items: center; box-shadow: 0 30px 50px -20px rgba(42,10,25,.5); }
+.card .keys { position: absolute; left: 50%; top: 54%; transform: translate(-50%, -50%); display: flex; gap: 12px; align-items: center; }
+.key { width: 74px; height: 74px; border-radius: 18px; background: #fff; color: #000; display: grid; place-items: center; font: 600 30px var(--mono); box-shadow: 0 6px 0 #77777c, 0 0 50px -10px rgba(255,255,255,.4); transition: transform .12s, box-shadow .12s; }
+.key.down { transform: translateY(5px); box-shadow: 0 1px 0 #77777c, 0 0 70px -6px rgba(255,255,255,.6); }
+.gift { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); width: 150px; height: 150px; border-radius: 34px; background: #000; display: grid; place-items: center; box-shadow: 0 0 0 1px var(--line2), 0 0 80px -20px rgba(255,255,255,.35); }
 .gift canvas { width: 110px; height: 110px; }
 
-/* mochi */
-.mochi { position: relative; margin-top: 60px; border-radius: 36px; overflow: hidden; background: var(--pink); height: 560px; color: #fff; }
-.mochi canvas.kit { position: absolute; left: 50%; bottom: 120px; width: 240px; height: 240px; transform: translateX(-50%); cursor: pointer; z-index: 3; }
-.mochi .bubble { position: absolute; left: 50%; bottom: 380px; z-index: 4; transform: translate(-50%, 8px); padding: 11px 18px; border-radius: 18px; background: #fff; color: var(--plum); font: 600 15px var(--sans); white-space: nowrap; opacity: 0; transition: opacity .25s, transform .45s var(--spring); }
+.mochi { position: relative; margin-top: 60px; border-radius: 32px; overflow: hidden; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); height: 580px; }
+.mochi canvas.kit { position: absolute; left: 50%; bottom: 152px; width: 224px; height: 224px; transform: translateX(-50%); cursor: pointer; z-index: 3; }
+.mochi .bubble { position: absolute; left: 50%; bottom: 390px; z-index: 4; transform: translate(-50%, 8px); padding: 10px 16px; border-radius: 16px; background: #fff; color: #000; font: 600 14.5px var(--sans); white-space: nowrap; opacity: 0; transition: opacity .25s, transform .45s var(--spring); }
 .mochi .bubble.on { opacity: 1; transform: translate(-50%, 0); }
 .mochi .bubble::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 14px; height: 14px; background: #fff; transform: translateX(-50%) rotate(45deg); border-radius: 3px; }
-.mochi .acts { position: absolute; left: 0; right: 0; bottom: 30px; z-index: 4; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 0 16px; }
-.mochi .acts button { height: 44px; padding: 0 20px; border-radius: 999px; border: 0; background: rgba(42,10,25,.88); color: #fff; font: 600 15px var(--sans); cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: background .2s, transform .3s var(--spring); }
-.mochi .acts button:hover { background: var(--plum); }
+.mochi .acts { position: absolute; left: 0; right: 0; bottom: 28px; z-index: 4; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 0 16px; }
+.mochi .acts button { height: 42px; padding: 0 18px; border-radius: 999px; border: 0; background: rgba(20,20,22,.85); color: #fff; font: 500 14.5px var(--sans); cursor: pointer; box-shadow: inset 0 0 0 1px var(--line2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: background .2s, transform .3s var(--spring); }
+.mochi .acts button:hover { background: #222225; }
 .mochi .acts button:active { transform: scale(.93); }
-.mochi .acts button.on { background: #fff; color: var(--pink); }
-.mochi .acts .sep { width: 1px; background: rgba(42,10,25,.2); margin: 8px 4px; }
+.mochi .acts button.on { background: #fff; color: #000; }
+.mochi .acts .sep { width: 1px; background: var(--line2); margin: 8px 4px; }
 
-/* final */
-.final { padding: 170px 0 120px; text-align: center; }
-.appicon { position: relative; width: 112px; height: 112px; margin: 0 auto 30px; border-radius: 26px; background: #000; box-shadow: 0 24px 50px -16px rgba(255,61,139,.55), inset 0 0 0 1px rgba(255,255,255,.08); }
-.appicon::before { content: ""; position: absolute; left: 50%; top: 0; width: 50px; height: 12px; transform: translateX(-50%); background: #000; border-radius: 0 0 8px 8px; box-shadow: 0 0 0 1px rgba(255,255,255,.12); }
+.final { position: relative; padding: 170px 0 120px; text-align: center; overflow: hidden; }
+.final .art { opacity: .9; }
+.final > .wrap { position: relative; z-index: 2; }
+.appicon { position: relative; width: 112px; height: 112px; margin: 0 auto 32px; border-radius: 26px; background: #000; box-shadow: 0 0 0 1px var(--line2), 0 0 90px -10px rgba(255,255,255,.35); }
+.appicon::before { content: ""; position: absolute; left: 50%; top: 0; width: 46px; height: 11px; transform: translateX(-50%); background: #000; border-radius: 0 0 8px 8px; box-shadow: 0 0 0 1px var(--line2); }
 .appicon canvas { position: absolute; left: 50%; top: 56%; width: 72px; height: 72px; transform: translate(-50%, -50%); }
-.final p { font-size: 19px; color: var(--plum2); margin: 16px 0 0; }
+.final p { font-size: 18px; color: var(--ink2); margin: 16px 0 0; }
 .final .btns { margin-top: 32px; }
-.final .small { color: var(--plum2); }
-.final .notmac { color: var(--pink); }
-footer { padding: 30px 0 50px; font-size: 13px; color: rgba(42,10,25,.45); }
+footer { padding: 30px 0 50px; font: 12.5px var(--mono); color: var(--ink3); }
 footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 26px; }
-footer a:hover { color: var(--plum); }
+footer a:hover { color: #fff; }
 
-/* sheet */
-.sheet-bg { position: fixed; inset: 0; z-index: 70; background: rgba(42,10,25,.25); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); opacity: 0; pointer-events: none; transition: opacity .4s; }
+.sheet-bg { position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; pointer-events: none; transition: opacity .4s; }
 .sheet-bg.show { opacity: 1; pointer-events: auto; }
-.sheet { position: fixed; left: 50%; bottom: 22px; z-index: 75; width: min(880px, calc(100vw - 32px)); transform: translate(-50%, calc(100% + 40px)); transition: transform .75s var(--spring); border-radius: 32px; padding: 28px; background: #fff; box-shadow: 0 40px 90px -20px rgba(42,10,25,.4); }
+.sheet { position: fixed; left: 50%; bottom: 22px; z-index: 75; width: min(880px, calc(100vw - 32px)); transform: translate(-50%, calc(100% + 40px)); transition: transform .75s var(--spring); border-radius: 30px; padding: 28px; background: #0c0c0d; box-shadow: inset 0 0 0 1px var(--line2), 0 40px 100px -20px #000; }
 .sheet.show { transform: translate(-50%, 0); }
 .sheet .hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.sheet h3 { margin: 0; font-size: 26px; letter-spacing: -.03em; }
-.sheet .hd p { margin: 4px 0 0; color: var(--plum2); font-size: 15px; }
-.sheet .x { width: 36px; height: 36px; border-radius: 50%; background: #ffe3ee; border: 0; cursor: pointer; display: grid; place-items: center; flex: none; }
-.sheet .x svg { width: 12px; height: 12px; stroke: var(--pink); stroke-width: 2.2; stroke-linecap: round; }
+.sheet h3 { margin: 0; font-size: 24px; letter-spacing: -.03em; font-weight: 600; }
+.sheet .hd p { margin: 4px 0 0; color: var(--ink2); font-size: 15px; }
+.sheet .x { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.08); border: 0; cursor: pointer; display: grid; place-items: center; flex: none; }
+.sheet .x svg { width: 12px; height: 12px; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
 .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; }
-.step { border-radius: 22px; padding: 14px; background: var(--bg); opacity: 0; transform: translateY(14px); transition: opacity .5s, transform .7s var(--spring); }
+.step { border-radius: 20px; padding: 14px; background: rgba(255,255,255,.035); box-shadow: inset 0 0 0 1px var(--line); opacity: 0; transform: translateY(14px); transition: opacity .5s, transform .7s var(--spring); }
 .sheet.show .step { opacity: 1; transform: none; }
 .sheet.show .step:nth-child(2) { transition-delay: .1s; } .sheet.show .step:nth-child(3) { transition-delay: .2s; }
-.step .vis { height: 96px; border-radius: 15px; background: var(--pink); position: relative; overflow: hidden; margin-bottom: 12px; }
-.step h4 { margin: 0 0 3px; font-size: 16px; letter-spacing: -.02em; }
-.step p { margin: 0; font-size: 14px; color: var(--plum2); }
-.step p b { color: var(--plum); }
-.sheet .ft { margin-top: 14px; text-align: center; font-size: 13.5px; color: var(--plum2); }
-.sheet .ft a { color: var(--pink); font-weight: 600; }
-.v-dmg { position: absolute; left: 50%; top: 50%; width: 48px; height: 58px; transform: translate(-50%, -50%); border-radius: 10px; background: #fff; box-shadow: 0 8px 18px rgba(42,10,25,.25); }
+.step .vis { height: 96px; border-radius: 14px; background: #000; box-shadow: inset 0 0 0 1px var(--line); position: relative; overflow: hidden; margin-bottom: 12px; }
+.step h4 { margin: 0 0 3px; font-size: 15.5px; font-weight: 600; letter-spacing: -.02em; }
+.step p { margin: 0; font-size: 14px; color: var(--ink2); }
+.step p b { color: #fff; font-weight: 600; }
+.sheet .ft { margin-top: 14px; text-align: center; font: 12.5px var(--mono); color: var(--ink3); }
+.sheet .ft a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.v-dmg { position: absolute; left: 50%; top: 50%; width: 48px; height: 58px; transform: translate(-50%, -50%); border-radius: 10px; background: #e9e9ec; }
 .v-dmg::before { content: ""; position: absolute; left: 13px; top: 10px; width: 22px; height: 22px; border-radius: 6px; background: #000; }
-.v-dmg::after { content: "DMG"; position: absolute; bottom: 7px; left: 0; right: 0; text-align: center; font: 700 9px var(--mono); color: var(--plum2); }
+.v-dmg::after { content: "DMG"; position: absolute; bottom: 7px; left: 0; right: 0; text-align: center; font: 700 9px var(--mono); color: #666; }
 .sheet.show .v-dmg { animation: bob 2.2s ease-in-out infinite; }
 @keyframes bob { 50% { transform: translate(-50%, -60%); } }
-.v-app { position: absolute; top: 50%; left: 20%; width: 44px; height: 44px; border-radius: 11px; background: #000; transform: translateY(-50%); }
+.v-app { position: absolute; top: 50%; left: 20%; width: 44px; height: 44px; border-radius: 11px; background: #000; transform: translateY(-50%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.3); }
 .v-app::after { content: ""; position: absolute; left: 50%; top: 4px; width: 22px; height: 7px; transform: translateX(-50%); border-radius: 0 0 5px 5px; background: #fff; }
-.v-folder { position: absolute; top: 50%; right: 16%; width: 54px; height: 40px; border-radius: 7px; transform: translateY(-40%); background: #fff; }
-.v-folder::before { content: ""; position: absolute; left: 0; top: -6px; width: 22px; height: 10px; border-radius: 4px 4px 0 0; background: #fff; }
+.v-folder { position: absolute; top: 50%; right: 16%; width: 54px; height: 40px; border-radius: 7px; transform: translateY(-40%); background: #e9e9ec; }
+.v-folder::before { content: ""; position: absolute; left: 0; top: -6px; width: 22px; height: 10px; border-radius: 4px 4px 0 0; background: #e9e9ec; }
 .sheet.show .v-app { animation: drag 2.4s cubic-bezier(.45,.05,.2,1) infinite; }
 @keyframes drag { 0%, 15% { left: 20%; opacity: 1; transform: translateY(-50%); } 60% { left: 56%; opacity: 1; transform: translateY(-50%) scale(.8); } 75%, 100% { left: 56%; opacity: 0; transform: translateY(-50%) scale(.6); } }
-.v-set { position: absolute; left: 14px; right: 14px; top: 50%; transform: translateY(-50%); height: 42px; border-radius: 11px; background: rgba(255,255,255,.95); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 11.5px; color: var(--plum2); font-weight: 500; }
-.v-set i { font-style: normal; height: 26px; padding: 0 10px; border-radius: 8px; background: var(--plum); color: #fff; font-weight: 600; display: grid; place-items: center; }
+.v-set { position: absolute; left: 14px; right: 14px; top: 50%; transform: translateY(-50%); height: 42px; border-radius: 11px; background: #161618; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 11.5px; color: var(--ink2); }
+.v-set i { font-style: normal; height: 26px; padding: 0 10px; border-radius: 8px; background: #fff; color: #000; font-weight: 600; display: grid; place-items: center; }
 .sheet.show .v-set i { animation: tap 2.4s ease infinite; }
-@keyframes tap { 0%, 55%, 100% { transform: scale(1); } 62% { transform: scale(.9); } 70%, 90% { transform: scale(1); background: var(--green); } }
+@keyframes tap { 0%, 55%, 100% { transform: scale(1); } 62% { transform: scale(.9); } 70%, 90% { transform: scale(1); background: var(--green); color: #fff; } }
 
 #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90; }
-.toast { position: fixed; left: 50%; bottom: 28px; z-index: 95; transform: translate(-50%, 20px); background: var(--plum); color: #fff; font: 600 14px var(--sans); padding: 12px 20px; border-radius: 999px; opacity: 0; transition: opacity .25s, transform .45s var(--spring); pointer-events: none; white-space: nowrap; }
+.toast { position: fixed; left: 50%; bottom: 28px; z-index: 95; transform: translate(-50%, 20px); background: #fff; color: #000; font: 600 14px var(--sans); padding: 12px 20px; border-radius: 999px; opacity: 0; transition: opacity .25s, transform .45s var(--spring); pointer-events: none; white-space: nowrap; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
-.reveal { opacity: 0; transform: translateY(30px) scale(.985); transition: opacity .9s var(--soft), transform 1.1s var(--soft); }
+.reveal { opacity: 0; transform: translateY(30px); transition: opacity 1s var(--soft), transform 1.2s var(--soft); }
 .reveal.in { opacity: 1; transform: none; }
 
-@media (max-width: 960px) {
-  .grid { grid-template-columns: 1fr 1fr; }
-  .card.span2 { grid-column: span 2; }
-}
+@media (max-width: 960px) { .grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 640px) {
   .nav .links { display: none; }
   .nav { gap: 14px; }
   .nav.open { width: calc(100vw - 16px); }
-  .hero { padding: 104px 18px 240px; }
-  .mascot { width: 156px; height: 156px; }
+  .hero { padding: 0 18px 220px; }
+  .hero .stage { height: 52vh; min-height: 380px; }
   .b { width: 100%; }
-  .demo { padding: 0 12px; margin-top: -190px; }
+  .demo { padding: 0 12px; margin-top: -160px; }
   .demo-fit { border-radius: 20px; }
   .grid { grid-template-columns: 1fr; }
   .card.span2 { grid-column: span 1; }
   .card { min-height: 380px; }
   .key { width: 60px; height: 60px; font-size: 24px; }
-  .mochi { height: 520px; border-radius: 26px; }
-  .mochi canvas.kit { width: 192px; height: 192px; bottom: 150px; }
-  .mochi .bubble { bottom: 360px; }
+  .mochi { height: 540px; border-radius: 24px; }
+  .mochi canvas.kit { width: 184px; height: 184px; bottom: 170px; }
+  .mochi .bubble { bottom: 370px; }
   .steps { grid-template-columns: 1fr; }
   .step .vis { display: none; }
-  .works { gap: 22px 30px; }
-  .chips button { height: 38px; padding: 0 12px; font-size: 13.5px; }
-  .chips button i { left: 12px; right: 12px; }
-  .sec { padding-top: 100px; }
+  .works { gap: 22px 28px; }
+  .sec { padding-top: 110px; }
+  .chips button { height: 36px; padding: 0 12px; font-size: 13px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; transition-duration: .01s !important; transition-delay: 0s !important; }
@@ -358,27 +337,27 @@ footer a:hover { color: var(--plum); }
 
 <main id="top">
   <section class="hero">
-    <canvas class="art" data-scene="hero"></canvas>
-    <div class="mascot" id="mascot" title="Pet me"><canvas class="px" id="heroKitty"></canvas></div>
-    <div class="shadow"></div>
-    <div class="badge"><i></i><span id="badge">New version, cuter kitty</span></div>
-    <h1><span class="soft">Dynamic Island</span><br>for your AI agents</h1>
-    <p class="sub">Approve Claude Code, Codex and Cursor right from your Mac's notch.</p>
-    <div class="btns">
-      <a class="b w" data-dl href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg"><span class="fill"></span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><span class="label">Download for macOS</span></a>
-      <a class="b g" href="https://github.com/mumbaitrip2022/notchma"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.75.11 3.04.74.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>Free and open source</a>
+    <canvas class="art" id="hole"></canvas>
+    <div class="stage"><canvas class="px kit" id="heroKitty" title="Pet me"></canvas></div>
+    <div class="copy">
+      <div class="badge"><i></i><span id="badge">Now with a cuter kitty</span></div>
+      <h1><span class="soft">Dynamic Island</span><br>for your AI agents</h1>
+      <p class="sub">Approve Claude Code, Codex and Cursor right from your Mac's notch.</p>
+      <div class="btns">
+        <a class="b w" data-dl href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg"><span class="fill"></span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><span class="label">Download for macOS</span></a>
+        <a class="b o" href="https://github.com/mumbaitrip2022/notchma"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.75.11 3.04.74.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>Open source</a>
+      </div>
+      <div class="small"><span class="v-ver">Latest</span> · Apple silicon · macOS 14+ · Free</div>
+      <div class="notmac">Open this page on your Mac to install.</div>
     </div>
-    <div class="small"><span class="v-ver">Latest version</span> · Apple silicon · macOS 14 or later</div>
-    <div class="notmac">Open this page on your Mac to install.</div>
   </section>
 
-  <!-- Big demo: all three agents at once -->
   <div class="demo">
     <div class="demo-fit reveal" id="demoFit">
       <div class="screen" id="screen">
         <canvas class="art" data-scene="wall"></canvas>
         <div class="menubar"><div class="l"><svg viewBox="0 0 24 24"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><b>Terminal</b><span>Shell</span><span>Edit</span><span>View</span></div><div class="r"><span id="mbDay"></span><span id="mbTime"></span></div></div>
-        <div class="win w1"><div class="tb"><i></i><i></i><i></i><span><i class="gl" data-g="claude"></i>Claude Code · checkout</span></div><div class="body">
+        <div class="win w1"><div class="tb"><i></i><i></i><i></i><span><img class="ico" src="images/agents/claude.svg" alt="">Claude Code · checkout</span></div><div class="body">
           <div><span>› </span><span id="typed"></span></div>
           <div data-t="1.6"><span class="or">⏺</span> Bash(npm test)</div>
           <div data-t="2.4"><span class="dd">  ⎿</span>  <span class="ok">3 passing</span>, <span class="bad">2 failing</span></div>
@@ -388,7 +367,7 @@ footer a:hover { color: var(--plum); }
           <div data-t="10.6"><span class="or">⏺</span> Bash(npm run e2e) <span class="ok">12 passing</span></div>
           <div data-t="16.6"><span class="or">⏺</span> <span class="ok">All tests pass.</span></div>
         </div></div>
-        <div class="win w2"><div class="tb"><i></i><i></i><i></i><span><i class="gl" data-g="codex"></i>Codex · api</span></div><div class="body">
+        <div class="win w2"><div class="tb"><i></i><i></i><i></i><span><img class="ico" src="images/agents/codex.png" alt="">Codex · api</span></div><div class="body">
           <div><span class="dd">›</span> add an orders table</div>
           <div data-t="1.2"><span class="gr">•</span> Reading db/schema.ts</div>
           <div data-t="2.2"><span class="gr">•</span> Writing 0042_orders.sql</div>
@@ -400,7 +379,7 @@ footer a:hover { color: var(--plum); }
           <div data-t="10.6"><span class="ok">• Ran migrate</span></div>
           <div data-t="17.6"><span class="ok">• Done.</span></div>
         </div></div>
-        <div class="win w3"><div class="tb"><i></i><i></i><i></i><span><i class="gl" data-g="cursor"></i>Cursor · landing-page · Hero.tsx</span></div>
+        <div class="win w3"><div class="tb"><i></i><i></i><i></i><span><img class="ico" src="images/agents/cursor.png" alt="">Cursor · landing-page · Hero.tsx</span></div>
           <pre><div><span class="k">export function</span> <span class="f">Hero</span>() {</div><div>  <span class="k">return</span> (</div><div>    &lt;<span class="tg">section</span>&gt;</div><div data-u="2.2">      &lt;<span class="tg">h1</span>&gt;Ship faster&lt;/<span class="tg">h1</span>&gt;</div><div data-t="2.2" class="add">      &lt;<span class="tg">h1</span>&gt;Ship with agents&lt;/<span class="tg">h1</span>&gt;</div><div data-t="3.0" class="add">      &lt;<span class="tg">p</span>&gt;Three of them, at once.&lt;/<span class="tg">p</span>&gt;</div><div>      &lt;<span class="tg">Button</span> <span class="s">size="lg"</span>&gt;Get started&lt;/<span class="tg">Button</span>&gt;</div><div>    &lt;/<span class="tg">section</span>&gt;</div><div>  )</div><div>}</div><div data-t="12.2" data-u="14.6"><span class="bad">  agent wants: git push --force origin main</span></div><div data-t="14.6"><span class="ok">  agent: pushed hero-refresh instead</span></div></pre>
         </div>
         <div class="dimmer" id="dimmer"></div>
@@ -410,22 +389,22 @@ footer a:hover { color: var(--plum); }
         <div class="ptr" id="ptr"><svg viewBox="0 0 24 24"><path d="M5.5 3.2v16.4l4.1-3.9 2.6 6 3-1.3-2.6-5.9h5.7z" fill="#000" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
       </div>
     </div>
-    <div class="chips" id="chips"><button data-c="0"><i></i><span>All three agents</span></button><button data-c="1"><i></i><span>Allow all</span></button><button data-c="2"><i></i><span>Risky stops</span></button><button data-c="3"><i></i><span>Done</span></button><button data-c="4"><i></i><span>Receipt</span></button></div>
+    <div class="chips" id="chips"><button data-c="0"><i></i><span>Three agents</span></button><button data-c="1"><i></i><span>Allow all</span></button><button data-c="2"><i></i><span>Risky stops</span></button><button data-c="3"><i></i><span>Done</span></button><button data-c="4"><i></i><span>Receipt</span></button></div>
     <div class="hint" id="hint"></div>
   </div>
 
   <section class="sec" id="features">
-    <div class="works reveal"><span class="lbl">Works with</span><div class="it"><span data-g="claude"></span>Claude Code</div><div class="it"><span data-g="codex"></span>Codex</div><div class="it"><span data-g="cursor"></span>Cursor</div></div>
+    <div class="works reveal"><span class="lbl">Works with</span><div class="it"><img class="ico" src="images/agents/claude.svg" alt="">Claude Code</div><div class="it"><img class="ico" src="images/agents/codex.png" alt="">Codex</div><div class="it"><img class="ico" src="images/agents/cursor.png" alt="">Cursor</div></div>
     <div class="wrap">
-      <div class="head reveal" style="margin-top:110px"><h2>Your agents. <span class="soft">One glance away.</span></h2></div>
+      <div class="head reveal" style="margin-top:120px"><h2>Your agents. <span class="soft">One glance away.</span></h2></div>
       <div class="grid">
-        <div class="card span2 reveal" data-demo="approve"><canvas class="art" data-scene="sky"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div><div class="keys"><span class="key">⌃</span><span class="key">⌥</span><span class="key">Y</span></div></div><div class="cap"><b>One key to say yes.</b><span>From any app, mid-anything.</span></div></div>
-        <div class="card reveal" data-demo="multi"><canvas class="art" data-scene="moon"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div></div><div class="cap"><b>Every agent, live.</b><span>What each one is doing, right now.</span></div></div>
-        <div class="card reveal" data-demo="risky"><canvas class="art" data-scene="sun"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div></div><div class="cap"><b>Risky? It stops.</b><span>Force pushes never auto-approve.</span></div></div>
-        <div class="card reveal" data-demo="usage"><canvas class="art" data-scene="hills"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div></div><div class="cap"><b>Know your limits.</b><span>And when you'll hit them.</span></div></div>
-        <div class="card reveal" data-demo="float"><canvas class="art" data-scene="waves"></canvas><div class="stage"><div class="isl float"><div class="bd"></div></div></div><div class="cap"><b>No notch? No problem.</b><span>It draws its own island.</span></div></div>
-        <div class="card span2 reveal" data-demo="receipt"><canvas class="art" data-scene="stars"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div><div class="rclip" style="top:46px"><div class="paper"></div></div></div><div class="cap"><b>Your day, printed.</b><span>A receipt of everything your agents shipped.</span></div></div>
-        <div class="card reveal" data-demo="update"><canvas class="art" data-scene="clouds"></canvas><div class="stage"><div class="gift"><canvas class="px"></canvas></div></div><div class="cap"><b>Updates in one tap.</b><span>Mochi brings them to you.</span></div></div>
+        <div class="card span2 reveal" data-demo="approve"><canvas class="art" data-scene="halo"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div><div class="keys"><span class="key">⌃</span><span class="key">⌥</span><span class="key">Y</span></div></div><div class="cap"><b>One key to say yes.</b><span>From any app, mid-anything.</span></div></div>
+        <div class="card reveal" data-demo="multi"><canvas class="art" data-scene="orbit"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div></div><div class="cap"><b>Every agent, live.</b><span>What each one is doing, right now.</span></div></div>
+        <div class="card reveal" data-demo="risky"><canvas class="art" data-scene="flare"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div></div><div class="cap"><b>Risky? It stops.</b><span>Force pushes never auto-approve.</span></div></div>
+        <div class="card reveal" data-demo="usage"><canvas class="art" data-scene="planet"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div></div><div class="cap"><b>Know your limits.</b><span>And when you'll hit them.</span></div></div>
+        <div class="card reveal" data-demo="float"><canvas class="art" data-scene="rings"></canvas><div class="stage"><div class="isl float"><div class="bd"></div></div></div><div class="cap"><b>No notch? No problem.</b><span>It draws its own island.</span></div></div>
+        <div class="card span2 reveal" data-demo="receipt"><canvas class="art" data-scene="warp"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div><div class="rclip" style="top:46px"><div class="paper"></div></div></div><div class="cap"><b>Your day, printed.</b><span>A receipt of everything your agents shipped.</span></div></div>
+        <div class="card reveal" data-demo="update"><canvas class="art" data-scene="none"></canvas><div class="stage"><div class="gift"><canvas class="px"></canvas></div></div><div class="cap"><b>Updates in one tap.</b><span>Mochi brings them to you.</span></div></div>
       </div>
     </div>
   </section>
@@ -434,7 +413,7 @@ footer a:hover { color: var(--plum); }
     <div class="wrap">
       <div class="head reveal"><h2>Meet mochi. <span class="soft">Say hi.</span></h2><p>It lives in your notch, eats a cookie for every finished task, and levels up as you ship.</p></div>
       <div class="mochi reveal">
-        <canvas class="art" data-scene="meadow"></canvas>
+        <canvas class="art" data-scene="moon"></canvas>
         <div class="bubble" id="bubble">hi bestie</div>
         <canvas class="px kit" id="bigKitty" aria-label="Mochi. Click to pet."></canvas>
         <div class="acts" id="acts"><button data-a="pet">Pet</button><button data-a="feed">Feed</button><button data-a="party">Ship it</button><button data-a="nap">Nap</button><span class="sep"></span><button data-o="sprout">Sprout</button><button data-o="headphones">Headphones</button><button data-o="crown">Crown</button></div>
@@ -443,15 +422,16 @@ footer a:hover { color: var(--plum); }
   </section>
 
   <section class="final" id="get">
+    <canvas class="art" data-scene="none"></canvas>
     <div class="wrap">
       <div class="appicon reveal"><canvas class="px" id="iconKitty"></canvas></div>
-      <h2 class="reveal">Ready to give your<br>notch a job?</h2>
+      <h2 class="reveal">Give your notch<br>a job.</h2>
       <p class="reveal">Free and open source. Connect your agents in one click.</p>
       <div class="btns reveal">
-        <a class="b p" data-dl href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg"><span class="fill"></span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><span class="label">Download for macOS</span></a>
-        <button class="b l" id="copy" type="button">Copy link</button>
+        <a class="b w" data-dl href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg"><span class="fill"></span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><span class="label">Download for macOS</span></a>
+        <button class="b o" id="copy" type="button">Copy link</button>
       </div>
-      <div class="small reveal"><span class="v-ver">Latest version</span> · <span class="v-size">2 MB</span> · Apple silicon · macOS 14+</div>
+      <div class="small reveal"><span class="v-ver">Latest</span> · <span class="v-size">2 MB</span> · Apple silicon · macOS 14+</div>
       <div class="notmac">Open this page on your Mac to install.</div>
     </div>
   </section>
@@ -480,86 +460,100 @@ const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
-const PINK = "#ff8cb3", HOLE = "#1d0812";
+const PINK = "#ff8cb3";
 
-/* ================= Dithered pixel art (1-bit, Bayer 8x8) ================= */
+/* ================= Real agent icons ================= */
+const ICON = { claude: "images/agents/claude.svg", codex: "images/agents/codex.png", cursor: "images/agents/cursor.png" };
+const ic = (a) => `<img class="ico" src="${ICON[a]}" alt="">`;
+const CHK = `<span class="chk"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.6-5"/></svg></span>`;
+
+/* ================= 1-bit dithered art, white light on black ================= */
 const BAYER = [0,32,8,40,2,34,10,42,48,16,56,24,50,18,58,26,12,44,4,36,14,46,6,38,60,28,52,20,62,30,54,22,3,35,11,43,1,33,9,41,51,19,59,27,49,17,57,25,15,47,7,39,13,45,5,37,63,31,55,23,61,29,53,21];
 const hash = (x, y) => { let h = (x * 374761393 + y * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
 function vnoise(x, y) { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, s = (t) => t * t * (3 - 2 * t);
   const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
   return a + (b - a) * s(xf) + (c - a) * s(yf) + (a - b - c + d) * s(xf) * s(yf); }
-const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
-function puffs(u, v, A, list) { // list of [cx, cy, r]; returns 0..1 coverage with a lit top and shaded underside
-  let c = 0;
-  for (const [cx, cy, rr] of list) {
-    const d = Math.hypot((u - cx) * A, v - cy) / rr;
-    if (d < 1) c = Math.max(c, (1 - d) * 1.6 - Math.max(0, (v - cy) / rr) * .55);
-  }
-  return clamp(c);
-}
-function bank(y, seed, n = 10, x0 = -0.05, x1 = 1.05, rmin = .07, rmax = .14) {
-  const out = [];
-  for (let i = 0; i < n; i++) out.push([x0 + (x1 - x0) * (i / (n - 1)) + (hash(i, seed) - .5) * .05, y + (hash(i + 7, seed) - .5) * .05, rmin + hash(i + 3, seed) * (rmax - rmin)]);
-  return out;
-}
-const cloudI = (c) => (c > .42 ? 1 : c * 1.9);
+const glow = (d, k) => Math.exp(-Math.max(0, d) / k);
 const SCENES = {
-  hero: (u, v, A) => Math.max(cloudI(puffs(u, v, A, bank(.98, 3, 14, -.04, 1.04, .05, .11))), cloudI(puffs(u, v, A, [[.06, .42, .07], [.12, .45, .05], [.0, .47, .05]])), cloudI(puffs(u, v, A, [[.92, .3, .06], [.97, .33, .05], [.87, .33, .04]]))),
-  sky: (u, v, A) => Math.max(cloudI(puffs(u, v, A, [[.84, .52, .07], [.91, .5, .06], [.78, .55, .05], [.96, .55, .045]])), cloudI(puffs(u, v, A, [[.12, .3, .05], [.17, .28, .04], [.08, .32, .035]]))),
-  moon: (u, v, A) => { const d = Math.hypot((u - .62) * A, v - .45); if (d < .2) { const s = Math.hypot((u - .55) * A, v - .4); return s < .17 ? .08 : 1; } return d < .3 ? .12 * (1 - (d - .2) / .1) : 0; },
-  sun: (u, v, A) => { const dx = (u - .82) * A, dy = v - .82, d = Math.hypot(dx, dy); if (d < .17) return 1; if (d < .2) return 0; const ray = Math.cos(Math.atan2(dy, dx) * 12) > .93 ? 1 : 0; return d < .42 ? ray : 0; },
-  hills: (u, v) => { const h1 = .6 + .07 * Math.sin(u * 5 + 1), h2 = .7 + .05 * Math.sin(u * 8 + 2.5); if (v > h2) return 1; if (v > h1) return .16; return 0; },
-  waves: (u, v) => { for (let i = 5; i >= 0; i--) { const y = .5 + i * .09 + .02 * Math.sin(u * 8 + i * 1.9); if (v > y && v < y + .018) return 1; } return 0; },
-  stars: (u, v, A) => Math.max(cloudI(puffs(u, v, A, [[.12, .5, .07], [.19, .47, .055], [.06, .53, .05]])), cloudI(puffs(u, v, A, [[.86, .3, .06], [.92, .32, .05], [.8, .33, .04]]))),
-  clouds: (u, v, A) => Math.max(cloudI(puffs(u, v, A, [[.2, .25, .1], [.3, .22, .08], [.12, .28, .07]])), cloudI(puffs(u, v, A, [[.85, .6, .09], [.93, .58, .07], [.78, .63, .06]]))),
-  meadow: (u, v, A) => { const g = .78 + .03 * Math.sin(u * 6); if (v > g) return v > g + .04 ? 1 : .5; return Math.max(cloudI(puffs(u, v, A, [[.15, .25, .08], [.23, .22, .06], [.08, .28, .05]])), cloudI(puffs(u, v, A, [[.82, .18, .07], [.9, .2, .06]]))); },
-  wall: (u, v, A) => { const d = Math.hypot((u - .5) * A, v - 1.3); return d < 1.1 ? .5 * (1 - d / 1.1) : 0; },
+  // Light pooling around a notch at the top center: the event horizon.
+  halo: (u, v, A) => { const dx = Math.max(0, Math.abs((u - .5) * A) - .3), d = Math.hypot(dx, Math.max(0, v - .08)); return glow(d, .022) * .7; },
+  orbit: (u, v, A) => { const dx = (u - .5) * A, dy = v - .52; let I = 0; for (const r of [.18, .3, .44, .6]) { const e = Math.hypot(dx, dy / .42); if (Math.abs(e - r) < .006) I = .9; } const pd = Math.hypot(dx - .3 * Math.cos(1.2), (dy - .3 * .42 * Math.sin(1.2))); if (pd < .035) I = 1; return Math.max(I, glow(Math.hypot(dx, dy) - .02, .05) * .9); },
+  flare: (u, v, A) => { const dx = (u - .72) * A, dy = v - .55, d = Math.hypot(dx, dy), R = .12; if (d < R) return 0; if (d < R * 1.06) return 1; const ey = dy / .2, er = Math.hypot(dx, ey); const disk = er > R * 1.3 && er < R * 2.6 && (dy > 0 || d > R) ? (1 - (er - R * 1.3) / (R * 1.3)) * .9 : 0; return Math.max(disk, glow(d - R, .015) * .8); },
+  grid: (u, v) => { if (v < .5) return 0; const y = v * 46 + 2.4 * Math.sin(u * 5.5) + 1.2 * Math.sin(u * 13 + 1); const f = Math.abs(y - Math.round(y)); return f < .09 ? .95 * clamp((v - .5) * 3) : 0; },
+  rings: (u, v, A) => { const d = Math.hypot((u - .5) * A, v - .55); const r = (d * 9 + 0) % 1; return d < .08 ? 0 : (r < .12 ? .85 : 0) * glow(d, .35); },
+  warp: (u, v, A) => { const dx = (u - .5) * A, dy = v - .5, ang = Math.atan2(dy, dx), d = Math.hypot(dx, dy); const st = vnoise(ang * 40, 3) > .88 ? 1 : 0; return st * clamp((d - .16) * 1.6) * .75; },
+  planet: (u, v, A) => { const dx = (u - .5) * A, dy = v - 1.45, d = Math.hypot(dx, dy); if (d < .62) return 0; return Math.max(Math.abs(d - .62) < .006 ? 1 : 0, glow(d - .62, .05) * .85); },
+  moon: (u, v, A) => { const dx = (u - .5) * A, dy = v - 1.96, d = Math.hypot(dx, dy); if (d < 1.2) return d > 1.192 ? 1 : 0; return glow(d - 1.2, .018) * .8; },
+  dawn: (u, v, A) => { const dx = (u - .5) * A, dy = v + 1.6, d = Math.hypot(dx, dy); return d < 1.75 ? 0 : d < 1.755 ? 1 : glow(d - 1.755, .009) * .7; },
+  wall: () => 0,
+  none: () => 0,
 };
-// Keep captions and headlines on clean color.
-const SAFE = {
-  hero: (u, v, A) => (A < 1 ? (v > .22 && v < .9 ? 0 : 1) : (Math.abs(u - .5) < .34 && v > .3 && v < .9 ? 0 : 1)),
-  card: (u, v) => (u < .75 && v > .74 ? 0 : 1),
-  none: () => 1,
-};
-const COLORS = { pink: [[255, 61, 139], [255, 236, 244]], wall: [[16, 10, 13], [84, 30, 56]] };
+const SAFE = (u, v) => (u < .75 && v > .74 ? 0 : 1);
 function paint(c) {
-  const scene = c.dataset.scene, pal = scene === "wall" ? COLORS.wall : COLORS.pink;
-  const W = c.clientWidth || c.parentElement.clientWidth, H = c.clientHeight || c.parentElement.clientHeight;
-  if (!W || !H) return;
-  const cell = scene === "wall" ? 4 : W < 500 ? 5 : 6;
-  const w = Math.ceil(W / cell), h = Math.ceil(H / cell);
+  const scene = c.dataset.scene; if (!scene) return;
+  const W = c.clientWidth, H = c.clientHeight; if (!W || !H) return;
+  const cell = scene === "wall" ? 4 : W < 500 ? 4 : 5, w = Math.ceil(W / cell), h = Math.ceil(H / cell);
   if (c.dataset.sz === `${w}x${h}`) return;
   c.dataset.sz = `${w}x${h}`; c.width = w; c.height = h;
-  const ctx = c.getContext("2d"), img = ctx.createImageData(w, h), d = img.data, A = w / h, f = SCENES[scene];
-  const safe = SAFE[scene === "hero" ? "hero" : c.closest(".card") ? "card" : "none"];
+  const ctx = c.getContext("2d"), img = ctx.createImageData(w, h), d = img.data, A = w / h, f = SCENES[scene], card = !!c.closest(".card");
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const I = f(x / w, y / h, A) * safe(x / w, y / h, A), on = I > (BAYER[(y & 7) * 8 + (x & 7)] + .5) / 64, col = on ? pal[1] : pal[0], i = (y * w + x) * 4;
-    d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = 255;
+    const I = f(x / w, y / h, A) * (card ? SAFE(x / w, y / h) : 1), on = I > (BAYER[(y & 7) * 8 + (x & 7)] + .5) / 64, i = (y * w + x) * 4, g = on ? 236 : 0;
+    d[i] = g; d[i + 1] = g; d[i + 2] = on ? 240 : 0; d[i + 3] = 255;
   }
   ctx.putImageData(img, 0, 0);
-  // a few twinkly pixel stars
-  ctx.fillStyle = `rgb(${pal[1].join(",")})`;
-  const n = scene === "wall" ? 24 : 12;
-  for (let i = 0; i < n; i++) {
-    const sx = Math.floor(hash(i, w) * w), sy = Math.floor(hash(i, h + 7) * h * .55);
-    if (safe(sx / w, sy / h, A) === 0) continue;
-    ctx.fillRect(sx, sy, 1, 1); if (i % 3 === 0) { ctx.fillRect(sx - 1, sy, 3, 1); ctx.fillRect(sx, sy - 1, 1, 3); }
-  }
+  ctx.fillStyle = "rgba(236,236,240,.8)";
+  for (let i = 0; i < 18; i++) { const sx = Math.floor(hash(i, w) * w), sy = Math.floor(hash(i, h + 7) * h); if (card && !SAFE(sx / w, sy / h)) continue; ctx.fillRect(sx, sy, 1, 1); }
 }
-const arts = $$("canvas.art");
-function paintAll() { arts.forEach(paint); }
+const arts = $$("canvas.art[data-scene]");
+const paintAll = () => arts.forEach(paint);
 
-/* ================= Agent glyphs ================= */
-function spark(c) { let s = ""; for (let i = 0; i < 12; i++) { const a = (i * 30 - 90) * Math.PI / 180, r2 = i % 2 ? 7.2 : 10.6; s += `<line x1="${(12 + Math.cos(a) * 2.2).toFixed(2)}" y1="${(12 + Math.sin(a) * 2.2).toFixed(2)}" x2="${(12 + Math.cos(a) * r2).toFixed(2)}" y2="${(12 + Math.sin(a) * r2).toFixed(2)}"/>`; } return `<svg viewBox="0 0 24 24" stroke="${c}" stroke-width="2.4" stroke-linecap="round">${s}</svg>`; }
-const G = {
-  claude: () => spark("#d97757"),
-  codex: () => `<svg viewBox="0 0 24 24" fill="none" stroke="#6bccae" stroke-width="2.5" stroke-linejoin="round"><path d="M12 2.6 20.2 7.3v9.4L12 21.4 3.8 16.7V7.3Z"/></svg>`,
-  cursor: () => `<svg viewBox="0 0 24 24"><path d="M5.5 3.4v16.2l4-3.9 2.6 5.9 2.9-1.3-2.6-5.8h5.6z" fill="#9ea8ff" stroke="#9ea8ff" stroke-width="1.2" stroke-linejoin="round"/></svg>`,
-};
-const CHK = `<span class="chk"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.6-5"/></svg></span>`;
-$$("[data-g]").forEach((el) => { el.innerHTML = G[el.dataset.g](); });
+/* The hero black hole, animated: shadow, photon ring, swirling disk, lensed arc. */
+const hole = $("#hole");
+let holeCtx = null, holeImg = null, holeW = 0, holeH = 0, holeVisible = true;
+function holeSize() {
+  const W = hole.clientWidth, H = hole.clientHeight, cell = W < 700 ? 3 : 4;
+  holeW = Math.ceil(W / cell); holeH = Math.ceil(H / cell); hole.width = holeW; hole.height = holeH;
+  holeCtx = hole.getContext("2d"); holeImg = holeCtx.createImageData(holeW, holeH);
+}
+function holeGeom() {
+  const st = $(".hero .stage"), hr = hole.getBoundingClientRect(), sr = st.getBoundingClientRect();
+  const cy = (sr.top - hr.top + sr.height * .61) / hr.height;
+  const R = Math.min(.12 * (hr.width / hr.height < 1 ? hr.width / hr.height * 1.6 : 1), sr.height * .2 / hr.height);
+  return { cy, R };
+}
+let geom = { cy: .36, R: .14 };
+function renderHole(t) {
+  if (!holeCtx) return;
+  const w = holeW, h = holeH, A = w / h, d = holeImg.data, { cy, R } = geom;
+  const r1 = R * 1.3, r2 = R * 2.7, flat = .17;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const u = x / w, v = y / h, dx = (u - .5) * A, dy = v - cy, dist = Math.hypot(dx, dy);
+    let I = 0;
+    // accretion disk, tilted and flattened
+    const ey = dy / flat, er = Math.hypot(dx, ey);
+    let disk = 0;
+    if (er > r1 && er < r2) {
+      const a = Math.atan2(ey, dx), k = 1 - (er - r1) / (r2 - r1);
+      const streak = vnoise(a * 7 - t * .9 + er * 3, er * 26);
+      disk = Math.pow(k, 1.1) * (.45 + .8 * streak) * (.8 + .35 * (-dx / er));
+    }
+    if (dist < R) I = dy > 0 && disk ? disk : 0; // shadow, with the near side of the disk in front
+    else {
+      I = Math.max(disk, glow(dist - R, .012) * (.75 + .25 * vnoise(Math.atan2(dy, dx) * 5 + t * .4, 2)));
+      if (dist < R * 1.05) I = 1;
+      // lensed light from the far side of the disk, arching over the top
+      if (dy < 0) { const lr = Math.abs(dist - R * 1.22); I = Math.max(I, glow(lr, .01) * (.55 + .45 * vnoise(Math.atan2(dy, dx) * 9 - t * .8, 5)) * (1 - Math.abs(dx) / (R * 1.6))); }
+    }
+    // faint stars
+    if (I < .05 && hash(x, y) > .9965 && !(v > cy + R * 1.5 && Math.abs(u - .5) < .38)) I = .5 + .5 * Math.sin(t * 2 + x);
+    const on = I > (BAYER[(y & 7) * 8 + (x & 7)] + .5) / 64, i = (y * w + x) * 4, g = on ? 238 : 0;
+    d[i] = g; d[i + 1] = g; d[i + 2] = on ? 242 : 0; d[i + 3] = 255;
+  }
+  holeCtx.putImageData(holeImg, 0, 0);
+}
+new IntersectionObserver((es) => { holeVisible = es[0].isIntersecting; }).observe(hole);
 
-/* ================= Mochi: the app's pixel art ================= */
+/* ================= Mochi ================= */
 const FEET = { stand: "...##....##...", stepA: "..##.....##...", stepB: "...##.....##..", tucked: "...########..." };
 const OUTFIT = { sprout: { y: 1, rows: ["......#.##....", ".......##.....", ".......#......", ".......#......", ".......#......"] }, headphones: { y: 3, rows: ["...########...", "..............", "..............", ".#..........#.", "##..........##"] }, crown: { y: 3, rows: ["....#.##.#....", "....######....", "....######...."] } };
 function kitty(p = {}) {
@@ -599,7 +593,7 @@ function fit(c) {
   const ctx = c.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, w, h);
   return ctx;
 }
-function drawGrid(ctx, g, ox, oy, px, ink = "#fff", hole = HOLE) {
+function drawGrid(ctx, g, ox, oy, px, ink = "#fff", hole = "#000") {
   for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
     const c = g[y][x]; if (!c) continue;
     ctx.fillStyle = c === 2 ? PINK : c === 3 ? hole : ink;
@@ -617,10 +611,9 @@ const wag = (f) => (f % 2 ? "up" : "curl");
 let mx = innerWidth / 2;
 addEventListener("pointermove", (e) => { mx = e.clientX; }, { passive: true });
 const lookAt = (c) => { const r = c.getBoundingClientRect(), cx = r.left + r.width / 2; return mx < cx - 90 ? -1 : mx > cx + 90 ? 1 : 0; };
-
 const pets = new Set();
 class Pet {
-  constructor(c, o) { Object.assign(this, { c, px: 4, ground: 0, x: null, parts: [], t: 0, hole: HOLE }, o); pets.add(this); }
+  constructor(c, o) { Object.assign(this, { c, px: 4, ground: 0, x: null, parts: [], t: 0 }, o); pets.add(this); }
   spawn(kind, x, y, vx = 0, vy = -0.6, life = 8) { if (this.parts.length < 16) this.parts.push({ kind, x, y, vx, vy, life }); }
   step() {
     if (!this.c.isConnected) { pets.delete(this); return; }
@@ -631,29 +624,25 @@ class Pet {
     const pose = this.brain(this.t, this, W, H) || {};
     const ox = this.x != null ? this.x : Math.round((W - 16 * px) / 2), base = H - 16 * px - this.ground;
     if (pose.under) pose.under(ctx, ox, base, px);
-    drawGrid(ctx, kitty(pose), ox, base - (pose.lift || 0) * px, px, "#fff", this.hole);
+    drawGrid(ctx, kitty(pose), ox, base - (pose.lift || 0) * px, px);
     this.parts = this.parts.filter((p) => { p.x += p.vx; p.y += p.vy; p.life--; if (p.kind === "crumb") p.vy += .45; drawSpr(ctx, SPR[p.kind], ox + p.x * px, base + p.y * px, px * .75, p.life / 3); return p.life > 0; });
   }
 }
-const idleBrain = (t, p) => ({ eyes: blinkAt(t) ? "blink" : "open", dx: lookAt(p.c), tail: sway(t) });
 
 /* ================= Island component ================= */
 class Island {
   constructor(el) { this.el = el; this.bd = $(".bd", el); this.cur = null; }
   size(w, h, r) {
-    const max = this.el.parentElement.clientWidth - 24;
-    w = Math.min(w, max || w);
+    const max = this.el.parentElement.clientWidth - 24; w = Math.min(w, max || w);
     this.el.style.width = w + "px"; this.el.style.height = h + "px";
-    if (!this.el.classList.contains("float")) this.el.style.borderRadius = `0 0 ${r ?? (h > 40 ? 28 : 16)}px ${r ?? (h > 40 ? 28 : 16)}px`;
-    return w;
+    if (!this.el.classList.contains("float")) { const rr = r ?? (h > 40 ? 28 : 16); this.el.style.borderRadius = `0 0 ${rr}px ${rr}px`; }
   }
   show(w, h, html, r) {
     this.size(w, h, r);
     const lay = document.createElement("div"); lay.className = "lay in"; lay.innerHTML = html; this.bd.appendChild(lay);
     requestAnimationFrame(() => requestAnimationFrame(() => lay.classList.remove("in")));
     if (this.cur) { const old = this.cur; old.classList.add("out"); setTimeout(() => old.remove(), 420); }
-    this.cur = lay;
-    return lay;
+    this.cur = lay; return lay;
   }
   kitty(w = 200, h = 32, extra = {}) {
     const lay = this.show(w, h, '<canvas class="px pc"></canvas>');
@@ -668,10 +657,8 @@ class Island {
     return lay;
   }
 }
-const row = (agent, proj, what, right = "", tone = "") => `<div class="rw ${tone}"><span class="gl${!tone && agent === "claude" ? " spin" : ""}">${agent === "all" ? "" : G[agent]()}</span>${agent === "all" ? `<span class="gls"><span class="gl">${G.claude()}</span><span class="gl">${G.codex()}</span><span class="gl">${G.cursor()}</span></span>` : ""}<span class="p">${proj}</span><span class="wt">${what}</span><span class="r">${right}</span></div>`;
+const row = (agent, proj, what, right = "", tone = "") => `<div class="rw ${tone}">${agent === "all" ? `<span class="icos">${ic("claude")}${ic("codex")}${ic("cursor")}</span>` : ic(agent)}<span class="p">${proj}</span><span class="wt">${what}</span><span class="r">${right}</span></div>`;
 const ring = '<span class="ring"></span>';
-
-/* Small helpers for looping demos that pause off screen */
 const visible = new Map();
 const vis = new IntersectionObserver((es) => es.forEach((e) => visible.set(e.target, e.isIntersecting)), { rootMargin: "60px" });
 function sleepFor(el) { return (ms) => new Promise((res) => { const go = () => { if (visible.get(el) && !document.hidden) setTimeout(res, reduce ? Math.min(ms, 80) : ms); else setTimeout(go, 300); }; go(); }); }
@@ -698,7 +685,7 @@ const DEMOS = {
     const A = [["claude", "checkout", ["Running the tests", "Editing total.ts", "Running e2e", "Done"]], ["codex", "api", ["Reading schema", "Writing migration", "Running migrate", "Done"]], ["cursor", "landing-page", ["Editing Hero.tsx", "Styling buttons", "Pushing a branch", "Done"]]];
     for (;;) {
       isl.show(330, 32, row("all", "", "3 agents working", ring)); await w(1300);
-      const lay = isl.show(460, 146, `<div class="ml">${A.map(([a, p, s]) => `<div class="mr"><span class="gl">${G[a]()}</span><span class="p">${p}</span><span class="wt">${s[0]}</span><span class="rt"><span class="mb"><i></i></span></span></div>`).join("")}</div>`);
+      const lay = isl.show(460, 146, `<div class="ml">${A.map(([a, p, s]) => `<div class="mr">${ic(a)}<span class="p">${p}</span><span class="wt">${s[0]}</span><span class="rt"><span class="mb"><i></i></span></span></div>`).join("")}</div>`);
       const rows = $$(".mr", lay);
       for (let step = 0; step < 4; step++) {
         await w(step ? 1100 : 400);
@@ -709,7 +696,7 @@ const DEMOS = {
         });
       }
       await w(900);
-      rows.forEach((r, i) => { $(".wt", r).textContent = "Done"; $(".wt", r).style.color = "#5ad37b"; $(".rt", r).innerHTML = CHK; });
+      rows.forEach((r) => { $(".wt", r).textContent = "Done"; $(".wt", r).style.color = "#5ad37b"; $(".rt", r).innerHTML = CHK; });
       await w(1400);
       isl.show(330, 32, row("all", "", "All 3 done", CHK + CHK + CHK, "green")); await w(1500);
       isl.kitty(200, 32); await w(1800);
@@ -721,7 +708,7 @@ const DEMOS = {
       isl.show(420, 32, row("cursor", "landing-page", "risky command", '<span class="bdg redb">!</span>', "red")); await w(1000);
       const lay = isl.show(460, 140, row("cursor", "landing-page", "wants to force push", "", "red") + `<div class="cd">$ git push <span class="bad">--force</span> origin main</div><div class="bt"><span class="cb pri">Deny <span class="kk">⌃⌥N</span></span><span class="cb rd">Allow anyway</span></div>`);
       await w(1800);
-      const b = $(".pri", lay); press(b); b.textContent = "Denied"; b.style.background = "#2c2c2f"; b.style.color = "#fff";
+      const b = $(".pri", lay); press(b); b.textContent = "Denied"; b.style.background = "#262628"; b.style.color = "#fff";
       await w(900);
       isl.show(420, 32, row("cursor", "landing-page", "Pushing a branch instead", ring)); await w(1700);
     }
@@ -729,7 +716,7 @@ const DEMOS = {
   async usage(card, isl, w) {
     for (;;) {
       isl.show(320, 32, row("claude", "Claude", "5 hour limit", "62%", "")); await w(1300);
-      const lay = isl.show(440, 196, `<div class="us"><div class="ur"><div class="top"><span>Claude · 5 hour</span><b>62%</b></div><div class="tr"><i style="background:#d97757"></i></div></div><div class="ur"><div class="top"><span>Claude · weekly</span><b>38%</b></div><div class="tr"><i style="background:#fff"></i></div></div><div class="ur"><div class="top"><span>Codex · 5 hour</span><b>24%</b></div><div class="tr"><i style="background:#6bccae"></i></div></div><div class="fc">At this pace you hit the limit at <b>4:40 pm</b></div></div>`);
+      const lay = isl.show(440, 196, `<div class="us"><div class="ur"><div class="top"><span>Claude · 5 hour</span><b>62%</b></div><div class="tr"><i style="background:#d97757"></i></div></div><div class="ur"><div class="top"><span>Claude · weekly</span><b>38%</b></div><div class="tr"><i style="background:#fff"></i></div></div><div class="ur"><div class="top"><span>Codex · 5 hour</span><b>24%</b></div><div class="tr"><i style="background:#8fa6ff"></i></div></div><div class="fc">At this pace you hit the limit at <b>4:40 pm</b></div></div>`);
       await w(250);
       const fills = $$(".tr i", lay); [62, 38, 24].forEach((v, i) => { fills[i].style.width = v + "%"; });
       await w(3600);
@@ -749,7 +736,7 @@ const DEMOS = {
   },
   async receipt(card, isl, w) {
     const clip = $(".rclip", card), paper = $(".paper", card);
-    buildReceipt(paper, true);
+    buildReceipt(paper);
     for (;;) {
       clip.style.height = "0px";
       isl.kitty(200, 32); await w(1300);
@@ -765,18 +752,17 @@ const DEMOS = {
 function buildReceipt(el) {
   const now = new Date();
   const R = [["logo"], ["title", "NOTCHBAR"], ["c", "agent receipt"], ["gap"], ["r", "#0128", now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase()], ["r", "served by mochi", now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase()], ["rule"], ["r", "CLAUDE CODE", "1h 52m"], ["r", "CODEX", "31m"], ["r", "CURSOR", "22m"], ["rule"], ["r", "tasks shipped", "14"], ["r", "tests", "148 ✓"], ["r", "you approved", "23"], ["r", "tokens", "2.0M"], ["rule"], ["b", "TOTAL", "$4.30"], ["c", "api value. your plan covers it"], ["gap"], ["bar"], ["gap"], ["c", "full squad showed up today"], ["c", "thank you for shipping"]];
-  el.innerHTML = R.map(([k, a, b]) => k === "logo" ? '<div class="logo"><canvas class="px"></canvas></div>' : k === "title" ? `<div class="rt">${a}</div>` : k === "c" ? `<div class="rc">${a}</div>` : k === "r" ? `<div class="rl"><span>${a}</span><span>${b}</span></div>` : k === "b" ? `<div class="rb"><span>${a}</span><span>${b}</span></div>` : k === "rule" ? '<div class="rr"></div>' : k === "gap" ? '<div class="gap"></div>' : `<div class="barcode">${Array.from({ length: 48 }, (_, i) => { const s = hash(i, 128); return `<i style="width:${1 + (s * 3 | 0)}px;margin-right:${1 + (hash(i, 9) * 3 | 0)}px"></i>`; }).join("")}</div>`).join("");
-  requestAnimationFrame(() => { const ctx = fit($(".logo canvas", el)); if (ctx) drawGrid(ctx, kitty({ eyes: "happy" }), 0, 0, 2.5, "#1b1b1b", "#f6f2ea"); });
+  el.innerHTML = R.map(([k, a, b]) => k === "logo" ? '<div class="logo"><canvas class="px"></canvas></div>' : k === "title" ? `<div class="rt">${a}</div>` : k === "c" ? `<div class="rc">${a}</div>` : k === "r" ? `<div class="rl"><span>${a}</span><span>${b}</span></div>` : k === "b" ? `<div class="rb"><span>${a}</span><span>${b}</span></div>` : k === "rule" ? '<div class="rr"></div>' : k === "gap" ? '<div class="gap"></div>' : `<div class="barcode">${Array.from({ length: 48 }, (_, i) => `<i style="width:${1 + (hash(i, 128) * 3 | 0)}px;margin-right:${1 + (hash(i, 9) * 3 | 0)}px"></i>`).join("")}</div>`).join("");
+  requestAnimationFrame(() => { const ctx = fit($(".logo canvas", el)); if (ctx) drawGrid(ctx, kitty({ eyes: "happy" }), 0, 0, 2.5, "#1b1b1b", "#f2f0eb"); });
 }
 $$("[data-demo]").forEach((card) => {
   vis.observe(card);
   const kind = card.dataset.demo;
-  if (kind === "update") { new Pet($(".gift canvas", card), { px: 5, ground: 8, hole: "#000", brain: (t, p) => ({ eyes: blinkAt(t) ? "blink" : "open", tail: sway(t), mouth: t % 40 < 8 ? "blep" : "small", under: (ctx, ox, base) => drawSpr(ctx, SPR.gift, ox + 64, base + 52 + (t % 8 < 4 ? 0 : -3), 4) }) }); return; }
-  const isl = new Island($(".isl", card));
-  DEMOS[kind](card, isl, sleepFor(card));
+  if (kind === "update") { new Pet($(".gift canvas", card), { px: 5, ground: 8, brain: (t) => ({ eyes: blinkAt(t) ? "blink" : "open", tail: sway(t), mouth: t % 40 < 8 ? "blep" : "small", under: (ctx, ox, base) => drawSpr(ctx, SPR.gift, ox + 64, base + 52 + (t % 8 < 4 ? 0 : -3), 4) }) }); return; }
+  DEMOS[kind](card, new Island($(".isl", card)), sleepFor(card));
 });
 
-/* ================= Big demo: three agents, one loop ================= */
+/* ================= Big demo ================= */
 const fitBox = $("#demoFit"), screen = $("#screen");
 let scale = 1;
 function layout() {
@@ -793,12 +779,11 @@ const PROMPT = "fix the failing checkout tests";
 const dIsl = new Island($("#demoIsl"));
 const ptr = $("#ptr");
 const T_END = 27, CH = [0, 6.0, 12.0, 15.6, 19.4, T_END];
-const HINTS = ["Claude Code, Codex and Cursor working at once.", 'Two requests waiting. Try it: press <span class="k2">⌃</span><span class="k2">⌥</span><span class="k2">Y</span>', "A force push. NotchBar stops it cold.", "All done. Mochi gets a cookie for each one.", "And your day, printed right out of the notch."];
+const HINTS = ["Claude Code, Codex and Cursor, working at once.", 'Two requests waiting. Try it: press <span class="k2">⌃</span><span class="k2">⌥</span><span class="k2">Y</span>', "A force push. Stopped before it lands.", "All done. Mochi gets a cookie for each one.", "Your day, printed right out of the notch."];
 buildReceipt($("#demoPaper"));
-let T = 0, lastState = "", kbOK = false, kbNo = false;
+let T = 0, lastState = "", kbOK = false, kbNo = false, multiLay = null, eatAt = 0;
 const A3 = { claude: ["checkout", 16.6, [[0, "Running the tests"], [3.4, "Editing total.ts"], [5, "Running e2e"], [8.2, "Waiting for you", "a"], [10.6, "Running e2e"], [16.6, "Done", "d"]]], codex: ["api", 17.6, [[0, "Reading schema"], [2.2, "Writing migration"], [6.2, "Waiting for you", "a"], [10.6, "Running migrate"], [17.6, "Done", "d"]]], cursor: ["landing-page", 15.8, [[0, "Editing Hero.tsx"], [12.0, "Waiting for you", "a"], [14.6, "Pushing a branch"], [15.8, "Done", "d"]]] };
 const st = (arr, t) => { let s = arr[0]; for (const x of arr) if (t >= x[0]) s = x; return s; };
-let multiLay = null;
 function demoState(t) {
   const ok = t >= 10.6 || (kbOK && t >= 7.0), no = t >= 14.6 || (kbNo && t >= 13.0);
   if (t < 1.4) return "idle";
@@ -812,10 +797,9 @@ function demoState(t) {
   if (t < 19.6) return "eat";
   return "print";
 }
-let eatAt = 0;
 function renderDemo(t) {
   let ci = 0; for (let i = 0; i < 5; i++) if (t >= CH[i]) ci = i;
-  $$("#chips button").forEach((b, i) => { b.classList.toggle("on", i === ci); $("i", b).style.transform = `scaleX(${i < ci ? 0 : i > ci ? 0 : clamp((t - CH[i]) / (CH[i + 1] - CH[i]))})`; });
+  $$("#chips button").forEach((b, i) => { b.classList.toggle("on", i === ci); $("i", b).style.transform = `scaleX(${i === ci ? clamp((t - CH[i]) / (CH[i + 1] - CH[i])) : 0})`; });
   const hint = $("#hint"); if (hint.dataset.i !== String(ci)) { hint.dataset.i = ci; hint.innerHTML = HINTS[ci]; }
   $("#typed").textContent = PROMPT.slice(0, Math.round(clamp(t / 1.3) * PROMPT.length));
   for (const o of timed) o.el.classList.toggle("on", t >= o.t && t < o.u);
@@ -824,41 +808,38 @@ function renderDemo(t) {
     lastState = s;
     if (s === "idle") dIsl.kitty(210, 32);
     else if (s === "three") dIsl.show(330, 32, row("all", "", "3 agents working", ring));
-    else if (s === "multi") { multiLay = dIsl.show(500, 146, `<div class="ml">${Object.keys(A3).map((k) => `<div class="mr" data-k="${k}"><span class="gl">${G[k]()}</span><span class="p">${A3[k][0]}</span><span class="wt"></span><span class="rt"></span></div>`).join("")}</div>`); }
+    else if (s === "multi") multiLay = dIsl.show(500, 146, `<div class="ml">${Object.keys(A3).map((k) => `<div class="mr" data-k="${k}">${ic(k)}<span class="p">${A3[k][0]}</span><span class="wt"></span><span class="rt"></span></div>`).join("")}</div>`);
     else if (s === "ask") dIsl.show(460, 32, row("codex", "api", "wants to run a command", '<span class="bdg">1</span>', "amber"));
     else if (s.startsWith("card")) {
       const two = s.startsWith("card2"), ok = s.endsWith("ok");
-      dIsl.show(520, two ? 178 : 140, row("codex", "api", two ? "and 1 more waiting" : "wants to run a command", `<span class="bdg">${two ? 2 : 1}</span>`, ok ? "green" : "amber") + `<div class="cd">$ npm run migrate <span class="dd">--env=staging</span></div>` + (two ? `<div class="pk"><span class="gl">${G.claude()}</span><b>checkout</b> wants to run npm run e2e</div>` : "") + `<div class="bt">${ok ? `<span class="cb">Deny</span><span class="cb pri okb">Allowed${two ? " 2" : ""}</span>` : `<span class="cb">Deny <span class="kk">⌃⌥N</span></span><span class="cb">Always allow</span><span class="cb pri" id="bAllow">${two ? "Allow all 2" : "Allow"} <span class="kk">⌃⌥Y</span></span>`}</div>`);
+      dIsl.show(520, two ? 178 : 140, row("codex", "api", two ? "and 1 more waiting" : "wants to run a command", `<span class="bdg">${two ? 2 : 1}</span>`, ok ? "green" : "amber") + `<div class="cd">$ npm run migrate <span class="dd">--env=staging</span></div>` + (two ? `<div class="pk">${ic("claude")}<b>checkout</b> wants to run npm run e2e</div>` : "") + `<div class="bt">${ok ? `<span class="cb">Deny</span><span class="cb pri okb">Allowed${two ? " 2" : ""}</span>` : `<span class="cb">Deny <span class="kk">⌃⌥N</span></span><span class="cb">Always allow</span><span class="cb pri" id="bAllow">${two ? "Allow all 2" : "Allow"} <span class="kk">⌃⌥Y</span></span>`}</div>`);
     }
     else if (s === "risky") dIsl.show(440, 32, row("cursor", "landing-page", "risky command", '<span class="bdg redb">!</span>', "red"));
-    else if (s.startsWith("rcard")) { const no = s.endsWith("no"); dIsl.show(500, 140, row("cursor", "landing-page", no ? "Denied. Finding another way" : "wants to force push", "", no ? "" : "red") + `<div class="cd">$ git push <span class="bad">--force</span> origin main</div><div class="bt">${no ? '<span class="cb pri" style="background:#2c2c2f;color:#fff">Denied</span>' : '<span class="cb pri" id="bDeny">Deny <span class="kk">⌃⌥N</span></span><span class="cb rd">Allow anyway</span>'}</div>`); }
+    else if (s.startsWith("rcard")) { const no = s.endsWith("no"); dIsl.show(500, 140, row("cursor", "landing-page", no ? "Denied. Finding another way" : "wants to force push", "", no ? "" : "red") + `<div class="cd">$ git push <span class="bad">--force</span> origin main</div><div class="bt">${no ? '<span class="cb pri" style="background:#262628;color:#fff">Denied</span>' : '<span class="cb pri" id="bDeny">Deny <span class="kk">⌃⌥N</span></span><span class="cb rd">Allow anyway</span>'}</div>`); }
     else if (s === "done") dIsl.show(380, 32, row("all", "", "All 3 agents done", CHK + CHK + CHK, "green"));
-    else if (s === "eat") { eatAt = performance.now(); dIsl.kitty(210, 32, { brain: (tt, p) => { const k = (performance.now() - eatAt) / 1000, f = tt; const cyc = k % .5; if (k < 1.5 && cyc < .2) p.spawn("cookie", 6, -3, 0, 1.2, 2); return k < 1.6 ? { eyes: cyc < .2 ? "wide" : "happy", mouth: f % 2 ? "open" : "small", blush: true, tail: wag(f) } : { eyes: "happy", blush: true, tail: wag(f) }; } }); }
-    else if (s === "print") dIsl.kitty(340, 42, { brain: (tt) => ({ eyes: tt % 8 < 6 ? "happy" : "love", mouth: "open", blush: true, lift: T < 24 && tt % 4 < 2 ? 1 : 0, feet: "stand", tail: wag(tt) }), opts: { ground: 5 } });
+    else if (s === "eat") { eatAt = performance.now(); dIsl.kitty(210, 32, { brain: (tt, p) => { const k = (performance.now() - eatAt) / 1000, cyc = k % .5; if (k < 1.5 && cyc < .13) p.spawn("cookie", 6, -3, 0, 1.2, 2); return k < 1.6 ? { eyes: cyc < .2 ? "wide" : "happy", mouth: tt % 2 ? "open" : "small", blush: true, tail: wag(tt) } : { eyes: "happy", blush: true, tail: wag(tt) }; } }); }
+    else if (s === "print") dIsl.kitty(340, 42, { brain: (tt) => ({ eyes: tt % 8 < 6 ? "happy" : "love", mouth: "open", blush: true, lift: T < 24 && tt % 4 < 2 ? 1 : 0, tail: wag(tt) }), opts: { ground: 5 } });
   }
   if (s === "multi" && multiLay) for (const r of $$(".mr", multiLay)) {
-    const k = r.dataset.k, [, done, arr] = A3[k], cur = st(arr, t), wt = $(".wt", r), rt = $(".rt", r);
+    const [, done, arr] = A3[r.dataset.k], cur = st(arr, t), wt = $(".wt", r), rt = $(".rt", r);
     if (wt.textContent !== cur[1]) wt.textContent = cur[1];
     wt.style.color = cur[2] === "a" ? "#f5b942" : cur[2] === "d" ? "#5ad37b" : "";
     const want = cur[2] || "b"; if (rt.dataset.v !== want) { rt.dataset.v = want; rt.innerHTML = want === "d" ? CHK : want === "a" ? '<span class="ad"></span>' : '<span class="mb"><i></i></span>'; }
     if (want === "b") $("i", rt).style.width = clamp(t / done) * 100 + "%";
   }
-  // pointer
-  let target = [1080, 640], click = false;
-  const el = s.startsWith("card2") && !s.endsWith("ok") ? $("#bAllow") : s === "rcard" ? $("#bDeny") : null;
-  if (el && ((s.startsWith("card2") && t > 9.2) || (s === "rcard" && t > 13.6))) {
+  let target = [1080, 640];
+  const el = s === "card2" ? $("#bAllow") : s === "rcard" ? $("#bDeny") : null;
+  if (el && ((s === "card2" && t > 9.2) || (s === "rcard" && t > 13.6))) {
     const sr = screen.getBoundingClientRect(), r = el.getBoundingClientRect();
     target = [(r.left - sr.left + r.width / 2) / scale - 6, (r.top - sr.top + r.height / 2) / scale - 4];
-  } else if (s.startsWith("card2ok") && !kbOK) target = ptr.dataset.last ? JSON.parse(ptr.dataset.last) : target;
-  ptr.dataset.last = JSON.stringify(target);
+    ptr.dataset.last = JSON.stringify(target);
+  } else if (s === "card2ok" || s === "rcardno") target = JSON.parse(ptr.dataset.last || "[1080,640]");
   ptr.style.transform = `translate(${target[0]}px, ${target[1]}px)`;
-  click = Math.abs(t - 10.5) < .12 || Math.abs(t - 14.5) < .12;
+  const click = Math.abs(t - 10.5) < .12 || Math.abs(t - 14.5) < .12;
   ptr.classList.toggle("press", click);
   if (click) press($("#bAllow") || $("#bDeny"));
-  // receipt
-  $("#dimmer").style.opacity = t >= 19.4 ? .55 : 0;
-  const clip = $("#demoClip"), full = Math.min($("#demoPaper").offsetHeight, 690);
-  clip.style.height = Math.round(clamp((t - 20) / 4.5) * full) + "px";
+  $("#dimmer").style.opacity = t >= 19.4 ? .6 : 0;
+  $("#demoClip").style.height = Math.round(clamp((t - 20) / 4.5) * Math.min($("#demoPaper").offsetHeight, 690)) + "px";
 }
 let demoVisible = false, lastTs = 0;
 new IntersectionObserver((es) => { demoVisible = es[0].isIntersecting; }, { threshold: .15 }).observe(fitBox);
@@ -871,16 +852,18 @@ addEventListener("keydown", (e) => {
   if (e.code === "KeyN" && T >= 13.0 && T < 14.6 && !kbNo) { e.preventDefault(); kbNo = true; T = Math.max(T, 14.62); flash("N"); toast("Denied. The agent will find another way."); }
 });
 
-/* ================= Hero mascot, nav, final, mochi ================= */
+/* ================= Hero kitty, nav, icon, mochi ================= */
 let dlMode = "idle", hoverDl = false, gift = null, heroMood = 0;
-new Pet($("#navKitty"), { px: 1.375, hole: "#000", brain: (t) => ({ eyes: blinkAt(t) ? "blink" : "open", tail: sway(t) }) });
-new Pet($("#iconKitty"), { px: 4.5, hole: "#000", brain: (t, p) => (hoverDl ? { eyes: "wide", mouth: "open", blush: true, tail: wag(t) } : { eyes: blinkAt(t) ? "blink" : "open", dx: lookAt(p.c), tail: sway(t) }) });
-const heroPet = new Pet($("#heroKitty"), { px: (W) => W / 16, brain: (t, p) => {
-  if (heroMood > 0) { heroMood--; if (heroMood % 5 === 0) p.spawn("heart", 2 + (heroMood * 7) % 10, 2, heroMood % 2 ? .2 : -.2, -.5, 10); return { eyes: "love", mouth: "open", blush: true, tail: wag(t), lift: heroMood % 4 < 2 ? .5 : 0 }; }
+new Pet($("#navKitty"), { px: 1.375, brain: (t) => ({ eyes: blinkAt(t) ? "blink" : "open", tail: sway(t) }) });
+new Pet($("#iconKitty"), { px: 4.5, brain: (t, p) => (hoverDl ? { eyes: "wide", mouth: "open", blush: true, tail: wag(t) } : { eyes: blinkAt(t) ? "blink" : "open", dx: lookAt(p.c), tail: sway(t) }) });
+const heroKit = $("#heroKitty");
+function sizeHeroKitty() { const s = Math.round(geom.R * hole.clientHeight * 1.05 / 16) * 16; heroKit.style.width = heroKit.style.height = Math.max(96, s) + "px"; }
+new Pet(heroKit, { px: (W) => W / 16, brain: (t, p) => {
+  if (heroMood > 0) { heroMood--; if (heroMood % 5 === 0) p.spawn("heart", 2 + (heroMood * 7) % 10, 2, heroMood % 2 ? .2 : -.2, -.5, 10); return { eyes: "love", mouth: "open", blush: true, tail: wag(t) }; }
   if (hoverDl) return { eyes: "wide", mouth: "open", blush: true, tail: wag(t) };
   return { eyes: blinkAt(t) ? "blink" : "open", dx: lookAt(p.c), tail: sway(t), mouth: t % 90 < 10 ? "blep" : "small" };
 } });
-$("#mascot").addEventListener("click", () => { heroMood = 26; });
+heroKit.addEventListener("click", () => { heroMood = 26; });
 
 const big = $("#bigKitty"), bubble = $("#bubble");
 let mood = "idle", moodT = 0, outfit = "";
@@ -910,12 +893,12 @@ const fx = $("#fx"), bits = [];
 let fxOn = false;
 function burst(x, y, n, spread = 10) {
   if (reduce) return;
-  for (let i = 0; i < n; i++) bits.push({ k: Math.random() < .6 ? "heart" : "sparkle", x, y, vx: (Math.random() - .5) * spread, vy: -Math.random() * 7 - 2, px: Math.random() < .5 ? 3 : 4, life: 80 + Math.random() * 40 | 0, t: 0, ink: Math.random() < .5 ? "#ff3d8b" : "#2a0a19" });
+  for (let i = 0; i < n; i++) bits.push({ k: Math.random() < .5 ? "heart" : "sparkle", x, y, vx: (Math.random() - .5) * spread, vy: -Math.random() * 7 - 2, px: Math.random() < .5 ? 3 : 4, life: 80 + Math.random() * 40 | 0, t: 0 });
   if (!fxOn) { fxOn = true; requestAnimationFrame(fxFrame); }
 }
 function fxFrame() {
   const ctx = fit(fx);
-  for (let i = bits.length - 1; i >= 0; i--) { const b = bits[i]; b.t++; b.vy += .2; b.vx *= .985; b.x += b.vx; b.y += b.vy; drawSpr(ctx, SPR[b.k], b.x, b.y, b.px, (b.life - b.t) / 25, b.ink); if (b.t > b.life || b.y > innerHeight + 40) bits.splice(i, 1); }
+  for (let i = bits.length - 1; i >= 0; i--) { const b = bits[i]; b.t++; b.vy += .2; b.vx *= .985; b.x += b.vx; b.y += b.vy; drawSpr(ctx, SPR[b.k], b.x, b.y, b.px, (b.life - b.t) / 25); if (b.t > b.life || b.y > innerHeight + 40) bits.splice(i, 1); }
   if (bits.length) requestAnimationFrame(fxFrame); else { fxOn = false; fit(fx); }
 }
 function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 2600); }
@@ -923,7 +906,7 @@ function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("s
 /* ================= Download: the nav notch becomes the island ================= */
 const nav = $("#nav"), sheet = $("#sheet"), sheetBg = $("#sheetBg");
 let version = "";
-new Pet($("#dlKitty"), { px: 4, hole: "#000", brain: (t, p) => {
+new Pet($("#dlKitty"), { px: 4, brain: (t) => {
   const pose = { tail: wag(t), blush: true };
   if (dlMode === "busy") Object.assign(pose, { eyes: gift ? "wide" : (t % 8 < 5 ? "love" : "happy"), mouth: "open", lift: !gift && t % 4 < 2 ? 1 : 0 });
   else Object.assign(pose, { eyes: "happy", mouth: t % 10 < 4 ? "blep" : "open", lift: t % 4 < 2 ? 1 : 0 });
@@ -972,8 +955,8 @@ $$("[data-dl]").forEach((b) => {
 fetch(`https://api.github.com/repos/${REPO}/releases/latest`).then((r) => (r.ok ? r.json() : Promise.reject())).then((rel) => {
   version = (rel.tag_name || "").replace(/^v/, "");
   const dmg = (rel.assets || []).find((a) => a.name === "NotchBar.dmg") || (rel.assets || []).find((a) => /\.dmg$/.test(a.name));
-  const when = rel.published_at ? new Date(rel.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "";
-  if (version) { $$(".v-ver").forEach((e) => { e.textContent = `Version ${version}`; }); $("#badge").textContent = `Version ${version}${when ? ` · ${when}` : ""}`; }
+  const when = rel.published_at ? new Date(rel.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+  if (version) { $$(".v-ver").forEach((e) => { e.textContent = `v${version}`; }); $("#badge").textContent = `v${version}${when ? ` · ${when}` : ""}`; }
   if (dmg) $$(".v-size").forEach((e) => { e.textContent = `${(dmg.size / 1048576).toFixed(1)} MB`; });
 }).catch(() => {});
 const ua = navigator.userAgent;
@@ -983,17 +966,20 @@ const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersec
 $$(".reveal").forEach((el) => io.observe(el));
 
 /* ================= Loop ================= */
-paintAll();
-let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { layout(); paintAll(); }, 120); });
-let lastPet = 0;
+function onResize() { layout(); paintAll(); holeSize(); geom = holeGeom(); sizeHeroKitty(); }
+onResize();
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(onResize, 120); });
+let lastPet = 0, lastHole = 0;
 function loop(ts) {
   const dt = Math.min(.1, (ts - (lastTs || ts)) / 1000); lastTs = ts;
   if (!document.hidden) {
+    if (holeVisible && ts - lastHole > (reduce ? 1e9 : 66)) { lastHole = ts; renderHole(ts / 1000); }
     if (demoVisible) { T += dt; if (T >= T_END) { T = 0; kbOK = kbNo = false; } renderDemo(T); }
     if (ts - lastPet > 125) { lastPet = ts; pets.forEach((p) => p.step()); }
   }
   requestAnimationFrame(loop);
 }
+renderHole(0);
 requestAnimationFrame(loop);
 if (new URLSearchParams(location.search).has("download") || location.hash === "#download") setTimeout(() => download(true), reduce ? 0 : 900);
 })();
