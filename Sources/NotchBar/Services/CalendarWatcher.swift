@@ -13,18 +13,31 @@ final class CalendarWatcher: ObservableObject {
     var onUpcoming: ((_ title: String, _ minutes: Int) -> Void)?
     var onMeetingEnded: ((_ title: String) -> Void)?
 
-    private let eventStore = EKEventStore()
+    /// Created on first use: opening the calendar database costs memory and a daemon connection.
+    private lazy var eventStore = EKEventStore()
     private var timer: Timer?
+    private var observer: NSObjectProtocol?
     private var warned = Set<String>()
 
     init() {
         refreshAccess()
-        let t = Timer(timeInterval: 60, repeats: true) { [weak self] _ in self?.check() }
-        t.tolerance = 20
-        RunLoop.main.add(t, forMode: .common)
-        timer = t
-        NotificationCenter.default.addObserver(forName: .EKEventStoreChanged, object: eventStore, queue: .main) {
-            [weak self] _ in self?.check()
+    }
+
+    /// Watch the calendar only while the feature is on. Off, it costs nothing.
+    func setActive(_ on: Bool) {
+        if on {
+            guard timer == nil else { return }
+            let t = Timer(timeInterval: 60, repeats: true) { [weak self] _ in self?.check() }
+            t.tolerance = 20
+            RunLoop.main.add(t, forMode: .common)
+            timer = t
+            if observer == nil {
+                observer = NotificationCenter.default.addObserver(forName: .EKEventStoreChanged, object: eventStore,
+                                                                  queue: .main) { [weak self] _ in self?.check() }
+            }
+        } else {
+            timer?.invalidate()
+            timer = nil
         }
     }
 

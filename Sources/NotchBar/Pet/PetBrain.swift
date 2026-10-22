@@ -3,9 +3,10 @@ import Combine
 
 /// The pet's little mind: what it's doing, where it stands, and the frame to draw.
 ///
-/// Runs at 4 fps while awake and 1 fps asleep, only while some view shows it,
-/// and stops entirely when the displays sleep. Low frame rates are on purpose:
-/// it reads as an old LCD pet and costs next to nothing.
+/// Runs at 4 fps while awake and 1 fps while dozing, only while some view shows it.
+/// After a minute of dozing it falls into a deep sleep and stops ticking entirely,
+/// and it also stops when the displays sleep. Frames go straight to `PetLayerView`
+/// through `frames`, never through SwiftUI, so a tick costs a few microseconds.
 final class PetBrain: ObservableObject {
     struct Particle: Equatable {
         var kind: PetSprite.ParticleKind
@@ -23,7 +24,12 @@ final class PetBrain: ObservableObject {
 
     enum Mood: Equatable { case egg, happy, content, hungry, sleepy }
 
-    @Published private(set) var frame = Frame()
+    /// The frame on screen now. Changes are sent on `frames`; views that only need
+    /// `lastPrinted` don't redraw on every tick.
+    private(set) var frame = Frame() {
+        didSet { frames.send(frame) }
+    }
+    let frames = PassthroughSubject<Frame, Never>()
     /// Set by the hero view while the receipt prints.
     var printing = false
     /// A new NotchBar version is waiting: the pet carries a little gift box.
@@ -33,7 +39,9 @@ final class PetBrain: ObservableObject {
     /// Stand still (the big pet on the printer) instead of wandering.
     var stayPut = false
     /// Receipt signature last printed, so it only prints again when something changed.
-    var lastPrinted = ""
+    @Published var lastPrinted = ""
+    /// Changes only when the mood does (asleep, fed, hungry), so the mood line can refresh.
+    @Published private(set) var shownMood: Mood = .content
     /// Where the pointer is relative to the pet (-1 left, 0 centered, 1 right), nil when unknown.
     var lookAt: Int?
 
@@ -43,6 +51,8 @@ final class PetBrain: ObservableObject {
 
     private enum Act: Equatable {
         case sit, walk(to: Int), sleep, yawn, eat(cookieY: Double, chomps: Int), party, petted, wobble
+        // Little idle fidgets.
+        case hop, blep, wag, curious
     }
     private var act: Act = .sit
     private var actTicks = 0
@@ -58,6 +68,12 @@ final class PetBrain: ObservableObject {
     private var displaysAsleep = false
     private var rng = SystemRandomNumberGenerator()
     private var bag = Set<AnyCancellable>()
+    // Slow facts, refreshed once a minute instead of every tick.
+    private var cachedStreak = 0
+    private var cachedNight = false
+    private var factsAt = Date.distantPast
+    /// Ticks of dozing before the deep sleep (no timer at all).
+    static let deepSleepTicks = 60
 
     init() {
         let ws = NSWorkspace.shared.notificationCenter
@@ -145,8 +161,9 @@ final class PetBrain: ObservableObject {
     /// You clicked the pet.
     func pet() {
         lastStimulus = Date()
+        if level() == 0 { start(.wobble); return }
         start(.petted)
-        burst(.heart, count: 2)
+        burst(.heart, count: 3)
         NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
     }
 
@@ -158,6 +175,8 @@ final class PetBrain: ObservableObject {
 
     #if DEBUG
     func debugSleep() { lastStimulus = .distantPast; start(.sleep) }
+    func debugStep(_ n: Int) { for _ in 0..<n { step() } }
+    var isTicking: Bool { timer != nil }
     #endif
 
     // MARK: loop
@@ -167,6 +186,7 @@ final class PetBrain: ObservableObject {
         timer = nil
         guard viewers > 0, !displaysAsleep else { return }
         let asleep = act == .sleep
+        if asleep && actTicks >= Self.deepSleepTicks { return }   // deep sleep: woken by poke()
         let t = Timer(timeInterval: asleep ? 1.0 : 0.25, repeats: true) { [weak self] _ in self?.step() }
         t.tolerance = asleep ? 0.2 : 0.05
         RunLoop.main.add(t, forMode: .common)
@@ -194,8 +214,13 @@ final class PetBrain: ObservableObject {
         tick += 1
         actTicks += 1
         let idleFor = Date().timeIntervalSince(lastStimulus)
-        let hour = Calendar.current.component(.hour, from: Date())
-        let night = hour >= 1 && hour < 6
+        if Date().timeIntervalSince(factsAt) > 60 {
+            factsAt = Date()
+            cachedStreak = streak()
+            let hour = Calendar.current.component(.hour, from: Date())
+            cachedNight = hour >= 1 && hour < 6
+        }
+        let night = cachedNight
         var pose = PetSprite.Pose()
         pose.outfit = .forLevel(level())
         pose.egg = level() == 0
@@ -208,13 +233,20 @@ final class PetBrain: ObservableObject {
         case .sit:
             pose.eyes = blinkOr(lookEyes())
             pose.ears = !hungry
-            if hungry { pose.eyes = blinkOr(.sleepy); pose.mouth = .flat }
+            // A slow, lazy tail sway.
+            pose.tail = (tick / 6) % 3 == 2 ? .curl : .up
+            if hungry { pose.eyes = blinkOr(.sleepy); pose.mouth = .flat; pose.tail = .down }
             if pose.egg {
                 // Eggs wobble now and then.
                 if actTicks % 24 < 4 { start(.wobble) }
-            } else if !stayPut && actTicks > 8 && Int.random(in: 0..<(hungry ? 40 : 14), using: &rng) == 0 {
-                let target = randomSpot()
-                if abs(target - x) > 6 { start(.walk(to: target)) }
+            } else if actTicks > 8 {
+                let roll = Int.random(in: 0..<(hungry ? 60 : 24), using: &rng)
+                if roll == 0 && !stayPut {
+                    let target = randomSpot()
+                    if abs(target - x) > 6 { start(.walk(to: target)) }
+                } else if roll == 1 && !hungry {
+                    start([.hop, .blep, .wag, .curious, .wag].randomElement(using: &rng) ?? .wag)
+                }
             }
             if idleFor > (night ? 45 : 150) { start(.sleep) }
 
@@ -226,35 +258,51 @@ final class PetBrain: ObservableObject {
             lift = tick % 2
             pose.eyes = .open(dx: facingLeft ? -1 : 1)
             pose.ears = !hungry
+            pose.tail = hungry ? .down : (tick % 4 < 2 ? .up : .curl)
+            if hungry { pose.mouth = .flat }
+            // Hums a little tune on a full belly.
+            if mood == .happy && tick % 10 == 0 {
+                spawn(.note, x: facingLeft ? 1 : 13, y: 3, vx: facingLeft ? -0.3 : 0.3, vy: -0.5, life: 5)
+            }
             if x == target || actTicks > 120 { start(.sit) }
 
         case .sleep:
             pose.eyes = .closed
             pose.squash = true
             pose.ears = false
-            if tick % 3 == 0 { spawn(.z, x: 13, y: 9, vx: 0.4, vy: -0.6, life: 6) }
             if idleFor < 5 { start(.yawn) }
+            else if actTicks >= Self.deepSleepTicks {
+                // Deep sleep: one still "z" above the head, then no more ticks until something wakes it.
+                particles = [Particle(kind: .z, x: 14, y: 7, life: 3)]   // ages to 2 below (a soft z), then stays put
+                timer?.invalidate()
+                timer = nil
+            } else if tick % 3 == 0 { spawn(.z, x: 14, y: 9, vx: 0.4, vy: -0.6, life: 6) }
 
         case .yawn:
-            pose.eyes = .closed
+            pose.eyes = actTicks < 5 ? .closed : .blink
             pose.mouth = actTicks < 5 ? .open : .small
             pose.ears = actTicks > 2
+            pose.tail = actTicks < 4 ? .down : .curl
+            lift = actTicks == 5 || actTicks == 6 ? 1 : 0     // a little stretch
             if actTicks > 7 { start(.sit) }
 
         case let .eat(cookieY, chomps):
-            pose.eyes = .open(dx: 0)
+            pose.eyes = .wide
+            pose.tail = tick % 2 == 0 ? .up : .curl
             let mouthY = 7.0
             if cookieY < mouthY - 3 {
                 pose.mouth = .open
                 act = .eat(cookieY: cookieY + 2, chomps: chomps)
                 particles.removeAll { $0.kind == .cookie }
-                particles.append(Particle(kind: .cookie, x: 5, y: cookieY + 2, life: 2))
+                particles.append(Particle(kind: .cookie, x: facingLeft ? 5 : 7, y: cookieY + 2, life: 2))
             } else if chomps < 6 {
                 pose.mouth = chomps % 2 == 0 ? .open : .small
                 pose.eyes = .happy
+                pose.blush = true
+                pose.tail = chomps % 2 == 0 ? .up : .curl
                 particles.removeAll { $0.kind == .cookie }
                 if chomps % 2 == 0 {
-                    spawn(.crumb, x: Double.random(in: 3...10, using: &rng), y: 9, vx: Double.random(in: -0.6...0.6, using: &rng), vy: -0.6, life: 3)
+                    spawn(.crumb, x: Double.random(in: 4...11, using: &rng), y: 12, vx: Double.random(in: -0.6...0.6, using: &rng), vy: -0.6, life: 3)
                 }
                 act = .eat(cookieY: cookieY, chomps: chomps + 1)
             } else {
@@ -263,20 +311,59 @@ final class PetBrain: ObservableObject {
             }
 
         case .party:
-            pose.eyes = .happy
-            pose.mouth = .smile
+            pose.eyes = actTicks % 8 < 6 ? .happy : .love
             pose.blush = true
             lift = actTicks % 4 < 2 ? 2 : 0
+            pose.mouth = actTicks < 4 ? .blep : (lift > 0 ? .open : .smile)
             pose.feet = lift > 0 ? .tucked : .stand
+            pose.tail = tick % 2 == 0 ? .up : .curl
             if actTicks % 6 == 0 { spawn(.sparkle, x: Double.random(in: -2...12, using: &rng), y: 2, vy: -0.4, life: 4) }
             if !printing && actTicks > 14 { start(.sit) }
 
         case .petted:
-            pose.eyes = .happy
-            pose.mouth = .smile
+            // Melts: heart eyes, rosy cheeks, a happy wiggle, then a wink.
+            pose.eyes = actTicks < 7 ? .love : actTicks < 10 ? .wink : .happy
+            pose.mouth = actTicks < 7 ? .open : .smile
             pose.blush = true
-            lift = actTicks < 3 ? 1 : 0
-            if actTicks > 8 { start(.sit) }
+            pose.tail = tick % 2 == 0 ? .up : .curl
+            lift = actTicks < 6 && actTicks % 3 == 1 ? 1 : 0
+            pose.feet = lift > 0 ? .tucked : .stand
+            if actTicks == 4 { spawn(.heart, x: 6, y: 0, vy: -0.7, life: 6) }
+            if actTicks > 12 { start(.sit) }
+
+        case .hop:
+            // Two bouncy hops.
+            let h = [1, 2, 2, 1, 0, 1, 2, 2, 1, 0]
+            lift = actTicks < h.count ? h[actTicks] : 0
+            pose.eyes = .happy
+            pose.mouth = lift > 0 ? .open : .smile
+            pose.feet = lift > 0 ? .tucked : .stand
+            pose.tail = lift > 0 ? .up : .curl
+            if actTicks == 2 || actTicks == 7 { spawn(.sparkle, x: facingLeft ? 0 : 14, y: 4, vy: -0.3, life: 3) }
+            if actTicks >= h.count { start(.sit) }
+
+        case .blep:
+            // Forgot its tongue out. Blinks about it.
+            pose.eyes = actTicks == 5 ? .blink : .open(dx: 0)
+            pose.mouth = .blep
+            pose.tail = (actTicks / 3) % 2 == 0 ? .up : .curl
+            if actTicks > 10 { start(.sit) }
+
+        case .wag:
+            pose.eyes = actTicks < 3 ? lookEyes() : .happy
+            pose.mouth = .smile
+            pose.blush = actTicks > 3
+            pose.tail = tick % 2 == 0 ? .up : .curl
+            if actTicks > 9 { start(.sit) }
+
+        case .curious:
+            // Looks one way, then the other, ears up, then back.
+            let phase = actTicks / 3
+            pose.eyes = phase == 2 ? .blink : .wide
+            if phase == 1 { facingLeft = true } else if phase == 3 { facingLeft = false }
+            pose.mouth = .small
+            pose.tail = .up
+            if actTicks > 13 { start(.sit) }
 
         case .wobble:
             pose.eyes = .open(dx: actTicks % 2 == 0 ? -1 : 1)
@@ -285,7 +372,7 @@ final class PetBrain: ObservableObject {
         }
 
         // Shades for a week-long streak (when the eyes are plain open).
-        if streak() >= 7, case .open = pose.eyes, !pose.egg { pose.eyes = .shades }
+        if cachedStreak >= 7, case .open = pose.eyes, !pose.egg { pose.eyes = .shades }
         pose.flip = facingLeft && !pose.egg
         x = min(max(0, x), max(0, stageWidth - PetSprite.width))
 
@@ -298,10 +385,12 @@ final class PetBrain: ObservableObject {
         var shown = particles
         if hasGift && !pose.egg {
             // The present sits on the ground next to the pet, on the side it faces.
-            shown.append(Particle(kind: .gift, x: facingLeft ? -6 : 15, y: 15 + Double(lift), life: 1))
+            shown.append(Particle(kind: .gift, x: facingLeft ? -6 : Double(PetSprite.width + 1), y: 16 + Double(lift), life: 1))
         }
         let next = Frame(pose: pose, x: x, lift: lift, particles: shown)
         if next != frame { frame = next }
+        let m = mood
+        if m != shownMood { shownMood = m }
     }
 
     private func lookEyes() -> PetSprite.Eyes {
@@ -312,7 +401,9 @@ final class PetBrain: ObservableObject {
     }
 
     private func blinkOr(_ e: PetSprite.Eyes) -> PetSprite.Eyes {
-        tick % 17 == 0 ? .closed : e
+        // A blink every few seconds, sometimes a double blink.
+        let t = tick % 23
+        return t == 0 || (tick % 69 == 2 && t == 2) ? .blink : e
     }
 
     private func spawn(_ k: PetSprite.ParticleKind, x: Double, y: Double, vx: Double = 0, vy: Double = 0, life: Int) {
@@ -322,7 +413,7 @@ final class PetBrain: ObservableObject {
 
     private func burst(_ k: PetSprite.ParticleKind, count: Int) {
         for i in 0..<count {
-            spawn(k, x: Double(2 + i * 6), y: 1, vx: i % 2 == 0 ? -0.3 : 0.3, vy: -0.6, life: 6)
+            spawn(k, x: Double(1 + i * 5), y: 2 - Double(i % 2), vx: i % 2 == 0 ? -0.3 : 0.3, vy: -0.6, life: 7)
         }
     }
 }

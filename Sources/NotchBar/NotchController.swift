@@ -538,8 +538,11 @@ final class NotchController: NSObject {
                                          action: .expand, important: true))
         }
         calendar.onMeetingEnded = { [weak self] title in self?.store.flushDigest(context: title) }
-        prefs.$calendarAware.dropFirst().sink { [weak self] _ in
-            DispatchQueue.main.async { self?.calendar.check() }
+        prefs.$calendarAware.sink { [weak self] on in
+            DispatchQueue.main.async {
+                self?.calendar.setActive(on)
+                self?.calendar.check()   // off: just clears the meeting, never opens the calendar
+            }
         }.store(in: &bag)
 
         // System vitals: sample only while you can see them; warn before the disk fills up.
@@ -548,6 +551,15 @@ final class NotchController: NSObject {
         }
         Publishers.CombineLatest(ui.$expanded, prefs.$showVitals)
             .sink { [weak self] expanded, show in self?.system.setLive(expanded && show) }
+            .store(in: &bag)
+        // The open panel builds a lot of short-lived views. Once it has been closed a few
+        // seconds, hand the freed memory back to macOS instead of keeping it reserved.
+        ui.$expanded.removeDuplicates().filter { !$0 }.dropFirst()
+            .debounce(for: .seconds(4), scheduler: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self, !self.ui.expanded else { return }
+                malloc_zone_pressure_relief(nil, 0)
+            }
             .store(in: &bag)
         system.onDiskLow = { [weak self] free, critical in
             self?.store.showBanner(Banner(kind: .attention, sessionID: "", agent: .claude,

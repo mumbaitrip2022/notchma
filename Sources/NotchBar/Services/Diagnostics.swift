@@ -12,7 +12,7 @@ final class DiagLog {
     private let limit = 150
     private let queue = DispatchQueue(label: "notchbar.diag", qos: .utility)
     private var dirty = false
-    private var timer: DispatchSourceTimer?
+    private var saveScheduled = false
     private let url = URL(fileURLWithPath: NSHomeDirectory())
         .appendingPathComponent("Library/Application Support/NotchBar/diag.log")
     private static let clock: DateFormatter = {
@@ -24,12 +24,6 @@ final class DiagLog {
         if let text = try? String(contentsOf: url, encoding: .utf8) {
             previous = text.split(separator: "\n").suffix(60).map(String.init)
         }
-        // Save at most every 20s, and only when something new was logged.
-        let t = DispatchSource.makeTimerSource(queue: queue)
-        t.schedule(deadline: .now() + 20, repeating: 20, leeway: .seconds(5))
-        t.setEventHandler { [weak self] in self?.flush() }
-        t.resume()
-        timer = t
     }
 
     static func log(_ message: String) { shared.add(message) }
@@ -40,6 +34,13 @@ final class DiagLog {
             self.lines.append(line)
             if self.lines.count > self.limit { self.lines.removeFirst(self.lines.count - self.limit) }
             self.dirty = true
+            // Save at most every 20s, and only after something new was logged: no timer while quiet.
+            guard !self.saveScheduled, !DayLedger.isTesting else { return }
+            self.saveScheduled = true
+            self.queue.asyncAfter(deadline: .now() + 20, qos: .utility) {
+                self.saveScheduled = false
+                self.flush()
+            }
         }
     }
 

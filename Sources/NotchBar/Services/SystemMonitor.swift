@@ -5,7 +5,7 @@ import Foundation
 ///
 /// Cost model: samples every 1.5s only while the notch is expanded (`setLive(true)`).
 /// Collapsed, memory pressure arrives as a kernel event (no polling) and disk is
-/// checked once a minute, just to warn before it runs out.
+/// checked every few minutes, just to warn before it runs out.
 final class SystemMonitor: ObservableObject {
     enum Pressure: Int { case normal = 1, warning = 2, critical = 4 }
 
@@ -52,7 +52,7 @@ final class SystemMonitor: ObservableObject {
         pressureSource = src
 
         let t = DispatchSource.makeTimerSource(queue: queue)
-        t.schedule(deadline: .now() + 2, repeating: 60, leeway: .seconds(15))
+        t.schedule(deadline: .now() + 2, repeating: 180, leeway: .seconds(30))
         t.setEventHandler { [weak self] in self?.sampleDisk() }
         t.resume()
         diskTimer = t

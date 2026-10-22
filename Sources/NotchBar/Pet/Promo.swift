@@ -145,7 +145,7 @@ private struct PromoStates: View {
                 Spacer()
                 PetCanvas(frame: PetBrain.Frame(pose: PetSprite.Pose(eyes: .open(dx: 1), outfit: .sprout)),
                           pixel: 2, ink: .white, roams: false, ground: 0)
-                    .frame(width: 28, height: 24)
+                    .frame(width: 32, height: 28)
                     .clipped()
                 Spacer()
             }

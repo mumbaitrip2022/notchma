@@ -119,8 +119,8 @@ struct ReceiptPaper: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PetCanvas(frame: PetBrain.Frame(pose: pose), pixel: 2, ink: Thermal.ink, roams: false, ground: 0)
-                .frame(width: 40, height: 24)
+            PetCanvas(frame: PetBrain.Frame(pose: pose), pixel: 2, ink: Thermal.ink, accent: nil, roams: false, ground: 0)
+                .frame(width: 40, height: 28)
                 .padding(.top, 10)
             VStack(spacing: 1.5) {
                 ForEach(Array(content.lines.enumerated()), id: \.offset) { _, line in row(line) }

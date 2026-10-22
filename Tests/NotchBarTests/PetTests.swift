@@ -80,7 +80,7 @@ final class PetTests: XCTestCase {
     }
 
     func testSpriteShapes() {
-        for eyes: PetSprite.Eyes in [.open(dx: -1), .open(dx: 1), .closed, .happy, .sleepy, .shades, .wide] {
+        for eyes: PetSprite.Eyes in [.open(dx: -1), .open(dx: 1), .closed, .happy, .sleepy, .shades, .wide, .love, .wink, .blink] {
             for outfit: PetSprite.Outfit in [.none, .sprout, .headphones, .crown] {
                 let g = PetSprite.render(.init(eyes: eyes, outfit: outfit))
                 XCTAssertEqual(g.count, PetSprite.height)
@@ -92,6 +92,30 @@ final class PetTests: XCTestCase {
         p.flip = true
         XCTAssertEqual(PetSprite.render(p), right.map { Array($0.reversed()) })
         XCTAssertFalse(PetSprite.render(.init(egg: true)).joined().allSatisfy { $0 == .none })
+        for mouth: PetSprite.Mouth in [.small, .open, .smile, .flat, .blep] {
+            for tail: PetSprite.Tail in [.up, .curl, .down] {
+                for squash in [false, true] {
+                    let g = PetSprite.render(.init(mouth: mouth, squash: squash, tail: tail))
+                    XCTAssertEqual(g.count, PetSprite.height)
+                }
+            }
+        }
+        // Pink cheeks and ears are there to be tinted.
+        XCTAssertTrue(PetSprite.render(.init()).joined().contains(.blush))
+    }
+
+    /// Every act runs for a while without getting stuck or crashing, idle fidgets included.
+    func testBrainRunsAllActs() {
+        let brain = PetBrain()
+        brain.level = { 4 }
+        brain.lastFedAt = { Date() }
+        brain.appeared(stageWidth: 120)
+        brain.pet(); brain.debugStep(20)
+        brain.feed(); brain.debugStep(40)
+        brain.party(); brain.debugStep(20)
+        brain.debugStep(400)
+        XCTAssertLessThanOrEqual(brain.frame.x, 120 - PetSprite.width)
+        brain.disappeared()
     }
 
     func testOutfitUnlocks() {
@@ -99,5 +123,39 @@ final class PetTests: XCTestCase {
         XCTAssertEqual(PetSprite.Outfit.forLevel(3), .sprout)
         XCTAssertEqual(PetSprite.Outfit.forLevel(6), .headphones)
         XCTAssertEqual(PetSprite.Outfit.forLevel(12), .crown)
+    }
+
+    func testDeepSleepStopsTickingAndPokeWakes() {
+        let brain = PetBrain()
+        brain.level = { 3 }
+        brain.appeared()
+        XCTAssertTrue(brain.isTicking)
+        var sent = 0
+        let sub = brain.frames.sink { _ in sent += 1 }
+        brain.debugSleep()
+        brain.debugStep(PetBrain.deepSleepTicks + 2)
+        XCTAssertFalse(brain.isTicking, "deep sleep should stop the timer")
+        XCTAssertTrue(brain.frame.particles.contains { $0.kind == .z }, "a still z stays above the head")
+        XCTAssertGreaterThan(sent, 0, "frames reach the layer without SwiftUI")
+        brain.poke()
+        XCTAssertTrue(brain.isTicking, "poke wakes it up")
+        brain.disappeared()
+        XCTAssertFalse(brain.isTicking, "nothing ticks while nobody sees it")
+        sub.cancel()
+    }
+
+    func testBitmapRendererDrawsEverySpritePixel() {
+        let pose = PetSprite.Pose()
+        let lit = PetSprite.render(pose).joined().filter { $0 != .none }.count
+        let w = 40, h = 20
+        let c = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                          space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        c.translateBy(x: 0, y: CGFloat(h)); c.scaleBy(x: 1, y: -1)
+        PetCanvas.draw(PetBrain.Frame(pose: pose), in: c, stageWidth: w, height: h,
+                       ink: CGColor(red: 1, green: 1, blue: 1, alpha: 1), roams: false, ground: 1)
+        let px = c.data!.bindMemory(to: UInt8.self, capacity: w * h * 4)
+        let drawn = (0..<(w * h)).filter { px[$0 * 4 + 3] > 0 }.count
+        XCTAssertEqual(drawn, lit)
     }
 }

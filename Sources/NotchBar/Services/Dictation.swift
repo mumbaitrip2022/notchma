@@ -13,7 +13,15 @@ final class Dictation: ObservableObject {
     var onFinal: ((String) -> Void)?
     var onError: ((String) -> Void)?
 
-    private let engine = AVAudioEngine()
+    /// Made when you start talking and released when you're done, so the audio
+    /// stack isn't held open the rest of the time.
+    private var liveEngine: AVAudioEngine?
+    private var engine: AVAudioEngine {
+        if let e = liveEngine { return e }
+        let e = AVAudioEngine()
+        liveEngine = e
+        return e
+    }
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
     private var recognizer: SFSpeechRecognizer?
@@ -150,8 +158,12 @@ final class Dictation: ObservableObject {
 
     private func cleanup() {
         silenceWork?.cancel(); maxWork?.cancel()
-        if engine.isRunning { engine.stop() }
-        engine.inputNode.removeTap(onBus: 0)
+        if let e = liveEngine {
+            if e.isRunning { e.stop() }
+            e.inputNode.removeTap(onBus: 0)
+            liveEngine = nil
+        }
+        recognizer = nil
         request = nil
         task = nil
         state = .idle
