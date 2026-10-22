@@ -30,7 +30,10 @@ certificate is for the App Store and can't be notarized for outside distribution
 
 ## 3. Publish
 
-- **GitHub Releases:** tag `v<version>`, attach the `.dmg` and `.zip`, paste the SHA-256 lines `make dist` prints.
+- **GitHub Releases:** tag `v<version>`, attach `NotchBar-<version>.dmg`, `NotchBar-<version>.zip` **and**
+  `NotchBar.dmg`, then paste the SHA-256 lines `make dist` prints. The fixed-name `NotchBar.dmg` keeps the
+  direct link working: `https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg`.
+  The download page (`docs/index.html`, served by GitHub Pages) uses that link too.
 - **Homebrew (later):** a cask pointing at the release `.zip` lets people `brew install --cask notchbar`.
 - Bump `CFBundleShortVersionString` / `CFBundleVersion` in `Resources/Info.plist` for each release.
 

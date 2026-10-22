@@ -6,7 +6,7 @@
 
 **Approve Claude Code, Codex and Cursor requests from your notch.** See what every agent is doing, track usage limits, and meet a pixel pet that prints a receipt of your day. 🏝️🧾
 
-[![Download for macOS](https://img.shields.io/badge/Download-macOS%2014%2B-black?style=for-the-badge&logo=apple)](https://github.com/mumbaitrip2022/notchma/releases/latest)
+[![Download for macOS](https://img.shields.io/badge/Download-macOS%2014%2B-black?style=for-the-badge&logo=apple)](https://mumbaitrip2022.github.io/notchma/)
 
 [![CI](https://github.com/mumbaitrip2022/notchma/actions/workflows/ci.yml/badge.svg)](https://github.com/mumbaitrip2022/notchma/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/mumbaitrip2022/notchma?style=flat-square&color=black)](https://github.com/mumbaitrip2022/notchma/releases/latest)
@@ -41,7 +41,7 @@ NotchBar turns the top of your Mac screen into a control center for coding agent
 **Requirements:** a Mac with Apple silicon (M1 or newer) on macOS 14 Sonoma or later. Intel Macs aren't supported.
 
 ### Download
-1. Get the latest **[NotchBar.dmg](https://github.com/mumbaitrip2022/notchma/releases/latest)**, open it and drag **NotchBar** into **Applications**.
+1. Get the latest **[NotchBar.dmg](https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg)** (or visit the [download page](https://mumbaitrip2022.github.io/notchma/)), open it and drag **NotchBar** into **Applications**.
 2. Open NotchBar. If it starts from somewhere else, it offers to move itself to Applications. Say yes, since agents connect to it by path.
 3. A short tour hosted by your pet opens in the notch and connects your agents. Or click **Connect** in the island. NotchBar adds its hooks to whichever of Claude Code, Codex and Cursor you have. Your other settings stay untouched, and a backup is kept next to each file.
 4. **Codex only:** run `/hooks` in Codex once and trust the NotchBar entries.

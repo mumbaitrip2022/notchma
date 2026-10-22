@@ -69,6 +69,10 @@ if [ -n "$SIGN_ID" ]; then
   notarize "$DMG" && [ -n "$NOTARY" ] && xcrun stapler staple "$DMG"
 fi
 
+# Same disk image under a fixed name, so this link always serves the newest release:
+#   https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg
+cp "$DMG" dist/NotchBar.dmg
+
 echo
 echo "✓ NotchBar $VERSION"
 for f in "$ZIP" "$DMG"; do
