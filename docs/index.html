@@ -3,448 +3,651 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>NotchBar · Dynamic Island for your AI agents</title>
-<meta name="description" content="Approve Claude Code, Codex and Cursor right from your Mac's notch. Free and open source.">
-<meta property="og:title" content="NotchBar · Dynamic Island for your AI agents">
-<meta property="og:description" content="Approve Claude Code, Codex and Cursor right from your Mac's notch. Free and open source.">
+<title>NotchBar · Your AI agents, in your notch</title>
+<meta name="description" content="See Claude Code, Codex and Cursor in your Mac's notch and approve them in one click. Free and open source.">
+<meta property="og:title" content="NotchBar · Your AI agents, in your notch">
+<meta property="og:description" content="See Claude Code, Codex and Cursor in your Mac's notch and approve them in one click. Free and open source.">
 <meta property="og:image" content="https://mumbaitrip2022.github.io/notchma/images/social-preview.png">
 <meta property="og:url" content="https://mumbaitrip2022.github.io/notchma/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#fbfaf7">
+<meta name="color-scheme" content="light">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'><rect width='16' height='16' rx='4' fill='%23000'/><path fill='%23fff' d='M4 3h1v1h1v1h4V4h1V3h1v3h1v5h-1v1H4v-1H3V6h1z'/><path fill='%23000' d='M5 7h2v2H5zM9 7h2v2H9z'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #000;
-  --ink: #f4f4f5;
-  --ink2: rgba(244,244,245,.6);
-  --ink3: rgba(244,244,245,.38);
-  --line: rgba(255,255,255,.09);
-  --line2: rgba(255,255,255,.16);
-  --card: #060606;
-  --blush: #ff8cb3;
-  --amber: #f5b942; --green: #34c759; --red: #ff5f57;
-  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
-  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
-  --spring: cubic-bezier(.3, 1.45, .45, 1);
-  --soft: cubic-bezier(.2, .9, .25, 1);
+  --bg: #fbfaf7; --ink: #0c0c0e; --ink2: #56565e; --ink3: #8d8d95;
+  --line: rgba(12,12,14,.08); --line2: rgba(12,12,14,.14); --card: #fff;
+  --lilac: #f0ebff; --sky: #e7f1ff; --peach: #fff0e5; --mint: #e6f6ee; --butter: #fff7d9; --stone: #f3f1ec;
+  --amber: #f5a524; --green: #22c55e; --red: #f04444; --pink: #ff8fb1;
+  --spring: cubic-bezier(.2,1.25,.35,1); --ease: cubic-bezier(.2,.8,.2,1);
+  --sans: "Geist", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-html, body { margin: 0; background: var(--bg); }
-body { color: var(--ink); font: 17px/1.5 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 a { color: inherit; text-decoration: none; }
-canvas.px, canvas.art { image-rendering: pixelated; display: block; }
-canvas.art { position: absolute; inset: 0; width: 100%; height: 100%; }
-.wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
-.ico { display: inline-block; flex: none; border-radius: 22%; object-fit: cover; }
+img, canvas, svg { display: block; }
+canvas.px { image-rendering: pixelated; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.wrap { width: min(1180px, 100% - 32px); margin: 0 auto; }
+::selection { background: #e3dcff; }
 
-/* ---------- Notch nav ---------- */
-.nav { position: fixed; top: 0; left: 50%; z-index: 60; transform: translateX(-50%); height: 50px; padding: 0 7px 0 16px; display: flex; align-items: center; gap: 22px;
-  background: #000; color: #fff; border-radius: 0 0 24px 24px; box-shadow: 0 0 0 1px var(--line), 0 20px 40px -10px rgba(0,0,0,.9);
-  transition: width .7s var(--spring), height .7s var(--spring), border-radius .7s var(--spring); }
-.nav::before, .nav::after { content: ""; position: absolute; top: 0; width: 14px; height: 14px; background: radial-gradient(circle at 0 100%, transparent 13.5px, #000 14px); }
-.nav::before { left: -14px; transform: scaleX(-1); }
-.nav::after { right: -14px; }
-.nav .items { display: flex; align-items: center; gap: 22px; transition: opacity .25s, filter .25s; white-space: nowrap; }
-.nav .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
-.nav .brand canvas { width: 22px; height: 22px; }
-.nav .links { display: flex; gap: 20px; font-size: 14px; color: var(--ink2); }
-.nav .links a:hover { color: #fff; }
-.nav .cta { height: 36px; padding: 0 16px; border-radius: 18px; background: #fff; color: #000; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; transition: transform .3s var(--spring); }
-.nav .cta:hover { transform: scale(1.05); }
-.nav .dl { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity .3s; }
-.nav .dl canvas { position: absolute; left: 22px; bottom: 16px; width: 64px; height: 64px; }
-.nav .dl .t { position: absolute; left: 104px; right: 28px; top: 38px; }
-.nav .dl .t1 { font-size: 15px; font-weight: 600; white-space: nowrap; }
-.nav .dl .t2 { font: 12px var(--mono); color: var(--ink3); margin-top: 3px; white-space: nowrap; }
-.nav .dl .pb { margin-top: 12px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
-.nav .dl .pb i { display: block; height: 100%; width: 0; border-radius: 4px; background: #fff; }
-.nav.open { height: 122px; border-radius: 0 0 36px 36px; }
-.nav.open .items { opacity: 0; filter: blur(6px); pointer-events: none; }
-.nav.open .dl { opacity: 1; transition-delay: .2s; }
-.nav.done .dl .pb i { background: var(--green); }
+/* ---------- nav ---------- */
+.nav { position: sticky; top: 0; z-index: 50; transition: background .3s, box-shadow .3s; }
+.nav.scrolled { background: rgba(251,250,247,.78); backdrop-filter: saturate(1.6) blur(18px); -webkit-backdrop-filter: saturate(1.6) blur(18px); box-shadow: 0 1px 0 var(--line); }
+.nav .wrap { height: 64px; display: flex; align-items: center; gap: 28px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; letter-spacing: -.02em; }
+.appi { position: relative; display: grid; place-items: center; background: #0c0c0e; border-radius: 22.5%; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 1px 2px rgba(0,0,0,.2); flex: none; }
+.appi.sm { width: 30px; height: 30px; }
+.appi.sm canvas { width: 22px; height: 22px; }
+.links { display: flex; gap: 26px; margin-left: 10px; font-size: 14.5px; color: var(--ink2); }
+.links a { transition: color .2s; } .links a:hover { color: var(--ink); }
+.nav .right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.gh { display: flex; align-items: center; gap: 7px; height: 36px; padding: 0 12px; border-radius: 999px; font-size: 14px; color: var(--ink2); transition: background .2s, color .2s; }
+.gh:hover { background: rgba(12,12,14,.05); color: var(--ink); }
+.gh svg { width: 17px; height: 17px; }
 
-/* ---------- Hero ---------- */
-.hero { position: relative; min-height: 100vh; padding: 0 24px 260px; text-align: center; overflow: hidden; }
-.hero .art { z-index: 0; }
-.hero .stage { position: relative; height: 62vh; min-height: 460px; z-index: 1; }
-.hero .stage canvas.kit { position: absolute; left: 50%; top: 61%; transform: translate(-50%, -50%); cursor: pointer; }
-.hero .copy { position: relative; z-index: 2; }
-.badge { display: inline-flex; align-items: center; gap: 9px; font: 13px var(--mono); color: var(--ink2); letter-spacing: .02em; }
-.badge i { width: 6px; height: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px #fff; animation: pulse 2.4s ease-in-out infinite; }
-@keyframes pulse { 50% { opacity: .35; } }
-h1 { margin: 18px auto 0; max-width: 980px; font-size: clamp(44px, 7vw, 92px); line-height: 1; letter-spacing: -.055em; font-weight: 600; }
-h1 .soft { color: var(--ink3); }
-.hero p.sub { margin: 22px auto 0; max-width: 540px; font-size: clamp(17px, 1.6vw, 20px); line-height: 1.45; color: var(--ink2); }
-.btns { margin-top: 34px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.b { position: relative; isolation: isolate; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 54px; padding: 0 26px; border-radius: 999px; border: 0; cursor: pointer;
-  font: 600 16px/1 var(--sans); letter-spacing: -.01em; transition: transform .35s var(--spring), background .3s, box-shadow .3s; -webkit-tap-highlight-color: transparent; }
-.b:hover { transform: translateY(-2px); }
-.b:active { transform: scale(.96); }
-.b svg { width: 18px; height: 18px; position: relative; }
-.b.w { background: #fff; color: #000; box-shadow: 0 0 40px -6px rgba(255,255,255,.45); }
-.b.w:hover { box-shadow: 0 0 60px -4px rgba(255,255,255,.6); }
-.b.o { background: transparent; color: #fff; box-shadow: inset 0 0 0 1px var(--line2); }
-.b.o:hover { box-shadow: inset 0 0 0 1px rgba(255,255,255,.4); }
-.b .label { position: relative; display: inline-block; transition: opacity .18s, transform .35s var(--spring); }
-.b .label.swap { opacity: 0; transform: translateY(10px); }
-.b .fill { position: absolute; inset: 0; z-index: -1; transform-origin: left; transform: scaleX(0); background: #d6d6d8; transition: transform 1.6s cubic-bezier(.45,.05,.2,1); }
-.b.busy { pointer-events: none; }
-.b.busy .fill { transform: scaleX(1); }
-.small { margin-top: 18px; font: 12.5px var(--mono); color: var(--ink3); }
-.notmac { display: none; margin-top: 8px; font: 12.5px var(--mono); color: var(--blush); }
+/* ---------- buttons ---------- */
+.btn { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 52px; padding: 0 24px; border-radius: 999px; font: 600 16px/1 var(--sans); letter-spacing: -.01em; white-space: nowrap; transition: transform .4s var(--spring), box-shadow .3s, background .2s; overflow: hidden; }
+.btn svg { width: 18px; height: 18px; flex: none; position: relative; }
+.btn.dark { background: var(--ink); color: #fff; box-shadow: 0 1px 0 rgba(255,255,255,.15) inset, 0 8px 24px -8px rgba(12,12,14,.45), 0 0 0 1px #000; }
+.btn.dark:hover { transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,.15) inset, 0 14px 30px -10px rgba(12,12,14,.55), 0 0 0 1px #000; }
+.btn.light { background: #fff; color: var(--ink); box-shadow: 0 0 0 1px var(--line2), 0 4px 14px -6px rgba(12,12,14,.12); }
+.btn.light:hover { transform: translateY(-1px); }
+.btn:active { transform: scale(.97); }
+.btn.sm { height: 38px; padding: 0 16px; font-size: 14px; gap: 7px; }
+.btn .bar { position: absolute; left: 0; top: 0; height: 100%; width: 0; background: rgba(255,255,255,.16); pointer-events: none; }
+.btn .label { position: relative; transition: opacity .17s, transform .17s; }
+.btn .label.swap { opacity: 0; transform: translateY(6px); }
+.dlw { position: relative; display: inline-block; }
+.peek { position: absolute; left: 50%; top: 0; width: 40px; height: 40px; margin-left: -20px; transform: translateY(8px); transition: transform .5s var(--spring); z-index: 0; pointer-events: none; }
+.dlw:hover .peek, .dlw.busy .peek { transform: translateY(-31px); }
+
+/* ---------- hero ---------- */
+.hero { text-align: center; padding: 72px 0 0; position: relative; }
+.hero::before { content: ""; position: absolute; inset: -64px 0 auto; height: 900px; z-index: -1; pointer-events: none;
+  background: radial-gradient(600px 380px at 22% 30%, rgba(196,180,255,.35), transparent 70%), radial-gradient(560px 360px at 80% 22%, rgba(168,212,255,.38), transparent 70%), radial-gradient(500px 340px at 55% 70%, rgba(255,214,190,.4), transparent 70%); }
+.news { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px 0 4px; border-radius: 999px; background: rgba(255,255,255,.75); box-shadow: 0 0 0 1px var(--line), 0 2px 8px -4px rgba(12,12,14,.1); font-size: 13.5px; color: var(--ink2); transition: box-shadow .2s; }
+.news:hover { box-shadow: 0 0 0 1px var(--line2), 0 2px 8px -4px rgba(12,12,14,.15); }
+.news b { font-weight: 600; color: #fff; background: var(--ink); border-radius: 999px; padding: 4px 9px; font-size: 12px; line-height: 1.2; }
+.news svg { width: 12px; height: 12px; opacity: .6; }
+h1 { margin: 26px auto 0; font-size: clamp(44px, 7.6vw, 96px); font-weight: 600; letter-spacing: -.05em; line-height: .98; }
+h1 .soft { color: transparent; background: linear-gradient(180deg, #2a2a30, #8d8d95); -webkit-background-clip: text; background-clip: text; }
+.inotch { display: inline-flex; vertical-align: .06em; align-items: flex-end; justify-content: center; width: 1.3em; height: .66em; margin-left: .14em; background: var(--ink); border-radius: .06em .06em .3em .3em; box-shadow: 0 10px 20px -8px rgba(12,12,14,.5); }
+.inotch canvas { width: .56em; height: .56em; margin-bottom: .02em; }
+.lede { max-width: 560px; margin: 24px auto 0; font-size: clamp(17px, 2vw, 19.5px); color: var(--ink2); line-height: 1.5; letter-spacing: -.01em; }
+.ctas { display: flex; gap: 12px; justify-content: center; margin-top: 34px; flex-wrap: wrap; }
+.meta { margin-top: 18px; font-size: 13.5px; color: var(--ink3); }
+.meta span + span::before { content: "·"; margin: 0 8px; opacity: .7; }
+.notmac { display: none; margin: 14px auto 0; font-size: 14px; color: var(--ink2); }
 .notmac.show { display: block; }
+.notmac button { text-decoration: underline; text-underline-offset: 3px; color: var(--ink); }
 
-/* ---------- Big demo ---------- */
-.demo { position: relative; z-index: 2; max-width: 1180px; margin: -180px auto 0; padding: 0 24px; }
-.demo-fit { position: relative; width: 100%; border-radius: 28px; overflow: hidden; background: #000; box-shadow: 0 0 0 1px var(--line), 0 60px 120px -40px rgba(255,255,255,.12); }
-.screen { position: absolute; left: 0; top: 0; width: 1280px; height: 760px; transform-origin: 0 0; color: #fff; }
-.menubar { position: absolute; inset: 0 0 auto; height: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-size: 13px; color: rgba(255,255,255,.85); background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.05); }
-.menubar .l, .menubar .r { display: flex; gap: 18px; align-items: center; }
-.menubar b { font-weight: 600; }
-.menubar svg { width: 13px; height: 13px; fill: #fff; }
-.win { position: absolute; border-radius: 12px; overflow: hidden; background: rgba(18,18,20,.92); box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 30px 60px -20px rgba(0,0,0,.9); }
-.win .tb { height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 12px; background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.06); }
-.win .tb i { width: 11px; height: 11px; border-radius: 50%; background: #3a3a3d; }
-.win .tb span { flex: 1; text-align: center; margin-right: 46px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.55); display: flex; gap: 7px; justify-content: center; align-items: center; }
-.win .tb .ico { width: 15px; height: 15px; }
-.win .body { padding: 13px 15px; font: 12.5px/1.66 var(--mono); color: rgba(255,255,255,.85); }
-.win .body div { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
-.w1 { left: 40px; top: 70px; width: 470px; height: 300px; }
-.w2 { left: 770px; top: 70px; width: 470px; height: 300px; }
-.w3 { left: 270px; top: 404px; width: 740px; height: 320px; }
-.ok { color: #5ad37b; } .bad { color: #ff7b72; } .amb { color: var(--amber); } .dd { color: rgba(255,255,255,.4); } .or { color: #d97757; } .gr { color: #8fa6ff; }
-.k { color: #c9c9ff; } .f { color: #9fe7ff; } .s { color: #ffd1a6; } .tg { color: #b5f0d4; }
-.w3 pre { margin: 0; padding: 10px 0; font: 12.5px/1.75 var(--mono); color: #d4d4d8; }
-.w3 pre div { padding-left: 18px; white-space: pre; min-height: 1.75em; }
-.w3 pre div.add { background: rgba(52,199,89,.12); box-shadow: inset 2px 0 0 #34c759; }
-[data-t] { display: none !important; }
-[data-t].on { display: block !important; }
-.dimmer { position: absolute; inset: 30px 0 0; background: #000; opacity: 0; transition: opacity .6s; z-index: 15; pointer-events: none; }
-.ptr { position: absolute; left: 0; top: 0; z-index: 40; width: 22px; height: 22px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); transition: transform 1s cubic-bezier(.45,.05,.2,1); }
-.ptr svg { width: 100%; height: 100%; transform-origin: 20% 10%; transition: transform .12s; }
-.ptr.press svg { transform: scale(.8); }
-.kflash { position: absolute; left: 50%; top: 260px; z-index: 45; transform: translateX(-50%) scale(.85); display: flex; gap: 10px; opacity: 0; transition: opacity .25s, transform .45s var(--spring); pointer-events: none; }
-.kflash.on { opacity: 1; transform: translateX(-50%) scale(1); }
-.kflash span { width: 70px; height: 70px; border-radius: 16px; background: #fff; color: #000; display: grid; place-items: center; font: 600 30px var(--mono); box-shadow: 0 5px 0 #8a8a8f, 0 0 60px rgba(255,255,255,.35); }
-.chips { display: flex; gap: 4px; justify-content: center; margin: 22px auto 0; padding: 5px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); width: max-content; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
-.chips button { position: relative; overflow: hidden; height: 40px; padding: 0 18px; border-radius: 999px; border: 0; background: transparent; color: var(--ink3); font: 500 14.5px var(--sans); cursor: pointer; white-space: nowrap; transition: color .3s, background .3s; }
-.chips button i { position: absolute; left: 18px; right: 18px; bottom: 6px; height: 2px; background: #000; transform-origin: left; transform: scaleX(0); border-radius: 2px; }
-.chips button.on { color: #000; background: #fff; }
-.chips button:not(.on) i { opacity: 0; }
-.hint { text-align: center; margin-top: 14px; font-size: 14px; color: var(--ink2); min-height: 22px; }
-.hint .k2 { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 6px; background: #fff; color: #000; box-shadow: 0 2px 0 #8a8a8f; font: 500 12px var(--mono); margin: 0 1px; }
+.rise { opacity: 0; transform: translateY(14px); filter: blur(6px); animation: rise .9s var(--ease) forwards; }
+@keyframes rise { to { opacity: 1; transform: none; filter: none; } }
 
-/* ---------- Island ---------- */
-.isl { position: absolute; left: 50%; top: 0; z-index: 20; transform: translateX(-50%); width: 200px; height: 32px; background: #000; color: #fff; border-radius: 0 0 16px 16px;
-  box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 10px 40px rgba(0,0,0,.8);
-  transition: width .62s var(--spring), height .62s var(--spring), border-radius .62s var(--spring); }
-.isl::before, .isl::after { content: ""; position: absolute; top: 0; width: 10px; height: 10px; background: radial-gradient(circle at 0 100%, transparent 9.5px, #000 10px); transition: opacity .3s; }
-.isl::before { left: -10px; transform: scaleX(-1); } .isl::after { right: -10px; }
-.isl.float { top: 14px; border-radius: 22px !important; }
-.isl.float::before, .isl.float::after { opacity: 0; }
-.isl .bd { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
-.lay { position: absolute; inset: 0; transition: opacity .32s ease, filter .32s ease, transform .55s var(--spring); }
-.lay.in { opacity: 0; filter: blur(8px); transform: scale(.94); }
-.lay.out { opacity: 0; filter: blur(8px); transform: scale(1.04); }
-.lay canvas.pc { position: absolute; inset: 0; width: 100%; height: 100%; }
-.rw { height: 32px; display: flex; align-items: center; gap: 9px; padding: 0 14px; font-size: 13.5px; white-space: nowrap; }
-.isl.float .rw { height: 36px; }
-.rw .p { font-weight: 600; }
-.rw .wt { color: rgba(255,255,255,.6); overflow: hidden; text-overflow: ellipsis; }
-.rw .r { margin-left: auto; display: flex; gap: 7px; align-items: center; font: 500 12.5px var(--mono); color: rgba(255,255,255,.6); }
-.amber .wt { color: var(--amber); } .red .wt { color: #ff7b72; } .green .wt { color: #5ad37b; }
-.rw .ico, .mr .ico, .pk .ico { width: 18px; height: 18px; border-radius: 5px; }
-.icos { display: inline-flex; gap: 4px; }
-.ring { width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(255,255,255,.18); border-top-color: #fff; animation: spin .9s linear infinite; }
+/* ---------- the Mac ---------- */
+.stage { margin-top: 64px; }
+.mac { position: relative; width: min(1120px, 100%); margin: 0 auto; }
+.lid { position: relative; padding: 10px; border-radius: 26px 26px 12px 12px; background: #0d0d0f; box-shadow: inset 0 0 0 1px #2c2c31, inset 0 0 0 2px #050506, 0 60px 120px -40px rgba(40,30,80,.45), 0 30px 60px -30px rgba(12,12,14,.35); }
+.fit { position: relative; overflow: hidden; border-radius: 16px 16px 4px 4px; background: #e9ecff; }
+.base { position: relative; height: 18px; margin: 0 -5.5%; border-radius: 2px 2px 18px 18px / 2px 2px 14px 14px; background: linear-gradient(#e7e7ec, #c9c9d0 55%, #9d9da6); box-shadow: 0 18px 30px -16px rgba(12,12,14,.4); }
+.base::before { content: ""; position: absolute; left: 50%; top: 0; width: 15%; height: 7px; transform: translateX(-50%); border-radius: 0 0 9px 9px; background: linear-gradient(#b6b6be, #cfcfd5); }
+.screen { text-align: left; position: absolute; left: 0; top: 0; width: 1200px; height: 750px; transform-origin: 0 0; overflow: hidden; font-family: var(--sans);
+  background: radial-gradient(900px 620px at 8% 0%, #cbbcff, transparent 62%), radial-gradient(800px 560px at 100% 100%, #ffc9ae, transparent 60%), radial-gradient(760px 600px at 62% 38%, #b7dcff, transparent 62%), linear-gradient(135deg, #e6e0ff, #fde4d6); }
+.menubar { position: absolute; inset: 0 0 auto; height: 32px; display: flex; align-items: center; gap: 20px; padding: 0 18px; font-size: 13.5px; font-weight: 500; color: #111; background: rgba(255,255,255,.32); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.menubar b { font-weight: 700; }
+.menubar .r { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.menubar svg { width: 16px; height: 16px; }
+
+.win { position: absolute; border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px rgba(0,0,0,.25), 0 0 0 1.5px rgba(255,255,255,.08) inset, 0 40px 80px -24px rgba(30,20,60,.45); }
+.tb { height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 14px; font-size: 12.5px; color: rgba(255,255,255,.55); font-weight: 500; }
+.tb i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; } .tb i:nth-child(2) { background: #febc2e; } .tb i:nth-child(3) { background: #28c840; }
+.tb .tt { flex: 1; display: flex; justify-content: center; align-items: center; gap: 7px; margin-right: 50px; }
+.tb .tt img { width: 15px; height: 15px; border-radius: 4px; }
+.term { left: 70px; top: 120px; width: 590px; height: 440px; background: rgba(22,22,24,.96); }
+.term pre { padding: 10px 20px; font: 14px/1.75 var(--mono); color: #e9e9ec; white-space: pre; }
+.term .l { display: none; }
+.term .l.on { display: inline; animation: lin .35s var(--ease); }
+@keyframes lin { from { opacity: 0; } }
+.c-dim { color: #8b8b93; } .c-org { color: #e0896a; } .c-g { color: #4ade80; } .c-r { color: #f87171; } .c-a { color: #fbbf24; } .c-w { color: #fff; font-weight: 500; }
+.edit { left: 600px; top: 200px; width: 540px; height: 420px; background: rgba(24,24,27,.97); display: grid; grid-template-rows: 34px 1fr; }
+.edit .ebody { display: grid; grid-template-columns: 120px 1fr 190px; min-height: 0; }
+.edit .tree { padding: 12px; border-right: 1px solid rgba(255,255,255,.06); }
+.edit .tree i, .edit .code i { display: block; height: 7px; border-radius: 4px; background: rgba(255,255,255,.12); margin: 0 0 11px; }
+.edit .code { padding: 14px 16px; }
+.edit .code i:nth-child(3n) { background: rgba(147,197,253,.4); } .edit .code i:nth-child(4n) { background: rgba(196,181,253,.45); } .edit .code i:nth-child(5n) { background: rgba(134,239,172,.35); }
+.edit .agent-p { border-left: 1px solid rgba(255,255,255,.06); padding: 12px; display: flex; flex-direction: column; gap: 9px; font-size: 12px; color: #ddd; }
+.bub { padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.07); line-height: 1.4; }
+.bub.me { align-self: flex-end; background: #3b5bdb; color: #fff; }
+.cmdc { padding: 8px 10px; border-radius: 10px; font: 11.5px/1.4 var(--mono); background: #0d0d0f; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); }
+.cmdc .s { display: none; margin-top: 5px; font-family: var(--sans); font-size: 11px; }
+.cmdc .s.on { display: block; }
+.agent-p > [data-t] { opacity: 0; transition: opacity .35s; }
+.agent-p > .on { opacity: 1; }
+
+/* the island */
+.islw { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 20; }
+.islw::before, .islw::after { content: ""; position: absolute; top: 0; width: 10px; height: 10px; }
+.islw::before { left: -10px; background: radial-gradient(circle at 0 100%, transparent 9.5px, #000 10px); }
+.islw::after { right: -10px; background: radial-gradient(circle at 100% 100%, transparent 9.5px, #000 10px); }
+.isl { position: relative; width: 200px; height: 34px; background: #000; color: #fff; border-radius: 0 0 17px 17px; overflow: hidden; transition: width .62s var(--spring), height .62s var(--spring), border-radius .5s var(--ease), box-shadow .5s; }
+.isl.big { box-shadow: 0 24px 50px -16px rgba(0,0,0,.55); }
+.lay { position: absolute; top: 0; left: 50%; transform: translateX(-50%) scale(.94); opacity: 0; filter: blur(8px); transition: opacity .28s, filter .28s, transform .5s var(--spring); pointer-events: none; color: #fff; }
+.lay.on { opacity: 1; filter: none; transform: translateX(-50%); transition-delay: .12s; }
+.band { height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 16px; font-size: 13.5px; white-space: nowrap; }
+.band img, .row img, .q img { width: 18px; height: 18px; border-radius: 5px; flex: none; }
+.band b { font-weight: 600; }
+.mut { color: rgba(255,255,255,.6); }
+.sp { flex: 1; }
+.num { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,.65); font-variant-numeric: tabular-nums; }
+.ring { width: 16px; height: 16px; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 2.6; }
+.ring .bg { stroke: rgba(255,255,255,.18); } .ring .fg { stroke: #fff; stroke-linecap: round; transition: stroke-dashoffset .4s; }
+.spin { width: 15px; height: 15px; border-radius: 50%; border: 2.2px solid rgba(255,255,255,.18); border-top-color: #fff; animation: spin .9s linear infinite; flex: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.chk { width: 17px; height: 17px; border-radius: 50%; background: var(--green); display: inline-grid; place-items: center; }
-.chk svg { width: 10px; height: 10px; }
-.bdg { height: 20px; min-width: 20px; padding: 0 6px; border-radius: 10px; background: var(--amber); color: #000; font: 700 11.5px/20px var(--sans); text-align: center; }
-.bdg.redb { background: var(--red); color: #fff; }
-.cd { margin: 8px 16px 0; padding: 10px 12px; border-radius: 10px; background: #111113; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); font: 12.5px/1.5 var(--mono); color: #eee; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
-.pk { margin: 7px 16px 0; display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 9px; background: #141416; font-size: 12px; color: rgba(255,255,255,.6); }
-.pk b { color: #fff; font-weight: 600; }
-.pk .ico { width: 14px; height: 14px; border-radius: 4px; }
-.bt { margin: 10px 16px 0; display: flex; gap: 7px; }
-.cb { height: 32px; padding: 0 13px; border-radius: 10px; display: inline-flex; align-items: center; gap: 7px; background: #262628; color: #fff; font-size: 12.5px; font-weight: 600; white-space: nowrap; transition: transform .16s var(--spring), background .3s, color .3s; }
-.cb .kk { font: 500 10.5px var(--mono); opacity: .55; }
-.cb.pri { margin-left: auto; background: #fff; color: #000; }
-.cb.rd { background: var(--red); color: #fff; }
-.cb.okb { background: var(--green); color: #fff; }
-.cb.press { transform: scale(.88); }
-.ml { padding: 38px 16px 0; display: grid; }
-.mr { display: grid; grid-template-columns: 18px 98px 1fr 58px; align-items: center; gap: 10px; height: 34px; font-size: 13px; border-top: 1px solid rgba(255,255,255,.07); }
-.mr:first-child { border-top: 0; }
-.mr .p { font-weight: 600; white-space: nowrap; }
-.mr .wt { color: rgba(255,255,255,.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .3s; }
-.mr .rt { display: flex; justify-content: flex-end; }
-.mb { width: 54px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.14); overflow: hidden; }
-.mb i { display: block; height: 100%; width: 0; background: #fff; border-radius: 4px; transition: width .8s var(--soft); }
-.ad { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 4px rgba(245,185,66,.18); }
-.us { padding: 38px 18px 0; display: grid; gap: 11px; }
-.ur .top { display: flex; justify-content: space-between; font-size: 12.5px; color: rgba(255,255,255,.65); margin-bottom: 5px; }
-.ur .top b { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
-.ur .tr { height: 6px; border-radius: 6px; background: rgba(255,255,255,.12); overflow: hidden; }
-.ur .tr i { display: block; height: 100%; width: 0; border-radius: 6px; transition: width 1.4s var(--soft); }
-.fc { font-size: 12.5px; color: rgba(255,255,255,.6); }
-.fc b { color: #fff; }
-.rclip { position: absolute; left: 50%; z-index: 18; width: 280px; height: 0; transform: translateX(-50%); overflow: hidden; transition: height .25s linear; }
-.paper { position: relative; width: 280px; padding: 20px 18px 24px; color: #1b1b1b; background: #f2f0eb; font: 500 11px/1.65 var(--mono);
-  -webkit-mask: linear-gradient(#000 0 0) top/100% calc(100% - 9px) no-repeat, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom/14px 9px repeat-x;
-  mask: linear-gradient(#000 0 0) top/100% calc(100% - 9px) no-repeat, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom/14px 9px repeat-x; }
-.paper .rl { display: flex; justify-content: space-between; white-space: pre; }
-.paper .rc { text-align: center; color: rgba(0,0,0,.55); }
-.paper .rt { text-align: center; font-weight: 700; font-size: 17px; letter-spacing: .5em; margin-right: -.5em; line-height: 1.4; }
-.paper .rb { display: flex; justify-content: space-between; font-weight: 700; font-size: 15px; margin-top: 3px; }
-.paper .rr { border-top: 1.5px dashed rgba(0,0,0,.3); margin: 7px 0; }
-.paper .gap { height: 7px; }
-.paper .logo { display: flex; justify-content: center; margin-bottom: 4px; }
-.paper .logo canvas { width: 40px; height: 40px; }
-.paper .barcode { height: 36px; margin-top: 3px; display: flex; justify-content: center; }
-.paper .barcode i { background: #1b1b1b; flex: none; }
+.chk { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--green); flex: none; }
+.chk svg { width: 11px; height: 11px; }
+.ibody { padding: 2px 18px 16px; }
+.row { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 12px; border-radius: 12px; background: rgba(255,255,255,.07); font-size: 13.5px; white-space: nowrap; }
+.row + .row { margin-top: 6px; }
+.row b { font-weight: 600; }
+.need { display: flex; align-items: center; gap: 6px; color: var(--amber); font-size: 12.5px; font-weight: 600; }
+.need::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px rgba(245,165,36,.2); }
+.q { display: flex; align-items: center; gap: 8px; font-size: 14px; white-space: nowrap; }
+.q b { font-weight: 600; }
+.tag { margin-left: auto; font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 6px; background: rgba(255,255,255,.1); color: rgba(255,255,255,.75); }
+.tag.risk { background: rgba(240,68,68,.2); color: #ff8a8a; }
+.cmd { margin-top: 10px; padding: 11px 13px; border-radius: 12px; background: #141416; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); font: 13.5px/1.4 var(--mono); color: #f2f2f2; white-space: nowrap; }
+.cmd .d { color: rgba(255,255,255,.4); }
+.btns { display: flex; gap: 8px; margin-top: 12px; align-items: center; white-space: nowrap; }
+.bt { height: 34px; padding: 0 16px; border-radius: 999px; display: inline-flex; align-items: center; font-size: 13.5px; font-weight: 600; background: rgba(255,255,255,.12); color: #fff; transition: transform .15s, background .2s; }
+.bt.pri { background: #fff; color: #000; }
+.bt.press { transform: scale(.9); }
+.btns .hint { margin-left: auto; font-size: 12px; color: rgba(255,255,255,.45); display: flex; gap: 3px; align-items: center; }
+.kc { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 5px; background: rgba(255,255,255,.12); color: rgba(255,255,255,.8); font: 500 11px var(--mono); }
+.ptr { position: absolute; left: 0; top: 0; z-index: 40; width: 24px; height: 24px; opacity: 0; transition: transform 1s cubic-bezier(.45,.05,.2,1), opacity .3s; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+.ptr.on { opacity: 1; }
+.ptr svg { width: 100%; height: 100%; transition: transform .12s; transform-origin: 20% 10%; }
+.ptr.click svg { transform: scale(.8); }
+.kflash { position: absolute; left: 50%; top: 260px; transform: translateX(-50%) scale(.9); display: flex; gap: 8px; opacity: 0; transition: opacity .25s, transform .4s var(--spring); z-index: 30; pointer-events: none; }
+.kflash.on { opacity: 1; transform: translateX(-50%); }
+.kflash span { width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; background: #fff; font: 600 26px var(--sans); color: var(--ink); box-shadow: 0 4px 0 #c9c9d0, 0 20px 40px -12px rgba(0,0,0,.3); }
 
-/* ---------- Sections ---------- */
-.sec { padding: 150px 0 0; }
-.head { text-align: center; max-width: 760px; margin: 0 auto; }
-h2 { margin: 0; font-size: clamp(34px, 5vw, 62px); line-height: 1.04; letter-spacing: -.045em; font-weight: 600; }
-h2 .soft { color: var(--ink3); }
-.head p { margin: 16px auto 0; font-size: 18px; color: var(--ink2); max-width: 540px; }
-.works { margin-top: 100px; display: flex; justify-content: center; align-items: center; gap: 48px; flex-wrap: wrap; color: var(--ink2); font-size: 15px; font-weight: 500; }
-.works .it { display: flex; align-items: center; gap: 12px; }
-.works .it .ico { width: 40px; height: 40px; border-radius: 10px; }
-.works .lbl { color: var(--ink3); font: 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+.chips { display: flex; justify-content: center; gap: 6px; margin: 30px auto 0; flex-wrap: wrap; }
+.chip { position: relative; overflow: hidden; height: 36px; padding: 0 16px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--ink2); background: rgba(255,255,255,.6); box-shadow: 0 0 0 1px var(--line); transition: color .2s, background .2s, box-shadow .2s; }
+.chip:hover { color: var(--ink); }
+.chip.on { color: var(--ink); background: #fff; box-shadow: 0 0 0 1px var(--line2), 0 4px 12px -6px rgba(12,12,14,.18); }
+.chip i { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--ink); }
+.chip span { position: relative; }
+.try { text-align: center; margin-top: 14px; font-size: 13.5px; color: var(--ink3); }
+.try kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 5px; margin: 0 1px; border-radius: 6px; background: #fff; box-shadow: 0 0 0 1px var(--line2), 0 2px 0 var(--line2); font: 500 12px var(--mono); color: var(--ink); }
 
-.grid { margin-top: 60px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.card { position: relative; border-radius: 28px; overflow: hidden; background: var(--card); color: #fff; min-height: 400px; box-shadow: inset 0 0 0 1px var(--line); transform: translateZ(0); }
-.card.span2 { grid-column: span 2; }
-.card .cap { position: absolute; left: 26px; right: 26px; bottom: 24px; z-index: 5; }
-.card .cap b { display: block; font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
-.card .cap span { display: block; margin-top: 4px; font-size: 15px; color: var(--ink2); }
-.card .stage { position: absolute; inset: 0; z-index: 3; }
-.card .keys { position: absolute; left: 50%; top: 54%; transform: translate(-50%, -50%); display: flex; gap: 12px; align-items: center; }
-.key { width: 74px; height: 74px; border-radius: 18px; background: #fff; color: #000; display: grid; place-items: center; font: 600 30px var(--mono); box-shadow: 0 6px 0 #77777c, 0 0 50px -10px rgba(255,255,255,.4); transition: transform .12s, box-shadow .12s; }
-.key.down { transform: translateY(5px); box-shadow: 0 1px 0 #77777c, 0 0 70px -6px rgba(255,255,255,.6); }
-.gift { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); width: 150px; height: 150px; border-radius: 34px; background: #000; display: grid; place-items: center; box-shadow: 0 0 0 1px var(--line2), 0 0 80px -20px rgba(255,255,255,.35); }
-.gift canvas { width: 110px; height: 110px; }
+/* ---------- works with ---------- */
+.works { margin-top: 96px; text-align: center; }
+.eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink3); }
+.agents { display: flex; justify-content: center; gap: 14px; margin-top: 22px; flex-wrap: wrap; }
+.agent { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 22px 0 12px; border-radius: 20px; background: #fff; box-shadow: 0 0 0 1px var(--line), 0 6px 20px -12px rgba(12,12,14,.15); font-weight: 600; font-size: 17px; letter-spacing: -.01em; transition: transform .4s var(--spring); }
+.agent:hover { transform: translateY(-3px); }
+.agent img { width: 40px; height: 40px; border-radius: 10px; }
 
-.mochi { position: relative; margin-top: 60px; border-radius: 32px; overflow: hidden; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); height: 580px; }
-.mochi canvas.kit { position: absolute; left: 50%; bottom: 152px; width: 224px; height: 224px; transform: translateX(-50%); cursor: pointer; z-index: 3; }
-.mochi .bubble { position: absolute; left: 50%; bottom: 390px; z-index: 4; transform: translate(-50%, 8px); padding: 10px 16px; border-radius: 16px; background: #fff; color: #000; font: 600 14.5px var(--sans); white-space: nowrap; opacity: 0; transition: opacity .25s, transform .45s var(--spring); }
-.mochi .bubble.on { opacity: 1; transform: translate(-50%, 0); }
-.mochi .bubble::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 14px; height: 14px; background: #fff; transform: translateX(-50%) rotate(45deg); border-radius: 3px; }
-.mochi .acts { position: absolute; left: 0; right: 0; bottom: 28px; z-index: 4; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 0 16px; }
-.mochi .acts button { height: 42px; padding: 0 18px; border-radius: 999px; border: 0; background: rgba(20,20,22,.85); color: #fff; font: 500 14.5px var(--sans); cursor: pointer; box-shadow: inset 0 0 0 1px var(--line2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: background .2s, transform .3s var(--spring); }
-.mochi .acts button:hover { background: #222225; }
-.mochi .acts button:active { transform: scale(.93); }
-.mochi .acts button.on { background: #fff; color: #000; }
-.mochi .acts .sep { width: 1px; background: var(--line2); margin: 8px 4px; }
+/* ---------- sections ---------- */
+section.blk { padding-top: 140px; scroll-margin-top: -60px; }
+.hd { text-align: center; max-width: 720px; margin: 0 auto 52px; }
+h2 { margin-top: 12px; font-size: clamp(34px, 5vw, 56px); font-weight: 600; letter-spacing: -.045em; line-height: 1.04; }
 
-.final { position: relative; padding: 170px 0 120px; text-align: center; overflow: hidden; }
-.final .art { opacity: .9; }
-.final > .wrap { position: relative; z-index: 2; }
-.appicon { position: relative; width: 112px; height: 112px; margin: 0 auto 32px; border-radius: 26px; background: #000; box-shadow: 0 0 0 1px var(--line2), 0 0 90px -10px rgba(255,255,255,.35); }
-.appicon::before { content: ""; position: absolute; left: 50%; top: 0; width: 46px; height: 11px; transform: translateX(-50%); background: #000; border-radius: 0 0 8px 8px; box-shadow: 0 0 0 1px var(--line2); }
-.appicon canvas { position: absolute; left: 50%; top: 56%; width: 72px; height: 72px; transform: translate(-50%, -50%); }
-.final p { font-size: 18px; color: var(--ink2); margin: 16px 0 0; }
-.final .btns { margin-top: 32px; }
-footer { padding: 30px 0 50px; font: 12.5px var(--mono); color: var(--ink3); }
-footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 26px; }
-footer a:hover { color: #fff; }
+.bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+.card { grid-column: span 2; border-radius: 28px; background: var(--card); box-shadow: 0 0 0 1px var(--line), 0 10px 30px -20px rgba(12,12,14,.18); overflow: hidden; display: flex; flex-direction: column; transition: transform .5s var(--spring), box-shadow .4s, opacity .9s var(--ease); }
+.card:hover { box-shadow: 0 0 0 1px var(--line), 0 24px 50px -24px rgba(12,12,14,.25); }
+.card.w4 { grid-column: span 4; } .card.w3 { grid-column: span 3; }
+.vg { position: relative; margin: 8px 8px 0; height: 270px; border-radius: 21px; overflow: hidden; }
+.card.w4 .vg { height: 300px; }
+.txt { padding: 22px 26px 26px; }
+.txt h3 { font-size: 19px; font-weight: 600; letter-spacing: -.02em; }
+.txt p { margin-top: 6px; color: var(--ink2); font-size: 15.5px; line-height: 1.5; }
+.t-lilac { background: var(--lilac); } .t-sky { background: var(--sky); } .t-peach { background: var(--peach); } .t-mint { background: var(--mint); } .t-butter { background: var(--butter); } .t-stone { background: var(--stone); } .t-cloud { background: #eef0f6; }
 
-.sheet-bg { position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; pointer-events: none; transition: opacity .4s; }
-.sheet-bg.show { opacity: 1; pointer-events: auto; }
-.sheet { position: fixed; left: 50%; bottom: 22px; z-index: 75; width: min(880px, calc(100vw - 32px)); transform: translate(-50%, calc(100% + 40px)); transition: transform .75s var(--spring); border-radius: 30px; padding: 28px; background: #0c0c0d; box-shadow: inset 0 0 0 1px var(--line2), 0 40px 100px -20px #000; }
-.sheet.show { transform: translate(-50%, 0); }
-.sheet .hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.sheet h3 { margin: 0; font-size: 24px; letter-spacing: -.03em; font-weight: 600; }
-.sheet .hd p { margin: 4px 0 0; color: var(--ink2); font-size: 15px; }
-.sheet .x { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.08); border: 0; cursor: pointer; display: grid; place-items: center; flex: none; }
-.sheet .x svg { width: 12px; height: 12px; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
-.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; }
-.step { border-radius: 20px; padding: 14px; background: rgba(255,255,255,.035); box-shadow: inset 0 0 0 1px var(--line); opacity: 0; transform: translateY(14px); transition: opacity .5s, transform .7s var(--spring); }
+.mini { position: absolute; top: 0; left: 50%; transform: translateX(-50%); background: #000; color: #fff; border-radius: 0 0 26px 26px; overflow: hidden; transition: width .6s var(--spring), height .6s var(--spring), border-radius .5s var(--ease); box-shadow: 0 20px 40px -18px rgba(0,0,0,.45); }
+.keys { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); display: flex; gap: 8px; }
+.keys kbd { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; background: #fff; font: 600 19px var(--sans); color: var(--ink); box-shadow: 0 0 0 1px var(--line), 0 4px 0 #d9d4ea, 0 10px 18px -8px rgba(60,40,120,.25); transition: transform .12s, box-shadow .12s; }
+.keys kbd.down { transform: translateY(3px); box-shadow: 0 0 0 1px var(--line), 0 1px 0 #d9d4ea, 0 4px 10px -6px rgba(60,40,120,.25); }
+.st { transition: opacity .18s; font-size: 12.5px; }
+.term-card { position: absolute; left: 50%; top: 50%; width: min(330px, 86%); transform: translate(-50%, -62%); border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px var(--line), 0 20px 40px -20px rgba(120,60,20,.3); overflow: hidden; }
+.term-card .tb { height: 30px; padding: 0 12px; gap: 6px; }
+.term-card .tb i { width: 10px; height: 10px; }
+.term-card pre { padding: 6px 16px 16px; font: 13.5px/1.6 var(--mono); color: var(--ink); white-space: pre-wrap; min-height: 44px; }
+.term-card .c-dim { color: var(--ink3); }
+.held { position: absolute; left: 50%; bottom: 30px; transform: translate(-50%, 16px) scale(.92); opacity: 0; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 12px; border-radius: 999px; background: #000; color: #fff; font-size: 14px; font-weight: 500; white-space: nowrap; transition: opacity .3s, transform .55s var(--spring); }
+.held.on { opacity: 1; transform: translate(-50%, 0); }
+.held svg { width: 17px; height: 17px; color: #ff8a8a; }
+.meters { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(300px, 86%); padding: 18px; border-radius: 18px; background: #fff; box-shadow: 0 0 0 1px var(--line), 0 20px 40px -22px rgba(20,90,60,.3); }
+.meter + .meter { margin-top: 16px; }
+.meter .lb { display: flex; justify-content: space-between; font-size: 13.5px; font-weight: 500; }
+.meter .lb span { color: var(--ink3); font-weight: 400; font-variant-numeric: tabular-nums; }
+.meter .tr { margin-top: 8px; height: 8px; border-radius: 99px; background: #eef0ee; overflow: hidden; }
+.meter .tr i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--ink); transition: width 1.4s var(--ease); }
+.meters .ft { margin-top: 14px; font-size: 12.5px; color: var(--ink3); display: flex; align-items: center; gap: 6px; }
+.monitor { position: absolute; left: 50%; top: 36px; width: 280px; transform: translateX(-50%); }
+.monitor .scr { height: 168px; border-radius: 10px; border: 7px solid #1a1a1d; background: linear-gradient(135deg, #ffe7a8, #ffd0b5 60%, #f7c2d8); position: relative; overflow: hidden; }
+.monitor .scr::before { content: ""; position: absolute; inset: 0 0 auto; height: 12px; background: rgba(255,255,255,.45); }
+.monitor .neck { width: 54px; height: 34px; margin: 0 auto; background: linear-gradient(#cfcfd5, #b3b3bb); clip-path: polygon(18% 0, 82% 0, 100% 100%, 0 100%); }
+.monitor .foot { width: 120px; height: 8px; margin: 0 auto; border-radius: 4px; background: #c4c4cb; }
+.float { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); height: 24px; width: 64px; border-radius: 12px; background: #000; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; font-size: 10px; font-weight: 600; transition: width .6s var(--spring); overflow: hidden; white-space: nowrap; box-shadow: 0 6px 14px -6px rgba(0,0,0,.5); }
+.float img { width: 12px; height: 12px; border-radius: 3px; }
+.float canvas { width: 18px; height: 18px; }
+.float .a, .float .b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 6px; transition: opacity .3s; }
+.float .b { opacity: 0; }
+.float.wide .a { opacity: 0; } .float.wide .b { opacity: 1; transition-delay: .15s; }
+.slot { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 230px; height: 30px; border-radius: 0 0 16px 16px; background: #000; z-index: 2; }
+.slot::after { content: ""; position: absolute; left: 22px; right: 22px; bottom: 6px; height: 3px; border-radius: 2px; background: #2a2a2e; }
+.paper { position: absolute; left: 50%; top: 22px; width: 196px; transform: translate(-50%, -100%); background: #fff; padding: 14px 16px 20px; font: 11.5px/1.65 var(--mono); color: #222; box-shadow: 0 16px 30px -18px rgba(0,0,0,.35); transition: transform 2.6s cubic-bezier(.3,.1,.2,1); z-index: 1;
+  -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 7px) no-repeat, conic-gradient(from 135deg at 50% 100%, #000 90deg, transparent 0) bottom / 12px 7px repeat-x;
+  mask: linear-gradient(#000 0 0) top / 100% calc(100% - 7px) no-repeat, conic-gradient(from 135deg at 50% 100%, #000 90deg, transparent 0) bottom / 12px 7px repeat-x; }
+.paper.out { transform: translate(-50%, 0); }
+.paper .c { text-align: center; } .paper .rl { display: flex; justify-content: space-between; } .paper hr { border: 0; border-top: 1px dashed #bbb; margin: 7px 0; }
+.paper canvas { width: 32px; height: 32px; margin: 0 auto 4px; }
+.facts { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 0 30px; }
+.fact { display: flex; align-items: center; gap: 14px; height: 58px; padding: 0 18px 0 14px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px var(--line); font-weight: 500; font-size: 15.5px; }
+.fact .ico { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: var(--ink); color: #fff; flex: none; }
+.fact .ico svg { width: 17px; height: 17px; }
+.fact span:last-child { color: var(--ink3); font-weight: 400; margin-left: auto; font-size: 13.5px; }
+
+/* ---------- mochi ---------- */
+.mochi { position: relative; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 30px; padding: 64px; border-radius: 36px; overflow: hidden; color: #fff;
+  background: radial-gradient(520px 380px at 72% 40%, rgba(155,130,255,.28), transparent 70%), radial-gradient(400px 300px at 90% 100%, rgba(255,170,140,.18), transparent 70%), #0d0d10; }
+.mochi .eyebrow { color: rgba(255,255,255,.5); }
+.mochi p { margin-top: 16px; color: rgba(255,255,255,.68); font-size: 18px; max-width: 440px; }
+.lvl { margin-top: 28px; max-width: 340px; }
+.lvl .lb { display: flex; justify-content: space-between; font-size: 13.5px; color: rgba(255,255,255,.6); }
+.lvl .lb b { color: #fff; font-weight: 600; }
+.lvl .tr { margin-top: 8px; height: 6px; border-radius: 9px; background: rgba(255,255,255,.12); overflow: hidden; }
+.lvl .tr i { display: block; height: 100%; width: 72%; border-radius: 9px; background: #fff; transition: width .8s var(--spring); }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+.acts button { height: 42px; padding: 0 18px; border-radius: 999px; font-size: 14.5px; font-weight: 500; background: rgba(255,255,255,.09); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); transition: background .2s, transform .35s var(--spring); }
+.acts button:hover { background: rgba(255,255,255,.16); }
+.acts button:active { transform: scale(.94); }
+.acts button.pri { background: #fff; color: var(--ink); }
+.acts .sep { flex-basis: 100%; height: 0; }
+.acts button[data-o] { font-size: 13.5px; height: 36px; padding: 0 14px; color: rgba(255,255,255,.75); }
+.acts button[data-o].on { background: #fff; color: var(--ink); }
+.pen { position: relative; height: 420px; display: flex; align-items: flex-end; justify-content: center; }
+.pen canvas { width: 256px; height: 256px; cursor: pointer; position: relative; z-index: 1; margin-bottom: 64px; }
+.pen .floor { position: absolute; bottom: 56px; left: 50%; width: 230px; height: 26px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.65), transparent); }
+.pen .glow { position: absolute; bottom: 36px; left: 50%; width: 380px; height: 90px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,.08), transparent); }
+.say { position: absolute; left: 50%; top: 34px; transform: translate(-50%, 8px) scale(.9); opacity: 0; padding: 10px 16px; border-radius: 16px; background: #fff; color: var(--ink); font-size: 15px; font-weight: 500; white-space: nowrap; transition: opacity .25s, transform .45s var(--spring); z-index: 2; }
+.say::after { content: ""; position: absolute; left: 50%; bottom: -5px; width: 12px; height: 12px; background: #fff; transform: translateX(-50%) rotate(45deg); border-radius: 2px; }
+.say.on { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- faq ---------- */
+.faq { max-width: 760px; margin: 0 auto; }
+.faq details { border-bottom: 1px solid var(--line); }
+.faq summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 24px 4px; font-size: 18px; font-weight: 500; letter-spacing: -.01em; cursor: pointer; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary i { position: relative; width: 14px; height: 14px; flex: none; transition: transform .35s var(--spring); }
+.faq summary i::before, .faq summary i::after { content: ""; position: absolute; left: 0; top: 6px; width: 14px; height: 2px; border-radius: 2px; background: var(--ink); }
+.faq summary i::after { transform: rotate(90deg); }
+.faq details[open] summary i { transform: rotate(45deg); }
+.faq details p { padding: 0 4px 24px; margin-top: -8px; color: var(--ink2); font-size: 16px; max-width: 640px; }
+
+/* ---------- final ---------- */
+.final { position: relative; text-align: center; padding: 160px 0 140px; }
+.final::before { content: ""; position: absolute; left: 50%; top: 90px; width: min(640px, 100%); height: 420px; transform: translateX(-50%); z-index: -1; background: radial-gradient(closest-side, rgba(196,180,255,.45), transparent), radial-gradient(260px 200px at 70% 70%, rgba(255,205,180,.5), transparent); filter: blur(10px); }
+.appi.xl { width: 128px; height: 128px; margin: 0 auto 36px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), 0 30px 60px -20px rgba(40,30,80,.5); }
+.appi.xl::before { content: ""; position: absolute; top: 0; left: 50%; width: 46px; height: 12px; transform: translateX(-50%); background: #26262b; border-radius: 0 0 8px 8px; }
+.appi.xl canvas { width: 72px; height: 72px; margin-top: 10px; }
+.final h2 { font-size: clamp(40px, 6vw, 72px); }
+.final > p { margin: 16px auto 0; font-size: 18px; color: var(--ink2); }
+.final .meta { font-size: 13.5px; color: var(--ink3); margin-top: 18px; }
+footer { border-top: 1px solid var(--line); }
+footer .wrap { height: 80px; display: flex; align-items: center; gap: 24px; font-size: 14px; color: var(--ink3); }
+footer .wrap > :first-child { display: flex; align-items: center; gap: 10px; color: var(--ink2); }
+footer nav { margin-left: auto; display: flex; gap: 22px; }
+footer a:hover { color: var(--ink); }
+
+/* ---------- download sheet ---------- */
+.veil { position: fixed; inset: 0; z-index: 80; background: rgba(20,18,30,.28); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); opacity: 0; pointer-events: none; transition: opacity .35s; }
+.veil.show { opacity: 1; pointer-events: auto; }
+.sheet { position: fixed; left: 50%; top: 50%; z-index: 90; width: min(760px, 100vw - 32px); max-height: calc(100vh - 32px); overflow: auto; padding: 36px; border-radius: 32px; background: #fff; box-shadow: 0 0 0 1px var(--line), 0 50px 100px -30px rgba(20,10,60,.4); text-align: center; opacity: 0; pointer-events: none; transform: translate(-50%, -46%) scale(.96); transition: opacity .3s, transform .6s var(--spring); }
+.sheet.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
+.sheet .appi { width: 72px; height: 72px; margin: 0 auto 18px; }
+.sheet .appi canvas { width: 44px; height: 44px; }
+.sheet h3 { font-size: 30px; font-weight: 600; letter-spacing: -.035em; }
+.sheet > p { margin-top: 6px; color: var(--ink2); }
+.x { position: absolute; right: 16px; top: 16px; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: #f2f2f4; transition: background .2s; }
+.x:hover { background: #e8e8ec; }
+.x svg { width: 12px; height: 12px; stroke: var(--ink); stroke-width: 2; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 28px; text-align: left; }
+.step { border-radius: 20px; padding: 10px 10px 16px; background: #f7f6f3; opacity: 0; transform: translateY(12px); transition: opacity .4s, transform .6s var(--spring); }
 .sheet.show .step { opacity: 1; transform: none; }
-.sheet.show .step:nth-child(2) { transition-delay: .1s; } .sheet.show .step:nth-child(3) { transition-delay: .2s; }
-.step .vis { height: 96px; border-radius: 14px; background: #000; box-shadow: inset 0 0 0 1px var(--line); position: relative; overflow: hidden; margin-bottom: 12px; }
-.step h4 { margin: 0 0 3px; font-size: 15.5px; font-weight: 600; letter-spacing: -.02em; }
-.step p { margin: 0; font-size: 14px; color: var(--ink2); }
-.step p b { color: #fff; font-weight: 600; }
-.sheet .ft { margin-top: 14px; text-align: center; font: 12.5px var(--mono); color: var(--ink3); }
-.sheet .ft a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
-.v-dmg { position: absolute; left: 50%; top: 50%; width: 48px; height: 58px; transform: translate(-50%, -50%); border-radius: 10px; background: #e9e9ec; }
-.v-dmg::before { content: ""; position: absolute; left: 13px; top: 10px; width: 22px; height: 22px; border-radius: 6px; background: #000; }
-.v-dmg::after { content: "DMG"; position: absolute; bottom: 7px; left: 0; right: 0; text-align: center; font: 700 9px var(--mono); color: #666; }
-.sheet.show .v-dmg { animation: bob 2.2s ease-in-out infinite; }
-@keyframes bob { 50% { transform: translate(-50%, -60%); } }
-.v-app { position: absolute; top: 50%; left: 20%; width: 44px; height: 44px; border-radius: 11px; background: #000; transform: translateY(-50%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.3); }
-.v-app::after { content: ""; position: absolute; left: 50%; top: 4px; width: 22px; height: 7px; transform: translateX(-50%); border-radius: 0 0 5px 5px; background: #fff; }
-.v-folder { position: absolute; top: 50%; right: 16%; width: 54px; height: 40px; border-radius: 7px; transform: translateY(-40%); background: #e9e9ec; }
-.v-folder::before { content: ""; position: absolute; left: 0; top: -6px; width: 22px; height: 10px; border-radius: 4px 4px 0 0; background: #e9e9ec; }
-.sheet.show .v-app { animation: drag 2.4s cubic-bezier(.45,.05,.2,1) infinite; }
-@keyframes drag { 0%, 15% { left: 20%; opacity: 1; transform: translateY(-50%); } 60% { left: 56%; opacity: 1; transform: translateY(-50%) scale(.8); } 75%, 100% { left: 56%; opacity: 0; transform: translateY(-50%) scale(.6); } }
-.v-set { position: absolute; left: 14px; right: 14px; top: 50%; transform: translateY(-50%); height: 42px; border-radius: 11px; background: #161618; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 11.5px; color: var(--ink2); }
-.v-set i { font-style: normal; height: 26px; padding: 0 10px; border-radius: 8px; background: #fff; color: #000; font-weight: 600; display: grid; place-items: center; }
-.sheet.show .v-set i { animation: tap 2.4s ease infinite; }
-@keyframes tap { 0%, 55%, 100% { transform: scale(1); } 62% { transform: scale(.9); } 70%, 90% { transform: scale(1); background: var(--green); color: #fff; } }
+.sheet.show .step:nth-child(2) { transition-delay: .08s; } .sheet.show .step:nth-child(3) { transition-delay: .16s; }
+.step .vis { position: relative; height: 104px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px var(--line); overflow: hidden; display: grid; place-items: center; }
+.step h4 { margin: 14px 6px 0; font-size: 15.5px; font-weight: 600; letter-spacing: -.01em; }
+.step h4 small { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 6px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 11.5px; vertical-align: 1px; }
+.step p { margin: 4px 6px 0; font-size: 14px; color: var(--ink2); }
+.dmg { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink2); }
+.dmg .disk { width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(#f4f4f6, #dcdce2); box-shadow: 0 0 0 1px var(--line2), 0 6px 12px -6px rgba(0,0,0,.3); display: grid; place-items: center; }
+.dmg .disk i { width: 22px; height: 22px; border-radius: 6px; background: var(--ink); }
+.drag { position: relative; width: 170px; height: 60px; }
+.drag .ap { position: absolute; left: 6px; top: 8px; width: 44px; height: 44px; border-radius: 11px; background: var(--ink); animation: drag 2.4s var(--ease) infinite; display: grid; place-items: center; z-index: 1; }
+.drag .ap canvas { width: 26px; height: 26px; }
+.drag .fd { position: absolute; right: 6px; top: 10px; width: 54px; height: 44px; border-radius: 8px; background: linear-gradient(#7cc3ff, #3d97f2); box-shadow: 0 6px 12px -6px rgba(30,100,200,.5); }
+.drag .fd::before { content: ""; position: absolute; left: 0; top: -6px; width: 22px; height: 10px; border-radius: 4px 4px 0 0; background: #6ab6fb; }
+@keyframes drag { 0%, 15% { transform: none; opacity: 1; } 60% { transform: translateX(106px) scale(.7); opacity: 1; } 70%, 100% { transform: translateX(106px) scale(.5); opacity: 0; } }
+.okb { width: 86%; padding: 10px 12px; border-radius: 12px; background: #f5f5f7; font-size: 11.5px; color: var(--ink2); text-align: left; }
+.okb b { display: block; color: var(--ink); font-weight: 600; font-size: 12px; margin-bottom: 6px; }
+.okb span { display: inline-block; margin-top: 6px; padding: 4px 10px; border-radius: 7px; background: #0a84ff; color: #fff; font-weight: 600; animation: pulse 1.8s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 5px rgba(10,132,255,.2); } }
+.sheet .ft { margin-top: 24px; font-size: 14px; color: var(--ink3); }
+.sheet .ft a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
-#fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90; }
-.toast { position: fixed; left: 50%; bottom: 28px; z-index: 95; transform: translate(-50%, 20px); background: #fff; color: #000; font: 600 14px var(--sans); padding: 12px 20px; border-radius: 999px; opacity: 0; transition: opacity .25s, transform .45s var(--spring); pointer-events: none; white-space: nowrap; }
+.toast { position: fixed; left: 50%; bottom: 28px; z-index: 100; transform: translate(-50%, 20px); opacity: 0; padding: 12px 18px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 14px; font-weight: 500; transition: opacity .25s, transform .45s var(--spring); pointer-events: none; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
-.reveal { opacity: 0; transform: translateY(30px); transition: opacity 1s var(--soft), transform 1.2s var(--soft); }
-.reveal.in { opacity: 1; transform: none; }
+#fx { position: fixed; inset: 0; z-index: 95; pointer-events: none; width: 100%; height: 100%; }
 
-@media (max-width: 960px) { .grid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 640px) {
-  .nav .links { display: none; }
-  .nav { gap: 14px; }
-  .nav.open { width: calc(100vw - 16px); }
-  .hero { padding: 0 18px 220px; }
-  .hero .stage { height: 52vh; min-height: 380px; }
-  .b { width: 100%; }
-  .demo { padding: 0 12px; margin-top: -160px; }
-  .demo-fit { border-radius: 20px; }
-  .grid { grid-template-columns: 1fr; }
-  .card.span2 { grid-column: span 1; }
-  .card { min-height: 380px; }
-  .key { width: 60px; height: 60px; font-size: 24px; }
-  .mochi { height: 540px; border-radius: 24px; }
-  .mochi canvas.kit { width: 184px; height: 184px; bottom: 170px; }
-  .mochi .bubble { bottom: 370px; }
-  .steps { grid-template-columns: 1fr; }
-  .step .vis { display: none; }
-  .works { gap: 22px 28px; }
-  .sec { padding-top: 110px; }
-  .chips button { height: 36px; padding: 0 12px; font-size: 13px; }
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s var(--ease), transform 1s var(--ease); }
+.reveal.in { opacity: 1; transform: none; }
+.card.reveal.in:hover { transform: translateY(-4px); transition: transform .5s var(--spring), box-shadow .4s; }
+
+@media (max-width: 980px) {
+  .links { display: none; }
+  .bento { grid-template-columns: 1fr 1fr; }
+  .card, .card.w3 { grid-column: span 1; } .card.w4 { grid-column: span 2; }
+  .mochi { grid-template-columns: 1fr; padding: 44px 32px 20px; text-align: center; }
+  .mochi p, .lvl { margin-left: auto; margin-right: auto; }
+  .acts { justify-content: center; }
 }
+@media (max-width: 640px) {
+  .gh span { display: none; }
+  .hero { padding-top: 44px; }
+  .stage { margin-top: 44px; }
+  .lid { padding: 6px; border-radius: 18px 18px 8px 8px; }
+  .fit { border-radius: 12px 12px 3px 3px; }
+  .base { height: 10px; margin: 0 -3%; }
+  .bento { grid-template-columns: 1fr; }
+  .card, .card.w3, .card.w4 { grid-column: span 1; }
+  .vg, .card.w4 .vg { height: 260px; }
+  #vApprove .mini { transform: translateX(-50%) scale(.82); transform-origin: top center; }
+  section.blk { padding-top: 100px; }
+  .mochi { padding: 36px 20px 10px; border-radius: 28px; }
+  .pen { height: 330px; }
+  .pen canvas { width: 192px; height: 192px; }
+  .steps { grid-template-columns: 1fr; }
+  .sheet { padding: 28px 18px 22px; }
+  footer .wrap { height: auto; padding: 24px 0; flex-direction: column; gap: 12px; }
+  footer nav { margin: 0; }
+}
+@media (hover: none) { .try { display: none; } }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; transition-duration: .01s !important; transition-delay: 0s !important; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
 </style>
 </head>
 <body>
 
 <header class="nav" id="nav">
-  <div class="items">
-    <a class="brand" href="#top"><canvas class="px" id="navKitty"></canvas>NotchBar</a>
-    <nav class="links"><a href="#features">Features</a><a href="#mochi">Mochi</a><a href="https://github.com/mumbaitrip2022/notchma">GitHub</a></nav>
-    <a class="cta" href="#get">Download</a>
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="appi sm"><canvas class="px" id="navKitty" width="22" height="22"></canvas></span>NotchBar</a>
+    <nav class="links"><a href="#features">Features</a><a href="#mochi">Mochi</a><a href="#faq">FAQ</a></nav>
+    <div class="right">
+      <a class="gh" href="https://github.com/mumbaitrip2022/notchma"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.690-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span>GitHub</span></a>
+      <a class="btn dark sm" data-dl href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg"><span class="bar"></span><span class="label">Download</span></a>
+    </div>
   </div>
-  <div class="dl" aria-hidden="true"><canvas class="px" id="dlKitty"></canvas><div class="t"><div class="t1" id="dlT1">Grabbing NotchBar</div><div class="t2" id="dlT2">packing your kitty</div><div class="pb"><i id="dlBar"></i></div></div></div>
 </header>
 
 <main id="top">
   <section class="hero">
-    <canvas class="art" id="hole"></canvas>
-    <div class="stage"><canvas class="px kit" id="heroKitty" title="Pet me"></canvas></div>
-    <div class="copy">
-      <div class="badge"><i></i><span id="badge">Now with a cuter kitty</span></div>
-      <h1><span class="soft">Dynamic Island</span><br>for your AI agents</h1>
-      <p class="sub">Approve Claude Code, Codex and Cursor right from your Mac's notch.</p>
-      <div class="btns">
-        <a class="b w" data-dl href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg"><span class="fill"></span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><span class="label">Download for macOS</span></a>
-        <a class="b o" href="https://github.com/mumbaitrip2022/notchma"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.75.11 3.04.74.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>Open source</a>
+    <div class="wrap">
+      <a class="news rise" href="https://github.com/mumbaitrip2022/notchma/releases/latest"><b id="ver">New</b>Mochi just got even cuter<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+      <h1 class="rise" style="animation-delay:.06s">Your AI agents,<br><span class="soft">right in your notch</span><span class="inotch"><canvas class="px" id="h1Kitty" width="32" height="32"></canvas></span></h1>
+      <p class="lede rise" style="animation-delay:.14s">See what Claude Code, Codex and Cursor are up to, and approve them in one click. No more babysitting terminals.</p>
+      <div class="ctas rise" style="animation-delay:.22s">
+        <span class="dlw"><canvas class="px peek" id="peekKitty" width="40" height="40"></canvas>
+          <a class="btn dark" data-dl href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg"><span class="bar"></span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.230-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><span class="label">Download for Mac</span></a>
+        </span>
+        <a class="btn light" href="https://github.com/mumbaitrip2022/notchma"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>Star on GitHub</a>
       </div>
-      <div class="small"><span class="v-ver">Latest</span> · Apple silicon · macOS 14+ · Free</div>
-      <div class="notmac">Open this page on your Mac to install.</div>
+      <p class="meta rise" style="animation-delay:.28s"><span>Free and open source</span><span>Apple silicon</span><span>macOS 14+</span></p>
+      <p class="notmac">NotchBar is a Mac app. <button type="button" id="copy">Copy the link</button> for later.</p>
+    </div>
+
+    <div class="wrap stage rise" style="animation-delay:.36s">
+      <div class="mac">
+        <div class="lid"><div class="fit" id="fit">
+          <div class="screen" id="screen">
+            <div class="menubar">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg>
+              <b>Terminal</b><span>Shell</span><span>Edit</span><span>View</span><span>Window</span>
+              <div class="r">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="3"/><rect x="4.5" y="9.5" width="10" height="5" rx="1" fill="currentColor" stroke="none"/><path d="M22 11v2"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg>
+                <span id="clock">Fri 9:41 AM</span>
+              </div>
+            </div>
+
+            <div class="win term">
+              <div class="tb"><i></i><i></i><i></i><span class="tt"><img src="images/agents/claude.svg" alt="">checkout · claude</span></div>
+<pre><span class="l on c-dim" data-t="0">~/checkout $ claude
+</span><span class="l on" data-t="0"><span class="c-org">✻</span> <span class="c-w">Claude Code</span>
+
+</span><span class="l on" data-t="0"><span class="c-dim">&gt;</span> fix the failing checkout tests
+</span><span class="l" data-t="1"><span class="c-org">⏺</span> Read <span class="c-dim">src/cart/total.ts</span>
+</span><span class="l" data-t="3"><span class="c-org">⏺</span> Update <span class="c-dim">total.ts</span>  <span class="c-g">+12</span> <span class="c-r">-3</span>
+</span><span class="l" data-t="8.8"><span class="c-org">⏺</span> Bash <span class="c-dim">npm run test:e2e</span>
+</span><span class="l c-a" data-t="8.8" data-u="12.2">  ◌ Waiting for you in the notch
+</span><span class="l c-g" data-t="12.2">  ✓ Allowed from NotchBar
+</span><span class="l" data-t="13.6">  48 passed <span class="c-dim">in 6.2s</span>
+</span><span class="l" data-t="20.2"><span class="c-org">⏺</span> Done. Checkout tests are green.
+</span></pre>
+            </div>
+
+            <div class="win edit">
+              <div class="tb"><i></i><i></i><i></i><span class="tt"><img src="images/agents/cursor.png" alt="">landing-page · Cursor</span></div>
+              <div class="ebody">
+                <div class="tree"><i style="width:70%"></i><i style="width:55%"></i><i style="width:80%"></i><i style="width:60%"></i><i style="width:45%"></i><i style="width:72%"></i><i style="width:50%"></i></div>
+                <div class="code"><i style="width:40%"></i><i style="width:72%"></i><i style="width:58%"></i><i style="width:84%"></i><i style="width:30%"></i><i style="width:66%"></i><i style="width:78%"></i><i style="width:46%"></i><i style="width:62%"></i><i style="width:88%"></i><i style="width:35%"></i><i style="width:70%"></i><i style="width:54%"></i><i style="width:76%"></i><i style="width:42%"></i></div>
+                <div class="agent-p">
+                  <div class="bub me">ship the new hero</div>
+                  <div class="bub">Updated Hero.tsx and the styles.</div>
+                  <div class="cmdc" data-t="14.6">git push --force origin main<span class="s c-a" data-t="14.6" data-u="18">Waiting for approval</span><span class="s c-r" data-t="18">Denied in NotchBar</span></div>
+                  <div class="bub" data-t="18.6">No problem. I'll open a PR instead.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="islw"><div class="isl" id="isl">
+              <div class="lay on" data-s="idle" style="width:200px"><div class="band" style="justify-content:center"><canvas class="px" data-kit="idle" width="32" height="32" style="width:32px;height:32px;margin-top:2px"></canvas></div></div>
+              <div class="lay" data-s="work" style="width:400px"><div class="band"><img src="images/agents/claude.svg" alt=""><b>checkout</b><span class="mut">Running the tests</span><span class="sp"></span><span class="num" id="wNum">2/5</span><svg class="ring" viewBox="0 0 20 20"><circle class="bg" cx="10" cy="10" r="8"/><circle class="fg" id="wRing" cx="10" cy="10" r="8" stroke-dasharray="50.3" stroke-dashoffset="30"/></svg></div></div>
+              <div class="lay" data-s="list" style="width:480px">
+                <div class="band"><canvas class="px" data-kit="band" width="24" height="24" style="width:24px;height:24px"></canvas><b>3 agents working</b><span class="sp"></span><span class="mut" style="font-size:12.5px">all good</span></div>
+                <div class="ibody">
+                  <div class="row"><img src="images/agents/claude.svg" alt=""><b>checkout</b><span class="mut">Editing total.ts</span><span class="sp"></span><span class="spin"></span></div>
+                  <div class="row"><img src="images/agents/codex.png" alt=""><b>api</b><span class="mut">Writing a migration</span><span class="sp"></span><span class="spin"></span></div>
+                  <div class="row"><img src="images/agents/cursor.png" alt=""><b>landing-page</b><span class="mut">Editing Hero.tsx</span><span class="sp"></span><span class="spin"></span></div>
+                </div>
+              </div>
+              <div class="lay" data-s="ask" style="width:480px">
+                <div class="band"><canvas class="px" data-kit="band" width="24" height="24" style="width:24px;height:24px"></canvas><b>1 request</b><span class="sp"></span><span class="need">Needs you</span></div>
+                <div class="ibody">
+                  <div class="q"><img src="images/agents/claude.svg" alt=""><b>checkout</b><span class="mut">wants to run a command</span><span class="tag">Bash</span></div>
+                  <div class="cmd"><span class="d">$</span> npm run test:e2e</div>
+                  <div class="btns"><span class="bt">Deny</span><span class="bt pri" id="bAllow">Allow</span><span class="bt">Always allow</span><span class="hint"><span class="kc">⌃</span><span class="kc">⌥</span><span class="kc">Y</span></span></div>
+                </div>
+              </div>
+              <div class="lay" data-s="okc" style="width:330px"><div class="band"><span class="chk"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.6-5"/></svg></span><b>Allowed</b><span class="mut">checkout is running e2e</span></div></div>
+              <div class="lay" data-s="risk" style="width:480px">
+                <div class="band"><canvas class="px" data-kit="worry" width="24" height="24" style="width:24px;height:24px"></canvas><b>Hold on</b><span class="sp"></span><span class="need" style="color:#ff8a8a">Risky</span></div>
+                <div class="ibody">
+                  <div class="q"><img src="images/agents/cursor.png" alt=""><b>landing-page</b><span class="mut">wants to force push</span><span class="tag risk">Risky</span></div>
+                  <div class="cmd"><span class="d">$</span> git push --force origin main</div>
+                  <div class="btns"><span class="bt pri" id="bDeny">Deny</span><span class="bt">Allow once</span><span class="hint">risky stuff always asks</span></div>
+                </div>
+              </div>
+              <div class="lay" data-s="stop" style="width:370px"><div class="band"><span class="chk" style="background:var(--red)"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l6 6M9 3 3 9"/></svg></span><b>Denied</b><span class="mut">nothing was pushed. phew</span></div></div>
+              <div class="lay" data-s="done" style="width:350px"><div class="band"><canvas class="px" data-kit="done" width="32" height="32" style="width:32px;height:32px;margin-top:2px"></canvas><b>All done</b><span class="mut">3 tasks shipped</span><span class="sp"></span><span class="chk"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.6-5"/></svg></span></div></div>
+            </div></div>
+
+            <div class="kflash" id="kflash"><span>⌃</span><span>⌥</span><span id="kKey">Y</span></div>
+            <div class="ptr" id="ptr"><svg viewBox="0 0 24 24"><path d="M5 2.5v17.2l4.3-4.1 2.9 6.6 2.9-1.3-2.9-6.4h6.1z" fill="#000" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+          </div>
+        </div></div>
+        <div class="base"></div>
+      </div>
+      <div class="chips" id="chips"></div>
+      <p class="try">Try it: when it asks, press <kbd>⌃</kbd><kbd>⌥</kbd><kbd>Y</kbd> to allow or <kbd>⌃</kbd><kbd>⌥</kbd><kbd>N</kbd> to deny</p>
     </div>
   </section>
 
-  <div class="demo">
-    <div class="demo-fit reveal" id="demoFit">
-      <div class="screen" id="screen">
-        <canvas class="art" data-scene="wall"></canvas>
-        <div class="menubar"><div class="l"><svg viewBox="0 0 24 24"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><b>Terminal</b><span>Shell</span><span>Edit</span><span>View</span></div><div class="r"><span id="mbDay"></span><span id="mbTime"></span></div></div>
-        <div class="win w1"><div class="tb"><i></i><i></i><i></i><span><img class="ico" src="images/agents/claude.svg" alt="">Claude Code · checkout</span></div><div class="body">
-          <div><span>› </span><span id="typed"></span></div>
-          <div data-t="1.6"><span class="or">⏺</span> Bash(npm test)</div>
-          <div data-t="2.4"><span class="dd">  ⎿</span>  <span class="ok">3 passing</span>, <span class="bad">2 failing</span></div>
-          <div data-t="3.4"><span class="or">⏺</span> Update(src/cart/total.ts)</div>
-          <div data-t="4.2"><span class="dd">  ⎿</span>  <span class="ok">+4</span> <span class="bad">-2</span></div>
-          <div data-t="8.2" data-u="10.6"><span class="or">⏺</span> Bash(npm run e2e) <span class="amb">waiting</span></div>
-          <div data-t="10.6"><span class="or">⏺</span> Bash(npm run e2e) <span class="ok">12 passing</span></div>
-          <div data-t="16.6"><span class="or">⏺</span> <span class="ok">All tests pass.</span></div>
-        </div></div>
-        <div class="win w2"><div class="tb"><i></i><i></i><i></i><span><img class="ico" src="images/agents/codex.png" alt="">Codex · api</span></div><div class="body">
-          <div><span class="dd">›</span> add an orders table</div>
-          <div data-t="1.2"><span class="gr">•</span> Reading db/schema.ts</div>
-          <div data-t="2.2"><span class="gr">•</span> Writing 0042_orders.sql</div>
-          <div data-t="3.0"><span class="k">  create table</span> orders (</div>
-          <div data-t="3.4">    id <span class="f">uuid</span> primary key,</div>
-          <div data-t="3.8">    total_cents <span class="f">int</span></div>
-          <div data-t="4.2">  );</div>
-          <div data-t="6.2" data-u="10.6"><span class="amb">• Waiting: npm run migrate</span></div>
-          <div data-t="10.6"><span class="ok">• Ran migrate</span></div>
-          <div data-t="17.6"><span class="ok">• Done.</span></div>
-        </div></div>
-        <div class="win w3"><div class="tb"><i></i><i></i><i></i><span><img class="ico" src="images/agents/cursor.png" alt="">Cursor · landing-page · Hero.tsx</span></div>
-          <pre><div><span class="k">export function</span> <span class="f">Hero</span>() {</div><div>  <span class="k">return</span> (</div><div>    &lt;<span class="tg">section</span>&gt;</div><div data-u="2.2">      &lt;<span class="tg">h1</span>&gt;Ship faster&lt;/<span class="tg">h1</span>&gt;</div><div data-t="2.2" class="add">      &lt;<span class="tg">h1</span>&gt;Ship with agents&lt;/<span class="tg">h1</span>&gt;</div><div data-t="3.0" class="add">      &lt;<span class="tg">p</span>&gt;Three of them, at once.&lt;/<span class="tg">p</span>&gt;</div><div>      &lt;<span class="tg">Button</span> <span class="s">size="lg"</span>&gt;Get started&lt;/<span class="tg">Button</span>&gt;</div><div>    &lt;/<span class="tg">section</span>&gt;</div><div>  )</div><div>}</div><div data-t="12.2" data-u="14.6"><span class="bad">  agent wants: git push --force origin main</span></div><div data-t="14.6"><span class="ok">  agent: pushed hero-refresh instead</span></div></pre>
+  <section class="works wrap reveal">
+    <div class="eyebrow">Works with the agents you already use</div>
+    <div class="agents">
+      <div class="agent"><img src="images/agents/claude.svg" alt="">Claude Code</div>
+      <div class="agent"><img src="images/agents/codex.png" alt="">Codex</div>
+      <div class="agent"><img src="images/agents/cursor.png" alt="">Cursor</div>
+    </div>
+  </section>
+
+  <section class="blk wrap" id="features">
+    <div class="hd reveal"><div class="eyebrow">Features</div><h2>Stay in flow.<br>Your agents check in.</h2></div>
+    <div class="bento">
+      <article class="card w4 reveal">
+        <div class="vg t-lilac" id="vApprove">
+          <div class="mini" style="width:400px;height:150px">
+            <div class="lay on" data-s="ask" style="width:400px">
+              <div class="band"><img src="images/agents/codex.png" alt=""><b>api</b><span class="mut">wants to edit 3 files</span><span class="sp"></span><span class="need">Needs you</span></div>
+              <div class="ibody"><div class="cmd" style="margin-top:4px">db/migrations/<span class="d">004_orders.sql</span> <span class="c-g">+84</span> <span class="c-r">-12</span></div>
+                <div class="btns"><span class="bt">Deny</span><span class="bt pri" data-allow>Allow</span><span class="bt">Always</span></div></div>
+            </div>
+            <div class="lay" data-s="ok" style="width:290px"><div class="band" style="justify-content:center"><span class="chk"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.6-5"/></svg></span><b>Allowed</b><span class="mut">api is back at it</span></div></div>
+          </div>
+          <div class="keys"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>Y</kbd></div>
         </div>
-        <div class="dimmer" id="dimmer"></div>
-        <div class="rclip" id="demoClip" style="top:44px"><div class="paper" id="demoPaper"></div></div>
-        <div class="isl" id="demoIsl"><div class="bd"></div></div>
-        <div class="kflash" id="kflash"><span>⌃</span><span>⌥</span><span id="kKey">Y</span></div>
-        <div class="ptr" id="ptr"><svg viewBox="0 0 24 24"><path d="M5.5 3.2v16.4l4.1-3.9 2.6 6 3-1.3-2.6-5.9h5.7z" fill="#000" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
-      </div>
-    </div>
-    <div class="chips" id="chips"><button data-c="0"><i></i><span>Three agents</span></button><button data-c="1"><i></i><span>Allow all</span></button><button data-c="2"><i></i><span>Risky stops</span></button><button data-c="3"><i></i><span>Done</span></button><button data-c="4"><i></i><span>Receipt</span></button></div>
-    <div class="hint" id="hint"></div>
-  </div>
-
-  <section class="sec" id="features">
-    <div class="works reveal"><span class="lbl">Works with</span><div class="it"><img class="ico" src="images/agents/claude.svg" alt="">Claude Code</div><div class="it"><img class="ico" src="images/agents/codex.png" alt="">Codex</div><div class="it"><img class="ico" src="images/agents/cursor.png" alt="">Cursor</div></div>
-    <div class="wrap">
-      <div class="head reveal" style="margin-top:120px"><h2>Your agents. <span class="soft">One glance away.</span></h2></div>
-      <div class="grid">
-        <div class="card span2 reveal" data-demo="approve"><canvas class="art" data-scene="halo"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div><div class="keys"><span class="key">⌃</span><span class="key">⌥</span><span class="key">Y</span></div></div><div class="cap"><b>One key to say yes.</b><span>From any app, mid-anything.</span></div></div>
-        <div class="card reveal" data-demo="multi"><canvas class="art" data-scene="orbit"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div></div><div class="cap"><b>Every agent, live.</b><span>What each one is doing, right now.</span></div></div>
-        <div class="card reveal" data-demo="risky"><canvas class="art" data-scene="flare"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div></div><div class="cap"><b>Risky? It stops.</b><span>Force pushes never auto-approve.</span></div></div>
-        <div class="card reveal" data-demo="usage"><canvas class="art" data-scene="planet"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div></div><div class="cap"><b>Know your limits.</b><span>And when you'll hit them.</span></div></div>
-        <div class="card reveal" data-demo="float"><canvas class="art" data-scene="rings"></canvas><div class="stage"><div class="isl float"><div class="bd"></div></div></div><div class="cap"><b>No notch? No problem.</b><span>It draws its own island.</span></div></div>
-        <div class="card span2 reveal" data-demo="receipt"><canvas class="art" data-scene="warp"></canvas><div class="stage"><div class="isl"><div class="bd"></div></div><div class="rclip" style="top:46px"><div class="paper"></div></div></div><div class="cap"><b>Your day, printed.</b><span>A receipt of everything your agents shipped.</span></div></div>
-        <div class="card reveal" data-demo="update"><canvas class="art" data-scene="none"></canvas><div class="stage"><div class="gift"><canvas class="px"></canvas></div></div><div class="cap"><b>Updates in one tap.</b><span>Mochi brings them to you.</span></div></div>
-      </div>
+        <div class="txt"><h3>Approve without switching apps</h3><p>Allow or deny right from the notch, or with a shortcut. Your agent keeps going, you keep your flow.</p></div>
+      </article>
+      <article class="card reveal">
+        <div class="vg t-sky" id="vAgents">
+          <div class="mini" style="width:300px;height:204px">
+            <div class="lay on" style="width:300px">
+              <div class="band"><canvas class="px" data-kit="band" width="24" height="24" style="width:24px;height:24px"></canvas><b>3 agents</b></div>
+              <div class="ibody" style="padding:2px 12px 12px">
+                <div class="row"><img src="images/agents/claude.svg" alt=""><b>checkout</b><span class="sp"></span><span class="st"></span></div>
+                <div class="row"><img src="images/agents/codex.png" alt=""><b>api</b><span class="sp"></span><span class="st"></span></div>
+                <div class="row"><img src="images/agents/cursor.png" alt=""><b>landing</b><span class="sp"></span><span class="st"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="txt"><h3>Every agent, one glance</h3><p>All your sessions side by side, live.</p></div>
+      </article>
+      <article class="card reveal">
+        <div class="vg t-peach" id="vRisk">
+          <div class="term-card"><div class="tb"><i></i><i></i><i></i></div><pre><span class="c-dim">$</span> <span id="rCmd"></span></pre></div>
+          <div class="held" id="rHeld"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Zm-1 6h2v6h-2V8Zm0 8h2v2h-2v-2Z"/></svg>Held for you</div>
+        </div>
+        <div class="txt"><h3>Risky stuff waits for you</h3><p>Force pushes and deletes always ask first. No exceptions.</p></div>
+      </article>
+      <article class="card reveal">
+        <div class="vg t-mint" id="vUsage">
+          <div class="meters">
+            <div class="meter"><div class="lb">5 hour limit<span id="u1t">0%</span></div><div class="tr"><i id="u1"></i></div></div>
+            <div class="meter"><div class="lb">Weekly<span id="u2t">0%</span></div><div class="tr"><i id="u2"></i></div></div>
+            <div class="ft"><img src="images/agents/claude.svg" alt="" style="width:14px;height:14px;border-radius:4px">Resets in 2h 10m</div>
+          </div>
+        </div>
+        <div class="txt"><h3>Know your limits</h3><p>Plan usage at a glance, before you hit the wall.</p></div>
+      </article>
+      <article class="card reveal">
+        <div class="vg t-butter" id="vFloat">
+          <div class="monitor"><div class="scr"><div class="float" id="flt"><span class="a"><canvas class="px" data-kit="tiny" width="18" height="18"></canvas></span><span class="b"><img src="images/agents/claude.svg" alt="">checkout · tests passing</span></div></div><div class="neck"></div><div class="foot"></div></div>
+        </div>
+        <div class="txt"><h3>No notch? No problem</h3><p>On any display it floats at the top, just like the real thing.</p></div>
+      </article>
+      <article class="card w3 reveal">
+        <div class="vg t-stone" id="vReceipt">
+          <div class="slot"></div>
+          <div class="paper" id="paper">
+            <canvas class="px" data-kit="receipt" width="32" height="32"></canvas>
+            <div class="c">NOTCHBAR · RECEIPT #128</div><hr>
+            <div class="rl"><span>tasks shipped</span><span>4</span></div>
+            <div class="rl"><span>lines</span><span>+1,280</span></div>
+            <div class="rl"><span>tests passed</span><span>148</span></div>
+            <div class="rl"><span>cookies eaten</span><span>4</span></div><hr>
+            <div class="c">thank u for shipping</div>
+          </div>
+        </div>
+        <div class="txt"><h3>A receipt for your day</h3><p>Your day's work prints right out of the notch. Share it if you're proud.</p></div>
+      </article>
+      <article class="card w3 reveal">
+        <div class="vg t-cloud">
+          <div class="facts">
+            <div class="fact"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>Runs on your Mac<span>local</span></div>
+            <div class="fact"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>No account, no tracking<span>none</span></div>
+            <div class="fact"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7-5 5 5 5M16 7l5 5-5 5"/></svg></span>Open source<span>MIT</span></div>
+          </div>
+        </div>
+        <div class="txt"><h3>Private by default</h3><p>Your prompts and code stay on your Mac. Read every line of it on GitHub.</p></div>
+      </article>
     </div>
   </section>
 
-  <section class="sec" id="mochi">
-    <div class="wrap">
-      <div class="head reveal"><h2>Meet mochi. <span class="soft">Say hi.</span></h2><p>It lives in your notch, eats a cookie for every finished task, and levels up as you ship.</p></div>
-      <div class="mochi reveal">
-        <canvas class="art" data-scene="moon"></canvas>
-        <div class="bubble" id="bubble">hi bestie</div>
-        <canvas class="px kit" id="bigKitty" aria-label="Mochi. Click to pet."></canvas>
-        <div class="acts" id="acts"><button data-a="pet">Pet</button><button data-a="feed">Feed</button><button data-a="party">Ship it</button><button data-a="nap">Nap</button><span class="sep"></span><button data-o="sprout">Sprout</button><button data-o="headphones">Headphones</button><button data-o="crown">Crown</button></div>
+  <section class="blk wrap" id="mochi">
+    <div class="mochi reveal">
+      <div>
+        <div class="eyebrow">Meet mochi</div>
+        <h2>A tiny cat that<br>ships with you.</h2>
+        <p>Mochi lives in your notch. It cheers when tasks finish, eats a cookie for each one, and levels up as you ship.</p>
+        <div class="lvl"><div class="lb"><span><b>mochi</b> · lvl <span id="lvN">4</span></span><span id="lvX">720 / 1,000 xp</span></div><div class="tr"><i id="lvBar"></i></div></div>
+        <div class="acts" id="acts">
+          <button class="pri" data-a="pet">Pet</button><button data-a="feed">Feed</button><button data-a="party">Ship it</button><button data-a="nap">Nap</button>
+          <span class="sep"></span>
+          <button data-o="sprout">🌱 lvl 3</button><button data-o="headphones">🎧 lvl 6</button><button data-o="crown">👑 lvl 10</button>
+        </div>
       </div>
+      <div class="pen"><div class="glow"></div><div class="floor"></div><div class="say" id="say">hi! pet me</div><canvas class="px" id="bigKitty" width="256" height="256" aria-label="Mochi, click to pet"></canvas></div>
     </div>
   </section>
 
-  <section class="final" id="get">
-    <canvas class="art" data-scene="none"></canvas>
-    <div class="wrap">
-      <div class="appicon reveal"><canvas class="px" id="iconKitty"></canvas></div>
-      <h2 class="reveal">Give your notch<br>a job.</h2>
-      <p class="reveal">Free and open source. Connect your agents in one click.</p>
-      <div class="btns reveal">
-        <a class="b w" data-dl href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg"><span class="fill"></span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><span class="label">Download for macOS</span></a>
-        <button class="b o" id="copy" type="button">Copy link</button>
-      </div>
-      <div class="small reveal"><span class="v-ver">Latest</span> · <span class="v-size">2 MB</span> · Apple silicon · macOS 14+</div>
-      <div class="notmac">Open this page on your Mac to install.</div>
+  <section class="blk wrap" id="faq">
+    <div class="hd reveal" style="margin-bottom:28px"><div class="eyebrow">FAQ</div><h2>Good questions</h2></div>
+    <div class="faq reveal">
+      <details><summary>Is it really free?<i></i></summary><p>Yes. NotchBar is free and open source under the MIT license. No account, no trial, no catch.</p></details>
+      <details><summary>My Mac has no notch. Does it work?<i></i></summary><p>Yep. On a Mac without a notch, or on an external display, NotchBar floats a little island at the top of the screen.</p></details>
+      <details><summary>Which agents and Macs are supported?<i></i></summary><p>Claude Code, Codex and Cursor. It runs on Macs with Apple silicon (M1 or newer) on macOS 14 Sonoma or later.</p></details>
+      <details><summary>Does my code leave my Mac?<i></i></summary><p>No. NotchBar talks to your agents locally on your Mac. It only goes online to check for updates.</p></details>
+      <details><summary>macOS says it can't open the app<i></i></summary><p>Open System Settings, go to Privacy &amp; Security, and click Open Anyway. You only need to do this once.</p></details>
     </div>
+  </section>
+
+  <section class="final wrap reveal">
+    <div class="appi xl"><canvas class="px" id="iconKitty" width="72" height="72"></canvas></div>
+    <h2>Give your agents a home.</h2>
+    <p>Mochi is ready when you are.</p>
+    <div class="ctas">
+      <a class="btn dark" data-dl href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg"><span class="bar"></span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><span class="label">Download for Mac</span></a>
+    </div>
+    <p class="meta"><span class="v-ver">Latest version</span><span class="v-size">Apple silicon</span><span>macOS 14+</span></p>
   </section>
 </main>
-<footer><div class="wrap"><span>NotchBar · MIT licensed</span><a href="https://github.com/mumbaitrip2022/notchma">github.com/mumbaitrip2022/notchma</a></div></footer>
 
-<div class="sheet-bg" id="sheetBg"></div>
-<div class="sheet" id="sheet" role="dialog" aria-labelledby="shT" aria-hidden="true">
-  <div class="hd"><div><h3 id="shT">Almost there</h3><p>Three steps and mochi moves into your notch.</p></div><button class="x" id="shX" type="button" aria-label="Close"><svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11"/></svg></button></div>
+<footer><div class="wrap">
+  <span><span class="appi sm" style="width:22px;height:22px"><canvas class="px" id="footKitty" width="16" height="16" style="width:16px;height:16px"></canvas></span>NotchBar · MIT licensed</span>
+  <nav><a href="https://github.com/mumbaitrip2022/notchma">GitHub</a><a href="https://github.com/mumbaitrip2022/notchma/releases">Releases</a><a href="https://github.com/mumbaitrip2022/notchma/issues">Report a bug</a></nav>
+</div></footer>
+
+<div class="veil" id="veil"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="shT" aria-hidden="true">
+  <button class="x" id="shX" type="button" aria-label="Close"><svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11"/></svg></button>
+  <div class="appi"><canvas class="px" id="sheetKitty" width="44" height="44"></canvas></div>
+  <h3 id="shT">Almost there</h3>
+  <p>Three quick steps and mochi moves in.</p>
   <div class="steps">
-    <div class="step"><div class="vis"><div class="v-dmg"></div></div><h4>Open the download</h4><p>Double click <b>NotchBar.dmg</b>.</p></div>
-    <div class="step"><div class="vis"><div class="v-app"></div><div class="v-folder"></div></div><h4>Drag to Applications</h4><p>Then open NotchBar.</p></div>
-    <div class="step"><div class="vis"><div class="v-set">Privacy &amp; Security<i>Open Anyway</i></div></div><h4>Say yes once</h4><p>If macOS asks, click <b>Open Anyway</b>.</p></div>
+    <div class="step"><div class="vis"><div class="dmg"><div class="disk"><i></i></div>NotchBar.dmg</div></div><h4><small>1</small>Open the download</h4><p>Double click NotchBar.dmg in your Downloads.</p></div>
+    <div class="step"><div class="vis"><div class="drag"><div class="ap"><canvas class="px" data-kit="tinyw" width="26" height="26"></canvas></div><div class="fd"></div></div></div><h4><small>2</small>Drag to Applications</h4><p>Then open NotchBar from there.</p></div>
+    <div class="step"><div class="vis"><div class="okb"><b>Privacy &amp; Security</b>"NotchBar" was blocked to protect your Mac.<br><span>Open Anyway</span></div></div><h4><small>3</small>Say yes once</h4><p>If macOS asks, click Open Anyway.</p></div>
   </div>
   <div class="ft">Download didn't start? <a href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg">Try again</a></div>
 </div>
@@ -460,100 +663,9 @@ const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
-const PINK = "#ff8cb3";
+const PINK = "#ff8fb1", INK = "#0c0c0e";
 
-/* ================= Real agent icons ================= */
-const ICON = { claude: "images/agents/claude.svg", codex: "images/agents/codex.png", cursor: "images/agents/cursor.png" };
-const ic = (a) => `<img class="ico" src="${ICON[a]}" alt="">`;
-const CHK = `<span class="chk"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.6-5"/></svg></span>`;
-
-/* ================= 1-bit dithered art, white light on black ================= */
-const BAYER = [0,32,8,40,2,34,10,42,48,16,56,24,50,18,58,26,12,44,4,36,14,46,6,38,60,28,52,20,62,30,54,22,3,35,11,43,1,33,9,41,51,19,59,27,49,17,57,25,15,47,7,39,13,45,5,37,63,31,55,23,61,29,53,21];
-const hash = (x, y) => { let h = (x * 374761393 + y * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
-function vnoise(x, y) { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, s = (t) => t * t * (3 - 2 * t);
-  const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
-  return a + (b - a) * s(xf) + (c - a) * s(yf) + (a - b - c + d) * s(xf) * s(yf); }
-const glow = (d, k) => Math.exp(-Math.max(0, d) / k);
-const SCENES = {
-  // Light pooling around a notch at the top center: the event horizon.
-  halo: (u, v, A) => { const dx = Math.max(0, Math.abs((u - .5) * A) - .3), d = Math.hypot(dx, Math.max(0, v - .08)); return glow(d, .022) * .7; },
-  orbit: (u, v, A) => { const dx = (u - .5) * A, dy = v - .52; let I = 0; for (const r of [.18, .3, .44, .6]) { const e = Math.hypot(dx, dy / .42); if (Math.abs(e - r) < .006) I = .9; } const pd = Math.hypot(dx - .3 * Math.cos(1.2), (dy - .3 * .42 * Math.sin(1.2))); if (pd < .035) I = 1; return Math.max(I, glow(Math.hypot(dx, dy) - .02, .05) * .9); },
-  flare: (u, v, A) => { const dx = (u - .72) * A, dy = v - .55, d = Math.hypot(dx, dy), R = .12; if (d < R) return 0; if (d < R * 1.06) return 1; const ey = dy / .2, er = Math.hypot(dx, ey); const disk = er > R * 1.3 && er < R * 2.6 && (dy > 0 || d > R) ? (1 - (er - R * 1.3) / (R * 1.3)) * .9 : 0; return Math.max(disk, glow(d - R, .015) * .8); },
-  grid: (u, v) => { if (v < .5) return 0; const y = v * 46 + 2.4 * Math.sin(u * 5.5) + 1.2 * Math.sin(u * 13 + 1); const f = Math.abs(y - Math.round(y)); return f < .09 ? .95 * clamp((v - .5) * 3) : 0; },
-  rings: (u, v, A) => { const d = Math.hypot((u - .5) * A, v - .55); const r = (d * 9 + 0) % 1; return d < .08 ? 0 : (r < .12 ? .85 : 0) * glow(d, .35); },
-  warp: (u, v, A) => { const dx = (u - .5) * A, dy = v - .5, ang = Math.atan2(dy, dx), d = Math.hypot(dx, dy); const st = vnoise(ang * 40, 3) > .88 ? 1 : 0; return st * clamp((d - .16) * 1.6) * .75; },
-  planet: (u, v, A) => { const dx = (u - .5) * A, dy = v - 1.45, d = Math.hypot(dx, dy); if (d < .62) return 0; return Math.max(Math.abs(d - .62) < .006 ? 1 : 0, glow(d - .62, .05) * .85); },
-  moon: (u, v, A) => { const dx = (u - .5) * A, dy = v - 1.96, d = Math.hypot(dx, dy); if (d < 1.2) return d > 1.192 ? 1 : 0; return glow(d - 1.2, .018) * .8; },
-  dawn: (u, v, A) => { const dx = (u - .5) * A, dy = v + 1.6, d = Math.hypot(dx, dy); return d < 1.75 ? 0 : d < 1.755 ? 1 : glow(d - 1.755, .009) * .7; },
-  wall: () => 0,
-  none: () => 0,
-};
-const SAFE = (u, v) => (u < .75 && v > .74 ? 0 : 1);
-function paint(c) {
-  const scene = c.dataset.scene; if (!scene) return;
-  const W = c.clientWidth, H = c.clientHeight; if (!W || !H) return;
-  const cell = scene === "wall" ? 4 : W < 500 ? 4 : 5, w = Math.ceil(W / cell), h = Math.ceil(H / cell);
-  if (c.dataset.sz === `${w}x${h}`) return;
-  c.dataset.sz = `${w}x${h}`; c.width = w; c.height = h;
-  const ctx = c.getContext("2d"), img = ctx.createImageData(w, h), d = img.data, A = w / h, f = SCENES[scene], card = !!c.closest(".card");
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const I = f(x / w, y / h, A) * (card ? SAFE(x / w, y / h) : 1), on = I > (BAYER[(y & 7) * 8 + (x & 7)] + .5) / 64, i = (y * w + x) * 4, g = on ? 236 : 0;
-    d[i] = g; d[i + 1] = g; d[i + 2] = on ? 240 : 0; d[i + 3] = 255;
-  }
-  ctx.putImageData(img, 0, 0);
-  ctx.fillStyle = "rgba(236,236,240,.8)";
-  for (let i = 0; i < 18; i++) { const sx = Math.floor(hash(i, w) * w), sy = Math.floor(hash(i, h + 7) * h); if (card && !SAFE(sx / w, sy / h)) continue; ctx.fillRect(sx, sy, 1, 1); }
-}
-const arts = $$("canvas.art[data-scene]");
-const paintAll = () => arts.forEach(paint);
-
-/* The hero black hole, animated: shadow, photon ring, swirling disk, lensed arc. */
-const hole = $("#hole");
-let holeCtx = null, holeImg = null, holeW = 0, holeH = 0, holeVisible = true;
-function holeSize() {
-  const W = hole.clientWidth, H = hole.clientHeight, cell = W < 700 ? 3 : 4;
-  holeW = Math.ceil(W / cell); holeH = Math.ceil(H / cell); hole.width = holeW; hole.height = holeH;
-  holeCtx = hole.getContext("2d"); holeImg = holeCtx.createImageData(holeW, holeH);
-}
-function holeGeom() {
-  const st = $(".hero .stage"), hr = hole.getBoundingClientRect(), sr = st.getBoundingClientRect();
-  const cy = (sr.top - hr.top + sr.height * .61) / hr.height;
-  const R = Math.min(.12 * (hr.width / hr.height < 1 ? hr.width / hr.height * 1.6 : 1), sr.height * .2 / hr.height);
-  return { cy, R };
-}
-let geom = { cy: .36, R: .14 };
-function renderHole(t) {
-  if (!holeCtx) return;
-  const w = holeW, h = holeH, A = w / h, d = holeImg.data, { cy, R } = geom;
-  const r1 = R * 1.3, r2 = R * 2.7, flat = .17;
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const u = x / w, v = y / h, dx = (u - .5) * A, dy = v - cy, dist = Math.hypot(dx, dy);
-    let I = 0;
-    // accretion disk, tilted and flattened
-    const ey = dy / flat, er = Math.hypot(dx, ey);
-    let disk = 0;
-    if (er > r1 && er < r2) {
-      const a = Math.atan2(ey, dx), k = 1 - (er - r1) / (r2 - r1);
-      const streak = vnoise(a * 7 - t * .9 + er * 3, er * 26);
-      disk = Math.pow(k, 1.1) * (.45 + .8 * streak) * (.8 + .35 * (-dx / er));
-    }
-    if (dist < R) I = dy > 0 && disk ? disk : 0; // shadow, with the near side of the disk in front
-    else {
-      I = Math.max(disk, glow(dist - R, .012) * (.75 + .25 * vnoise(Math.atan2(dy, dx) * 5 + t * .4, 2)));
-      if (dist < R * 1.05) I = 1;
-      // lensed light from the far side of the disk, arching over the top
-      if (dy < 0) { const lr = Math.abs(dist - R * 1.22); I = Math.max(I, glow(lr, .01) * (.55 + .45 * vnoise(Math.atan2(dy, dx) * 9 - t * .8, 5)) * (1 - Math.abs(dx) / (R * 1.6))); }
-    }
-    // faint stars
-    if (I < .05 && hash(x, y) > .9965 && !(v > cy + R * 1.5 && Math.abs(u - .5) < .38)) I = .5 + .5 * Math.sin(t * 2 + x);
-    const on = I > (BAYER[(y & 7) * 8 + (x & 7)] + .5) / 64, i = (y * w + x) * 4, g = on ? 238 : 0;
-    d[i] = g; d[i + 1] = g; d[i + 2] = on ? 242 : 0; d[i + 3] = 255;
-  }
-  holeCtx.putImageData(holeImg, 0, 0);
-}
-new IntersectionObserver((es) => { holeVisible = es[0].isIntersecting; }).observe(hole);
-
-/* ================= Mochi ================= */
+/* ================= Mochi, the pixel kitty ================= */
 const FEET = { stand: "...##....##...", stepA: "..##.....##...", stepB: "...##.....##..", tucked: "...########..." };
 const OUTFIT = { sprout: { y: 1, rows: ["......#.##....", ".......##.....", ".......#......", ".......#......", ".......#......"] }, headphones: { y: 3, rows: ["...########...", "..............", "..............", ".#..........#.", "##..........##"] }, crown: { y: 3, rows: ["....#.##.#....", "....######....", "....######...."] } };
 function kitty(p = {}) {
@@ -576,6 +688,7 @@ function kitty(p = {}) {
     case "small": set(8, [5, 8]); set(9, [6, 7]); break;
     case "open": set(8, [6, 7]); set(9, [6, 7], "P"); break;
     case "blep": set(8, [5, 6, 7, 8]); set(9, [7], "P"); break;
+    case "flat": set(8, [6, 7]); set(9, [5, 8]); break;
   }
   const rows = p.squash ? r.slice(0, 4).concat(r.slice(5)) : r, top = p.squash ? 4 : 3;
   rows.forEach((row, y) => row.forEach((ch, x) => { g[top + y][2 + x] = ch === "#" ? 1 : ch === "P" ? 2 : ch === "o" ? 3 : 0; }));
@@ -585,7 +698,7 @@ function kitty(p = {}) {
   if (p.flip) g.forEach((row) => row.reverse());
   return g;
 }
-const SPR = { heart: [".P.P.", "PPPPP", ".PPP.", "..P.."], sparkle: [".#.", "###", ".#."], gift: ["PP.PP", ".PPP.", "#####", "##P##", "##P##"], cookie: [".##.", "#P##", "##P#", ".##."], z: ["###", ".#.", "###"], crumb: ["#"], note: [".##", ".#.", "##."] };
+const SPR = { heart: [".P.P.", "PPPPP", ".PPP.", "..P.."], sparkle: [".#.", "###", ".#."], cookie: [".##.", "#P##", "##P#", ".##."], z: ["###", ".#.", "###"], crumb: ["#"], note: [".##", ".#.", "##."] };
 function fit(c) {
   const dpr = Math.max(1, Math.round(window.devicePixelRatio || 1)), w = c.clientWidth, h = c.clientHeight;
   if (!w || !h) return null;
@@ -593,14 +706,14 @@ function fit(c) {
   const ctx = c.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, w, h);
   return ctx;
 }
-function drawGrid(ctx, g, ox, oy, px, ink = "#fff", hole = "#000") {
+function drawGrid(ctx, g, ox, oy, px, ink, hole) {
   for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
     const c = g[y][x]; if (!c) continue;
     ctx.fillStyle = c === 2 ? PINK : c === 3 ? hole : ink;
     ctx.fillRect(Math.round(ox + x * px), Math.round(oy + y * px), Math.ceil(px), Math.ceil(px));
   }
 }
-function drawSpr(ctx, rows, ox, oy, px, a = 1, ink = "#fff") {
+function drawSpr(ctx, rows, ox, oy, px, a, ink) {
   ctx.globalAlpha = clamp(a);
   rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === ".") return; ctx.fillStyle = ch === "P" ? PINK : ink; ctx.fillRect(Math.round(ox + x * px), Math.round(oy + y * px), Math.ceil(px), Math.ceil(px)); }));
   ctx.globalAlpha = 1;
@@ -610,273 +723,150 @@ const sway = (f) => ((f / 6 | 0) % 3 === 2 ? "curl" : "up");
 const wag = (f) => (f % 2 ? "up" : "curl");
 let mx = innerWidth / 2;
 addEventListener("pointermove", (e) => { mx = e.clientX; }, { passive: true });
-const lookAt = (c) => { const r = c.getBoundingClientRect(), cx = r.left + r.width / 2; return mx < cx - 90 ? -1 : mx > cx + 90 ? 1 : 0; };
+const lookAt = (c) => { const r = c.getBoundingClientRect(), cx = r.left + r.width / 2; return mx < cx - 80 ? -1 : mx > cx + 80 ? 1 : 0; };
+const idle = (t, p) => ({ eyes: blinkAt(t) ? "blink" : "open", dx: p ? lookAt(p.c) : 0, tail: sway(t) });
 const pets = new Set();
 class Pet {
-  constructor(c, o) { Object.assign(this, { c, px: 4, ground: 0, x: null, parts: [], t: 0 }, o); pets.add(this); }
+  // dark: a white kitty for black surfaces. Otherwise an ink kitty with white eyes.
+  constructor(c, o) { Object.assign(this, { c, parts: [], t: 0, dark: true, brain: idle }, o); pets.add(this); }
   spawn(kind, x, y, vx = 0, vy = -0.6, life = 8) { if (this.parts.length < 16) this.parts.push({ kind, x, y, vx, vy, life }); }
   step() {
-    if (!this.c.isConnected) { pets.delete(this); return; }
     this.t++;
-    const r = this.c.getBoundingClientRect(); if (r.bottom < -50 || r.top > innerHeight + 50 || !r.width) return;
+    const r = this.c.getBoundingClientRect(); if (r.bottom < -40 || r.top > innerHeight + 40 || !r.width) return;
     const ctx = fit(this.c); if (!ctx) return;
-    const W = this.c.clientWidth, H = this.c.clientHeight, px = typeof this.px === "function" ? this.px(W, H) : this.px;
-    const pose = this.brain(this.t, this, W, H) || {};
-    const ox = this.x != null ? this.x : Math.round((W - 16 * px) / 2), base = H - 16 * px - this.ground;
-    if (pose.under) pose.under(ctx, ox, base, px);
-    drawGrid(ctx, kitty(pose), ox, base - (pose.lift || 0) * px, px);
-    this.parts = this.parts.filter((p) => { p.x += p.vx; p.y += p.vy; p.life--; if (p.kind === "crumb") p.vy += .45; drawSpr(ctx, SPR[p.kind], ox + p.x * px, base + p.y * px, px * .75, p.life / 3); return p.life > 0; });
+    const W = this.c.clientWidth, H = this.c.clientHeight, px = W / 16;
+    const pose = this.brain(this.t, this) || {};
+    const ink = this.dark ? "#fff" : INK, hole = this.dark ? "#000" : "#fff";
+    const base = H - 16 * px;
+    drawGrid(ctx, kitty(pose), 0, base - (pose.lift || 0) * px, px, ink, hole);
+    this.parts = this.parts.filter((p) => { p.x += p.vx; p.y += p.vy; p.life--; if (p.kind === "crumb") p.vy += .45; drawSpr(ctx, SPR[p.kind], p.x * px, base + p.y * px, px * .75, p.life / 3, ink); return p.life > 0; });
   }
 }
 
-/* ================= Island component ================= */
-class Island {
-  constructor(el) { this.el = el; this.bd = $(".bd", el); this.cur = null; }
-  size(w, h, r) {
-    const max = this.el.parentElement.clientWidth - 24; w = Math.min(w, max || w);
-    this.el.style.width = w + "px"; this.el.style.height = h + "px";
-    if (!this.el.classList.contains("float")) { const rr = r ?? (h > 40 ? 28 : 16); this.el.style.borderRadius = `0 0 ${rr}px ${rr}px`; }
-  }
-  show(w, h, html, r) {
-    this.size(w, h, r);
-    const lay = document.createElement("div"); lay.className = "lay in"; lay.innerHTML = html; this.bd.appendChild(lay);
-    requestAnimationFrame(() => requestAnimationFrame(() => lay.classList.remove("in")));
-    if (this.cur) { const old = this.cur; old.classList.add("out"); setTimeout(() => old.remove(), 420); }
-    this.cur = lay; return lay;
-  }
-  kitty(w = 200, h = 32, extra = {}) {
-    const lay = this.show(w, h, '<canvas class="px pc"></canvas>');
-    const roam = { x: 40, tgt: 40, walk: false, face: 1 };
-    new Pet($("canvas", lay), Object.assign({ px: 2, ground: this.el.classList.contains("float") ? 2 : 0, brain: (t, p, W) => {
-      if (extra.brain) return extra.brain(t, p, W);
-      const pose = { tail: sway(t) }, maxX = W - 40;
-      if (roam.walk) { roam.face = roam.tgt < roam.x ? -1 : 1; roam.x += Math.sign(roam.tgt - roam.x) * Math.min(3, Math.abs(roam.tgt - roam.x)); Object.assign(pose, { feet: t % 2 ? "stepA" : "stepB", dx: roam.face, flip: roam.face < 0 }); if (roam.x === roam.tgt) roam.walk = false; }
-      else { pose.eyes = blinkAt(t) ? "blink" : "open"; if (t > 8 && Math.random() < .07) { roam.tgt = 10 + Math.random() * (maxX - 10) | 0; roam.walk = Math.abs(roam.tgt - roam.x) > 16; } }
-      roam.x = clamp(roam.x, 10, maxX); p.x = roam.x; return pose;
-    } }, extra.opts || {}));
-    return lay;
-  }
-}
-const row = (agent, proj, what, right = "", tone = "") => `<div class="rw ${tone}">${agent === "all" ? `<span class="icos">${ic("claude")}${ic("codex")}${ic("cursor")}</span>` : ic(agent)}<span class="p">${proj}</span><span class="wt">${what}</span><span class="r">${right}</span></div>`;
-const ring = '<span class="ring"></span>';
-const visible = new Map();
-const vis = new IntersectionObserver((es) => es.forEach((e) => visible.set(e.target, e.isIntersecting)), { rootMargin: "60px" });
-function sleepFor(el) { return (ms) => new Promise((res) => { const go = () => { if (visible.get(el) && !document.hidden) setTimeout(res, reduce ? Math.min(ms, 80) : ms); else setTimeout(go, 300); }; go(); }); }
+let hoverDl = false, dlBusy = false;
+new Pet($("#navKitty"));
+new Pet($("#footKitty"));
+new Pet($("#h1Kitty"), { brain: (t, p) => ({ ...idle(t, p), mouth: t % 80 < 8 ? "blep" : "small" }) });
+new Pet($("#peekKitty"), { dark: false, brain: (t) => (dlBusy ? { eyes: "happy", mouth: "open", blush: true, tail: wag(t) } : { eyes: blinkAt(t) ? "blink" : "wide", mouth: "open", blush: true, tail: wag(t) }) });
+new Pet($("#iconKitty"), { brain: (t, p) => (hoverDl ? { eyes: "love", mouth: "open", blush: true, tail: wag(t) } : idle(t, p)) });
+new Pet($("#sheetKitty"), { brain: (t) => ({ eyes: t % 30 < 22 ? "happy" : "open", mouth: "open", blush: true, tail: wag(t) }) });
+const KITS = {
+  idle: (t, p) => ({ ...idle(t, p), mouth: t % 70 < 6 ? "blep" : "small" }),
+  band: (t) => ({ eyes: blinkAt(t) ? "blink" : "open", tail: sway(t) }),
+  worry: () => ({ eyes: "wide", mouth: "flat", ears: false }),
+  done: (t) => ({ eyes: "happy", mouth: "open", blush: true, tail: wag(t), lift: t % 6 < 3 ? 1 : 0, feet: t % 6 < 3 ? "tucked" : "stand" }),
+  tiny: (t) => ({ eyes: blinkAt(t) ? "blink" : "open", tail: sway(t) }),
+  tinyw: (t) => ({ eyes: "happy", blush: true, tail: wag(t) }),
+  receipt: () => ({ eyes: "happy", mouth: "small", blush: true }),
+};
+$$("canvas[data-kit]").forEach((c) => new Pet(c, { dark: c.dataset.kit !== "receipt", brain: KITS[c.dataset.kit] }));
+$$("[data-dl]").forEach((b) => { b.addEventListener("pointerenter", () => { hoverDl = true; }); b.addEventListener("pointerleave", () => { hoverDl = false; }); });
+
+/* ================= Visibility helpers ================= */
+const seen = new Map();
+const vis = new IntersectionObserver((es) => es.forEach((e) => seen.set(e.target, e.isIntersecting)), { rootMargin: "80px" });
+const wait = (ms) => new Promise((r) => setTimeout(r, reduce ? Math.min(ms, 60) : ms));
+function sleepFor(el) { vis.observe(el); return (ms) => new Promise((res) => { const go = () => (seen.get(el) && !document.hidden ? setTimeout(res, reduce ? Math.min(ms, 80) : ms) : setTimeout(go, 300)); go(); }); }
+function show(root, name) { [...root.children].forEach((l) => { if (l.classList.contains("lay")) l.classList.toggle("on", l.dataset.s === name); }); }
 function press(el) { if (!el) return; el.classList.add("press"); setTimeout(() => el.classList.remove("press"), 170); }
 
-/* ================= Card demos ================= */
-const DEMOS = {
-  async approve(card, isl, w) {
-    const keys = $$(".key", card);
-    for (;;) {
-      isl.kitty(200, 32); await w(1600);
-      isl.show(470, 32, row("claude", "checkout", "wants to run a command", '<span class="bdg">1</span>', "amber")); await w(1100);
-      const lay = isl.show(500, 140, row("claude", "checkout", "wants to run a command", '<span class="bdg">1</span>', "amber") + `<div class="cd">$ git push origin main</div><div class="bt"><span class="cb">Deny <span class="kk">⌃⌥N</span></span><span class="cb">Always allow</span><span class="cb pri">Allow <span class="kk">⌃⌥Y</span></span></div>`);
-      await w(1300);
-      for (const k of keys) { k.classList.add("down"); await w(120); }
-      const b = $(".pri", lay); press(b); b.className = "cb pri okb"; b.textContent = "Allowed";
-      await w(380); keys.forEach((k) => k.classList.remove("down"));
-      await w(700);
-      isl.show(400, 32, row("claude", "checkout", "Pushing to main", ring)); await w(1500);
-      isl.show(360, 32, row("claude", "checkout", "Pushed", CHK, "green")); await w(1500);
-    }
-  },
-  async multi(card, isl, w) {
-    const A = [["claude", "checkout", ["Running the tests", "Editing total.ts", "Running e2e", "Done"]], ["codex", "api", ["Reading schema", "Writing migration", "Running migrate", "Done"]], ["cursor", "landing-page", ["Editing Hero.tsx", "Styling buttons", "Pushing a branch", "Done"]]];
-    for (;;) {
-      isl.show(330, 32, row("all", "", "3 agents working", ring)); await w(1300);
-      const lay = isl.show(460, 146, `<div class="ml">${A.map(([a, p, s]) => `<div class="mr">${ic(a)}<span class="p">${p}</span><span class="wt">${s[0]}</span><span class="rt"><span class="mb"><i></i></span></span></div>`).join("")}</div>`);
-      const rows = $$(".mr", lay);
-      for (let step = 0; step < 4; step++) {
-        await w(step ? 1100 : 400);
-        rows.forEach((r, i) => {
-          const st = Math.min(3, step + (i === 2 ? 1 : 0) - (i === 1 && step > 0 ? 1 : 0));
-          $(".wt", r).textContent = A[i][2][Math.max(0, st)];
-          if (st >= 3) { $(".rt", r).innerHTML = CHK; $(".wt", r).style.color = "#5ad37b"; } else $(".mb i", r).style.width = (25 + st * 25 + i * 6) + "%";
-        });
-      }
-      await w(900);
-      rows.forEach((r) => { $(".wt", r).textContent = "Done"; $(".wt", r).style.color = "#5ad37b"; $(".rt", r).innerHTML = CHK; });
-      await w(1400);
-      isl.show(330, 32, row("all", "", "All 3 done", CHK + CHK + CHK, "green")); await w(1500);
-      isl.kitty(200, 32); await w(1800);
-    }
-  },
-  async risky(card, isl, w) {
-    for (;;) {
-      isl.kitty(200, 32); await w(1400);
-      isl.show(420, 32, row("cursor", "landing-page", "risky command", '<span class="bdg redb">!</span>', "red")); await w(1000);
-      const lay = isl.show(460, 140, row("cursor", "landing-page", "wants to force push", "", "red") + `<div class="cd">$ git push <span class="bad">--force</span> origin main</div><div class="bt"><span class="cb pri">Deny <span class="kk">⌃⌥N</span></span><span class="cb rd">Allow anyway</span></div>`);
-      await w(1800);
-      const b = $(".pri", lay); press(b); b.textContent = "Denied"; b.style.background = "#262628"; b.style.color = "#fff";
-      await w(900);
-      isl.show(420, 32, row("cursor", "landing-page", "Pushing a branch instead", ring)); await w(1700);
-    }
-  },
-  async usage(card, isl, w) {
-    for (;;) {
-      isl.show(320, 32, row("claude", "Claude", "5 hour limit", "62%", "")); await w(1300);
-      const lay = isl.show(440, 196, `<div class="us"><div class="ur"><div class="top"><span>Claude · 5 hour</span><b>62%</b></div><div class="tr"><i style="background:#d97757"></i></div></div><div class="ur"><div class="top"><span>Claude · weekly</span><b>38%</b></div><div class="tr"><i style="background:#fff"></i></div></div><div class="ur"><div class="top"><span>Codex · 5 hour</span><b>24%</b></div><div class="tr"><i style="background:#8fa6ff"></i></div></div><div class="fc">At this pace you hit the limit at <b>4:40 pm</b></div></div>`);
-      await w(250);
-      const fills = $$(".tr i", lay); [62, 38, 24].forEach((v, i) => { fills[i].style.width = v + "%"; });
-      await w(3600);
-      isl.kitty(200, 32); await w(1600);
-    }
-  },
-  async float(card, isl, w) {
-    for (;;) {
-      isl.kitty(190, 36); await w(1500);
-      isl.show(400, 36, row("codex", "api", "Writing migration", ring)); await w(1500);
-      const lay = isl.show(440, 132, row("codex", "api", "wants to run a command", '<span class="bdg">1</span>', "amber") + `<div class="cd">$ npm run migrate</div><div class="bt"><span class="cb">Deny</span><span class="cb pri">Allow <span class="kk">⌃⌥Y</span></span></div>`);
-      await w(1700);
-      const b = $(".pri", lay); press(b); b.className = "cb pri okb"; b.textContent = "Allowed";
-      await w(900);
-      isl.show(360, 36, row("codex", "api", "Done", CHK, "green")); await w(1500);
-    }
-  },
-  async receipt(card, isl, w) {
-    const clip = $(".rclip", card), paper = $(".paper", card);
-    buildReceipt(paper);
-    for (;;) {
-      clip.style.height = "0px";
-      isl.kitty(200, 32); await w(1300);
-      isl.show(330, 32, row("all", "", "All 3 done today", CHK + CHK + CHK, "green")); await w(1300);
-      isl.kitty(300, 40, { brain: (t) => ({ eyes: t % 8 < 6 ? "happy" : "love", mouth: "open", blush: true, lift: t % 4 < 2 ? 1 : 0, feet: t % 4 < 2 ? "tucked" : "stand", tail: wag(t) }), opts: { ground: 4 } });
-      await w(500);
-      const full = Math.min(paper.offsetHeight, card.clientHeight - 60);
-      for (let hgt = 0; hgt <= full; hgt += 22) { clip.style.height = hgt + "px"; await w(110); }
-      await w(3000);
-    }
-  },
-};
-function buildReceipt(el) {
-  const now = new Date();
-  const R = [["logo"], ["title", "NOTCHBAR"], ["c", "agent receipt"], ["gap"], ["r", "#0128", now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase()], ["r", "served by mochi", now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase()], ["rule"], ["r", "CLAUDE CODE", "1h 52m"], ["r", "CODEX", "31m"], ["r", "CURSOR", "22m"], ["rule"], ["r", "tasks shipped", "14"], ["r", "tests", "148 ✓"], ["r", "you approved", "23"], ["r", "tokens", "2.0M"], ["rule"], ["b", "TOTAL", "$4.30"], ["c", "api value. your plan covers it"], ["gap"], ["bar"], ["gap"], ["c", "full squad showed up today"], ["c", "thank you for shipping"]];
-  el.innerHTML = R.map(([k, a, b]) => k === "logo" ? '<div class="logo"><canvas class="px"></canvas></div>' : k === "title" ? `<div class="rt">${a}</div>` : k === "c" ? `<div class="rc">${a}</div>` : k === "r" ? `<div class="rl"><span>${a}</span><span>${b}</span></div>` : k === "b" ? `<div class="rb"><span>${a}</span><span>${b}</span></div>` : k === "rule" ? '<div class="rr"></div>' : k === "gap" ? '<div class="gap"></div>' : `<div class="barcode">${Array.from({ length: 48 }, (_, i) => `<i style="width:${1 + (hash(i, 128) * 3 | 0)}px;margin-right:${1 + (hash(i, 9) * 3 | 0)}px"></i>`).join("")}</div>`).join("");
-  requestAnimationFrame(() => { const ctx = fit($(".logo canvas", el)); if (ctx) drawGrid(ctx, kitty({ eyes: "happy" }), 0, 0, 2.5, "#1b1b1b", "#f2f0eb"); });
-}
-$$("[data-demo]").forEach((card) => {
-  vis.observe(card);
-  const kind = card.dataset.demo;
-  if (kind === "update") { new Pet($(".gift canvas", card), { px: 5, ground: 8, brain: (t) => ({ eyes: blinkAt(t) ? "blink" : "open", tail: sway(t), mouth: t % 40 < 8 ? "blep" : "small", under: (ctx, ox, base) => drawSpr(ctx, SPR.gift, ox + 64, base + 52 + (t % 8 < 4 ? 0 : -3), 4) }) }); return; }
-  DEMOS[kind](card, new Island($(".isl", card)), sleepFor(card));
-});
-
-/* ================= Big demo ================= */
-const fitBox = $("#demoFit"), screen = $("#screen");
+/* ================= Hero: the live Mac ================= */
+const fitEl = $("#fit"), screen = $("#screen"), isl = $("#isl"), ptr = $("#ptr");
 let scale = 1;
 function layout() {
-  const w = fitBox.clientWidth;
-  if (w < 700) { const cw = 720, ch = 560; scale = w / cw; screen.style.transform = `translateX(${-((1280 - cw) / 2) * scale}px) scale(${scale})`; fitBox.style.height = ch * scale + "px"; }
-  else { scale = w / 1280; screen.style.transform = `scale(${scale})`; fitBox.style.height = 760 * scale + "px"; }
+  const W = fitEl.clientWidth, narrow = W < 700, dw = narrow ? 760 : 1200, dh = narrow ? 600 : 750;
+  scale = W / dw;
+  screen.style.transform = `translateX(${(-(1200 - dw) / 2) * scale}px) scale(${scale})`;
+  fitEl.style.height = Math.round(dh * scale) + "px";
 }
-layout();
 const now = new Date();
-$("#mbDay").textContent = now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).replace(",", "");
-$("#mbTime").textContent = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-const timed = $$("#screen [data-t], #screen [data-u]").map((el) => { if (el.dataset.t == null) el.setAttribute("data-t", "-1"); return { el, t: +el.dataset.t, u: el.dataset.u != null ? +el.dataset.u : 1e9 }; });
-const PROMPT = "fix the failing checkout tests";
-const dIsl = new Island($("#demoIsl"));
-const ptr = $("#ptr");
-const T_END = 27, CH = [0, 6.0, 12.0, 15.6, 19.4, T_END];
-const HINTS = ["Claude Code, Codex and Cursor, working at once.", 'Two requests waiting. Try it: press <span class="k2">⌃</span><span class="k2">⌥</span><span class="k2">Y</span>', "A force push. Stopped before it lands.", "All done. Mochi gets a cookie for each one.", "Your day, printed right out of the notch."];
-buildReceipt($("#demoPaper"));
-let T = 0, lastState = "", kbOK = false, kbNo = false, multiLay = null, eatAt = 0;
-const A3 = { claude: ["checkout", 16.6, [[0, "Running the tests"], [3.4, "Editing total.ts"], [5, "Running e2e"], [8.2, "Waiting for you", "a"], [10.6, "Running e2e"], [16.6, "Done", "d"]]], codex: ["api", 17.6, [[0, "Reading schema"], [2.2, "Writing migration"], [6.2, "Waiting for you", "a"], [10.6, "Running migrate"], [17.6, "Done", "d"]]], cursor: ["landing-page", 15.8, [[0, "Editing Hero.tsx"], [12.0, "Waiting for you", "a"], [14.6, "Pushing a branch"], [15.8, "Done", "d"]]] };
-const st = (arr, t) => { let s = arr[0]; for (const x of arr) if (t >= x[0]) s = x; return s; };
-function demoState(t) {
-  const ok = t >= 10.6 || (kbOK && t >= 7.0), no = t >= 14.6 || (kbNo && t >= 13.0);
-  if (t < 1.4) return "idle";
-  if (t < 2.0) return "three";
-  if (t < 6.0 || (t >= 11.4 && t < 12.0) || (t >= 15.6 && t < 17.8)) return "multi";
-  if (t < 7.0) return "ask";
-  if (t < 11.4) return (t >= 8.2 ? "card2" : "card1") + (ok ? "ok" : "");
-  if (t < 13.0) return "risky";
-  if (t < 15.6) return "rcard" + (no ? "no" : "");
-  if (t < 18.4) return "done";
-  if (t < 19.6) return "eat";
-  return "print";
-}
-function renderDemo(t) {
-  let ci = 0; for (let i = 0; i < 5; i++) if (t >= CH[i]) ci = i;
-  $$("#chips button").forEach((b, i) => { b.classList.toggle("on", i === ci); $("i", b).style.transform = `scaleX(${i === ci ? clamp((t - CH[i]) / (CH[i + 1] - CH[i])) : 0})`; });
-  const hint = $("#hint"); if (hint.dataset.i !== String(ci)) { hint.dataset.i = ci; hint.innerHTML = HINTS[ci]; }
-  $("#typed").textContent = PROMPT.slice(0, Math.round(clamp(t / 1.3) * PROMPT.length));
-  for (const o of timed) o.el.classList.toggle("on", t >= o.t && t < o.u);
-  const s = demoState(t);
-  if (s !== lastState) {
-    lastState = s;
-    if (s === "idle") dIsl.kitty(210, 32);
-    else if (s === "three") dIsl.show(330, 32, row("all", "", "3 agents working", ring));
-    else if (s === "multi") multiLay = dIsl.show(500, 146, `<div class="ml">${Object.keys(A3).map((k) => `<div class="mr" data-k="${k}">${ic(k)}<span class="p">${A3[k][0]}</span><span class="wt"></span><span class="rt"></span></div>`).join("")}</div>`);
-    else if (s === "ask") dIsl.show(460, 32, row("codex", "api", "wants to run a command", '<span class="bdg">1</span>', "amber"));
-    else if (s.startsWith("card")) {
-      const two = s.startsWith("card2"), ok = s.endsWith("ok");
-      dIsl.show(520, two ? 178 : 140, row("codex", "api", two ? "and 1 more waiting" : "wants to run a command", `<span class="bdg">${two ? 2 : 1}</span>`, ok ? "green" : "amber") + `<div class="cd">$ npm run migrate <span class="dd">--env=staging</span></div>` + (two ? `<div class="pk">${ic("claude")}<b>checkout</b> wants to run npm run e2e</div>` : "") + `<div class="bt">${ok ? `<span class="cb">Deny</span><span class="cb pri okb">Allowed${two ? " 2" : ""}</span>` : `<span class="cb">Deny <span class="kk">⌃⌥N</span></span><span class="cb">Always allow</span><span class="cb pri" id="bAllow">${two ? "Allow all 2" : "Allow"} <span class="kk">⌃⌥Y</span></span>`}</div>`);
-    }
-    else if (s === "risky") dIsl.show(440, 32, row("cursor", "landing-page", "risky command", '<span class="bdg redb">!</span>', "red"));
-    else if (s.startsWith("rcard")) { const no = s.endsWith("no"); dIsl.show(500, 140, row("cursor", "landing-page", no ? "Denied. Finding another way" : "wants to force push", "", no ? "" : "red") + `<div class="cd">$ git push <span class="bad">--force</span> origin main</div><div class="bt">${no ? '<span class="cb pri" style="background:#262628;color:#fff">Denied</span>' : '<span class="cb pri" id="bDeny">Deny <span class="kk">⌃⌥N</span></span><span class="cb rd">Allow anyway</span>'}</div>`); }
-    else if (s === "done") dIsl.show(380, 32, row("all", "", "All 3 agents done", CHK + CHK + CHK, "green"));
-    else if (s === "eat") { eatAt = performance.now(); dIsl.kitty(210, 32, { brain: (tt, p) => { const k = (performance.now() - eatAt) / 1000, cyc = k % .5; if (k < 1.5 && cyc < .13) p.spawn("cookie", 6, -3, 0, 1.2, 2); return k < 1.6 ? { eyes: cyc < .2 ? "wide" : "happy", mouth: tt % 2 ? "open" : "small", blush: true, tail: wag(tt) } : { eyes: "happy", blush: true, tail: wag(tt) }; } }); }
-    else if (s === "print") dIsl.kitty(340, 42, { brain: (tt) => ({ eyes: tt % 8 < 6 ? "happy" : "love", mouth: "open", blush: true, lift: T < 24 && tt % 4 < 2 ? 1 : 0, tail: wag(tt) }), opts: { ground: 5 } });
+$("#clock").textContent = now.toLocaleDateString("en-US", { weekday: "short" }) + " " + now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+const SC = [["idle", 0], ["work", 2.4], ["list", 5.2], ["ask", 8.8], ["okc", 12.4], ["risk", 14.6], ["stop", 18.0], ["done", 20.2]];
+const T_END = 24;
+const SIZE = { idle: [200, 34, 17], work: [400, 34, 17], list: [480, 196, 30], ask: [480, 186, 30], okc: [330, 34, 17], risk: [480, 186, 30], stop: [370, 34, 17], done: [350, 34, 17] };
+const CH = [["Live status", 0, 5.2], ["Every agent", 5.2, 8.8], ["One click approve", 8.8, 14.6], ["Risky stops", 14.6, 20.2], ["All done", 20.2, T_END]];
+const chips = $("#chips");
+let T = 0, scene = "", ptrKey = "";
+const clicked = new Set();
+CH.forEach(([name, at]) => { const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.innerHTML = `<i></i><span>${name}</span>`; b.addEventListener("click", () => { T = Math.max(0, at === 0 ? 2.39 : at - .01); clicked.clear(); }); chips.appendChild(b); });
+const chipEls = $$(".chip", chips);
+const timed = $$("#screen [data-t]").map((el) => ({ el, t: +el.dataset.t, u: el.dataset.u != null ? +el.dataset.u : 1e9 }));
+function posOf(el) { const s = screen.getBoundingClientRect(), r = el.getBoundingClientRect(); return [(r.left + r.width * .5 - s.left) / scale, (r.top + r.height * .55 - s.top) / scale]; }
+function movePtr(key, xy) { if (ptrKey === key) return; ptrKey = key; ptr.style.transform = `translate(${xy[0].toFixed(1)}px, ${xy[1].toFixed(1)}px)`; }
+function clickAt(id, el) { if (clicked.has(id)) return; clicked.add(id); ptr.classList.add("click"); press(el); setTimeout(() => ptr.classList.remove("click"), 180); }
+function render(t) {
+  let s = "idle"; for (const [n, at] of SC) if (t >= at) s = n;
+  if (s !== scene) {
+    scene = s; const [w, h, r] = SIZE[s];
+    isl.style.width = w + "px"; isl.style.height = h + "px"; isl.style.borderRadius = `0 0 ${r}px ${r}px`;
+    isl.classList.toggle("big", h > 40); show(isl, s);
   }
-  if (s === "multi" && multiLay) for (const r of $$(".mr", multiLay)) {
-    const [, done, arr] = A3[r.dataset.k], cur = st(arr, t), wt = $(".wt", r), rt = $(".rt", r);
-    if (wt.textContent !== cur[1]) wt.textContent = cur[1];
-    wt.style.color = cur[2] === "a" ? "#f5b942" : cur[2] === "d" ? "#5ad37b" : "";
-    const want = cur[2] || "b"; if (rt.dataset.v !== want) { rt.dataset.v = want; rt.innerHTML = want === "d" ? CHK : want === "a" ? '<span class="ad"></span>' : '<span class="mb"><i></i></span>'; }
-    if (want === "b") $("i", rt).style.width = clamp(t / done) * 100 + "%";
-  }
-  let target = [1080, 640];
-  const el = s === "card2" ? $("#bAllow") : s === "rcard" ? $("#bDeny") : null;
-  if (el && ((s === "card2" && t > 9.2) || (s === "rcard" && t > 13.6))) {
-    const sr = screen.getBoundingClientRect(), r = el.getBoundingClientRect();
-    target = [(r.left - sr.left + r.width / 2) / scale - 6, (r.top - sr.top + r.height / 2) / scale - 4];
-    ptr.dataset.last = JSON.stringify(target);
-  } else if (s === "card2ok" || s === "rcardno") target = JSON.parse(ptr.dataset.last || "[1080,640]");
-  ptr.style.transform = `translate(${target[0]}px, ${target[1]}px)`;
-  const click = Math.abs(t - 10.5) < .12 || Math.abs(t - 14.5) < .12;
-  ptr.classList.toggle("press", click);
-  if (click) press($("#bAllow") || $("#bDeny"));
-  $("#dimmer").style.opacity = t >= 19.4 ? .6 : 0;
-  $("#demoClip").style.height = Math.round(clamp((t - 20) / 4.5) * Math.min($("#demoPaper").offsetHeight, 690)) + "px";
+  timed.forEach((o) => o.el.classList.toggle("on", t >= o.t && t < o.u));
+  if (s === "work") { const k = clamp((t - 2.4) / 2.8); $("#wRing").style.strokeDashoffset = (50.3 * (1 - (.3 + .5 * k))).toFixed(1); $("#wNum").textContent = `${2 + Math.floor(k * 2)}/5`; }
+  // The pointer comes in, clicks Allow, then Deny, then leaves.
+  ptr.classList.toggle("on", t >= 9.6 && t < 18.8);
+  if (t < 10.4) movePtr("start", [740, 560]);
+  else if (t < 12.8) movePtr("allow", posOf($("#bAllow")));
+  else if (t < 15.6) movePtr("rest", [760, 300]);
+  else if (t < 18.4) movePtr("deny", posOf($("#bDeny")));
+  else movePtr("out", [860, 520]);
+  if (t >= 12.0 && t < 12.4) clickAt("allow", $("#bAllow"));
+  if (t >= 17.6 && t < 18.0) clickAt("deny", $("#bDeny"));
+  CH.forEach(([, a, b], i) => { const act = t >= a && t < b, el = chipEls[i]; el.classList.toggle("on", act); el.firstChild.style.width = act ? (100 * (t - a) / (b - a)).toFixed(1) + "%" : "0"; });
 }
-let demoVisible = false, lastTs = 0;
-new IntersectionObserver((es) => { demoVisible = es[0].isIntersecting; }, { threshold: .15 }).observe(fitBox);
-$$("#chips button").forEach((b) => b.addEventListener("click", () => { T = CH[+b.dataset.c] + .01; kbOK = kbNo = false; }));
-function flash(k) { const f = $("#kflash"); $("#kKey").textContent = k; f.classList.add("on"); setTimeout(() => f.classList.remove("on"), 900); }
+let demoOn = false;
+new IntersectionObserver(([e]) => { demoOn = e.isIntersecting; }, { rootMargin: "100px" }).observe(fitEl);
+function flash(k) { $("#kKey").textContent = k; const f = $("#kflash"); f.classList.add("on"); setTimeout(() => f.classList.remove("on"), 900); }
 addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeSheet();
-  if (e.metaKey || !demoVisible) return;
-  if (e.code === "KeyY" && T >= 7.0 && T < 10.6 && !kbOK) { e.preventDefault(); kbOK = true; T = Math.max(T, 10.62); flash("Y"); const r = $("#demoIsl").getBoundingClientRect(); burst(r.left + r.width / 2, r.bottom, 22); toast("Approved from your keyboard. That's the whole idea."); }
-  if (e.code === "KeyN" && T >= 13.0 && T < 14.6 && !kbNo) { e.preventDefault(); kbNo = true; T = Math.max(T, 14.62); flash("N"); toast("Denied. The agent will find another way."); }
+  if (!e.ctrlKey || !e.altKey) return;
+  if (e.code === "KeyY" && scene === "ask") { e.preventDefault(); flash("Y"); press($("#bAllow")); clicked.add("allow"); T = 12.0; }
+  else if (e.code === "KeyN" && scene === "risk") { e.preventDefault(); flash("N"); press($("#bDeny")); clicked.add("deny"); T = 17.6; }
 });
 
-/* ================= Hero kitty, nav, icon, mochi ================= */
-let dlMode = "idle", hoverDl = false, gift = null, heroMood = 0;
-new Pet($("#navKitty"), { px: 1.375, brain: (t) => ({ eyes: blinkAt(t) ? "blink" : "open", tail: sway(t) }) });
-new Pet($("#iconKitty"), { px: 4.5, brain: (t, p) => (hoverDl ? { eyes: "wide", mouth: "open", blush: true, tail: wag(t) } : { eyes: blinkAt(t) ? "blink" : "open", dx: lookAt(p.c), tail: sway(t) }) });
-const heroKit = $("#heroKitty");
-function sizeHeroKitty() { const s = Math.round(geom.R * hole.clientHeight * 1.05 / 16) * 16; heroKit.style.width = heroKit.style.height = Math.max(96, s) + "px"; }
-new Pet(heroKit, { px: (W) => W / 16, brain: (t, p) => {
-  if (heroMood > 0) { heroMood--; if (heroMood % 5 === 0) p.spawn("heart", 2 + (heroMood * 7) % 10, 2, heroMood % 2 ? .2 : -.2, -.5, 10); return { eyes: "love", mouth: "open", blush: true, tail: wag(t) }; }
-  if (hoverDl) return { eyes: "wide", mouth: "open", blush: true, tail: wag(t) };
-  return { eyes: blinkAt(t) ? "blink" : "open", dx: lookAt(p.c), tail: sway(t), mouth: t % 90 < 10 ? "blep" : "small" };
-} });
-heroKit.addEventListener("click", () => { heroMood = 26; });
+/* ================= Feature cards ================= */
+(async () => { const el = $("#vApprove"), sl = sleepFor(el), mini = $(".mini", el), keys = $$(".keys kbd", el);
+  for (;;) {
+    show(mini, "ask"); mini.style.width = "400px"; mini.style.height = "150px"; mini.style.borderRadius = "0 0 26px 26px";
+    await sl(1900);
+    for (const k of keys) { k.classList.add("down"); await sl(110); }
+    press($("[data-allow]", el)); await sl(220); keys.forEach((k) => k.classList.remove("down"));
+    show(mini, "ok"); mini.style.width = "290px"; mini.style.height = "34px"; mini.style.borderRadius = "0 0 17px 17px";
+    await sl(2200);
+  } })();
+(async () => { const el = $("#vAgents"), sl = sleepFor(el), sts = $$(".st", el);
+  const ok = '<span class="chk"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.6-5"/></svg></span>';
+  const S = [['<span class="mut">Running tests</span>', '<span class="mut">Writing SQL</span>', '<span class="need">Needs you</span>'], ['<span class="mut">Editing total.ts</span>', '<span class="need">Needs you</span>', '<span class="mut">Building</span>'], [ok, '<span class="mut">Migrating</span>', '<span class="mut">Pushing a branch</span>']];
+  for (let i = 0; ; i = (i + 1) % S.length) { sts.forEach((s, j) => { s.style.opacity = 0; setTimeout(() => { s.innerHTML = S[i][j]; s.style.opacity = 1; }, 180); }); await sl(2000); } })();
+(async () => { const el = $("#vRisk"), sl = sleepFor(el), cmd = $("#rCmd"), held = $("#rHeld");
+  const C = ["git push --force origin main", "rm -rf ~/projects/old"];
+  for (let n = 0; ; n++) {
+    const s = C[n % C.length]; held.classList.remove("on"); cmd.textContent = ""; await sl(500);
+    for (let i = 1; i <= s.length; i++) { cmd.textContent = s.slice(0, i) + "▍"; await sl(42); }
+    cmd.textContent = s; await sl(350); held.classList.add("on"); await sl(2600);
+  } })();
+(async () => { const el = $("#vUsage"), sl = sleepFor(el);
+  for (let n = 0; ; n++) { const a = [64, 71, 58][n % 3], b = [31, 34, 29][n % 3];
+    await sl(n ? 2600 : 300); $("#u1").style.width = a + "%"; $("#u2").style.width = b + "%"; $("#u1t").textContent = a + "%"; $("#u2t").textContent = b + "%"; } })();
+(async () => { const el = $("#vFloat"), sl = sleepFor(el), f = $("#flt");
+  for (;;) { f.classList.remove("wide"); f.style.width = "64px"; await sl(2200); f.classList.add("wide"); f.style.width = "176px"; await sl(2600); } })();
+(async () => { const el = $("#vReceipt"), sl = sleepFor(el), p = $("#paper");
+  for (;;) { p.style.transition = "none"; p.classList.remove("out"); void p.offsetWidth; p.style.transition = ""; await sl(700); p.classList.add("out"); await sl(5400); } })();
 
-const big = $("#bigKitty"), bubble = $("#bubble");
-let mood = "idle", moodT = 0, outfit = "";
+/* ================= Mochi playground ================= */
+const big = $("#bigKitty"), bubble = $("#say");
+let mood = "idle", moodT = 0, outfit = "", xp = 720, lv = 4;
 const LINES = { pet: ["pets accepted. more pls", "ok you're my favorite", "purring at max volume"], feed: ["cookie secured. nom", "5 stars, would eat again"], party: ["we shipped!!", "agents ate today"], nap: ["eepy. 5 more min", "do not disturb"], sprout: ["lvl 3 unlocked"], headphones: ["lvl 6. vibes only"], crown: ["lvl 10. bow down"] };
 function say(k) { const l = LINES[k]; bubble.textContent = l[(Math.random() * l.length) | 0]; bubble.classList.add("on"); clearTimeout(say.t); say.t = setTimeout(() => bubble.classList.remove("on"), 2200); }
-function act(k) { mood = k; moodT = 0; say(k); }
-new Pet(big, { px: (W) => W / 16, brain: (t, p) => {
+function gain(n) { xp += n; if (xp >= 1000) { xp -= 1000; lv++; } $("#lvN").textContent = lv; $("#lvX").textContent = `${xp.toLocaleString("en-US")} / 1,000 xp`; $("#lvBar").style.width = xp / 10 + "%"; }
+function act(k) { mood = k; moodT = 0; say(k); gain(k === "feed" ? 60 : k === "party" ? 90 : 20); }
+new Pet(big, { brain: (t, p) => {
   moodT++;
   const pose = { outfit, tail: sway(t), eyes: blinkAt(t) ? "blink" : "open", dx: lookAt(p.c) };
   if (mood === "pet") { if (moodT % 5 === 1) p.spawn("heart", 2 + (moodT * 5) % 10, 1, moodT % 2 ? .2 : -.2, -.5, 10); const hop = moodT < 14 && moodT % 4 === 1; Object.assign(pose, { eyes: moodT < 18 ? "love" : "happy", mouth: "open", blush: true, lift: hop ? 1 : 0, feet: hop ? "tucked" : "stand", tail: wag(t) }); if (moodT > 26) mood = "idle"; }
   else if (mood === "feed") { if (moodT === 1) p.spawn("cookie", 6, -6, 0, 1.1, 8); const chew = moodT >= 8 && moodT < 20; if (chew && moodT % 3 === 0) p.spawn("crumb", 5 + (moodT % 5), 12, moodT % 2 ? .4 : -.4, -.7, 3); Object.assign(pose, { eyes: moodT < 8 ? "wide" : chew ? "happy" : "open", mouth: moodT < 8 ? "open" : chew ? (t % 2 ? "open" : "small") : "blep", blush: chew || moodT >= 20, tail: wag(t) }); if (moodT > 30) mood = "idle"; }
   else if (mood === "party") { if (moodT % 4 === 0) p.spawn(moodT % 8 ? "sparkle" : "note", (moodT * 5) % 13, 3, moodT % 2 ? .3 : -.3, -.45, 6); const up = t % 4 < 2; Object.assign(pose, { eyes: moodT % 10 < 7 ? "happy" : "shades", mouth: up ? "open" : "small", blush: true, lift: up ? 1.5 : 0, feet: up ? "tucked" : "stand", tail: wag(t) }); if (moodT > 34) mood = "idle"; }
   else if (mood === "nap") { if (moodT % 9 === 0) p.spawn("z", 12, 7, .2, -.35, 10); Object.assign(pose, { eyes: "closed", squash: true }); if (moodT > 70) mood = "idle"; }
+  else if (t % 90 < 8) pose.mouth = "blep";
   return pose;
 } });
 big.addEventListener("click", () => act("pet"));
@@ -885,78 +875,61 @@ $$("#acts button").forEach((b) => b.addEventListener("click", () => {
   const on = !b.classList.contains("on");
   $$("#acts [data-o]").forEach((x) => x.classList.remove("on"));
   if (on) b.classList.add("on");
-  outfit = on ? b.dataset.o : ""; act("party"); if (on) say(b.dataset.o);
+  outfit = on ? b.dataset.o : ""; mood = "party"; moodT = 0; say(on ? b.dataset.o : "party");
 }));
+gain(0);
 
 /* ================= Confetti + toast ================= */
 const fx = $("#fx"), bits = [];
+const COLORS = ["#c4b4ff", "#a8d4ff", "#ffc9ae", "#9be3bf", "#ffe08a", "#ff9fbd"];
 let fxOn = false;
-function burst(x, y, n, spread = 10) {
+function burst(x, y, n) {
   if (reduce) return;
-  for (let i = 0; i < n; i++) bits.push({ k: Math.random() < .5 ? "heart" : "sparkle", x, y, vx: (Math.random() - .5) * spread, vy: -Math.random() * 7 - 2, px: Math.random() < .5 ? 3 : 4, life: 80 + Math.random() * 40 | 0, t: 0 });
+  for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + (Math.random() - .5) * 2.2, v = 7 + Math.random() * 8; bits.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: Math.random() * 6, w: 6 + Math.random() * 5, h: 4 + Math.random() * 4, c: COLORS[i % COLORS.length], life: 90 + Math.random() * 40 }); }
   if (!fxOn) { fxOn = true; requestAnimationFrame(fxFrame); }
 }
 function fxFrame() {
-  const ctx = fit(fx);
-  for (let i = bits.length - 1; i >= 0; i--) { const b = bits[i]; b.t++; b.vy += .2; b.vx *= .985; b.x += b.vx; b.y += b.vy; drawSpr(ctx, SPR[b.k], b.x, b.y, b.px, (b.life - b.t) / 25); if (b.t > b.life || b.y > innerHeight + 40) bits.splice(i, 1); }
-  if (bits.length) requestAnimationFrame(fxFrame); else { fxOn = false; fit(fx); }
+  const dpr = devicePixelRatio || 1; if (fx.width !== Math.round(innerWidth * dpr)) { fx.width = Math.round(innerWidth * dpr); fx.height = Math.round(innerHeight * dpr); }
+  const c = fx.getContext("2d"); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, innerWidth, innerHeight);
+  for (let i = bits.length - 1; i >= 0; i--) { const b = bits[i]; b.x += b.vx; b.y += b.vy; b.vy += .32; b.vx *= .985; b.r += .12; b.life--; if (b.life <= 0) { bits.splice(i, 1); continue; }
+    c.save(); c.translate(b.x, b.y); c.rotate(b.r); c.globalAlpha = Math.min(1, b.life / 30); c.fillStyle = b.c; c.fillRect(-b.w / 2, -b.h / 2, b.w, b.h); c.restore(); }
+  if (bits.length) requestAnimationFrame(fxFrame); else { fxOn = false; c.clearRect(0, 0, innerWidth, innerHeight); }
 }
 function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 2600); }
 
-/* ================= Download: the nav notch becomes the island ================= */
-const nav = $("#nav"), sheet = $("#sheet"), sheetBg = $("#sheetBg");
-let version = "";
-new Pet($("#dlKitty"), { px: 4, brain: (t) => {
-  const pose = { tail: wag(t), blush: true };
-  if (dlMode === "busy") Object.assign(pose, { eyes: gift ? "wide" : (t % 8 < 5 ? "love" : "happy"), mouth: "open", lift: !gift && t % 4 < 2 ? 1 : 0 });
-  else Object.assign(pose, { eyes: "happy", mouth: t % 10 < 4 ? "blep" : "open", lift: t % 4 < 2 ? 1 : 0 });
-  pose.feet = pose.lift ? "tucked" : "stand";
-  pose.under = (ctx, ox, base) => { if (!gift) return; gift.vy += 1.1; gift.y += gift.vy; const land = base - 2; drawSpr(ctx, SPR.gift, ox + 22, Math.min(gift.y, land), 4); if (gift.y >= land) { const r = nav.getBoundingClientRect(); burst(r.left + 60, r.top + 60, 16); gift = null; } };
-  return pose;
-} });
+/* ================= Download ================= */
+const sheet = $("#sheet"), veil = $("#veil");
 function setLabel(b, txt) { const l = $(".label", b); if (!l) return; l.classList.add("swap"); setTimeout(() => { l.textContent = txt; l.classList.remove("swap"); }, 170); }
-function progress(ms) { const el = $("#dlBar"), t0 = performance.now(); return new Promise((res) => { const f = (t) => { const k = clamp((t - t0) / ms); el.style.width = (100 * (1 - Math.pow(1 - k, 2.4))).toFixed(1) + "%"; k < 1 ? requestAnimationFrame(f) : res(); }; requestAnimationFrame(f); }); }
-function closeSheet() { sheet.classList.remove("show"); sheetBg.classList.remove("show"); sheet.setAttribute("aria-hidden", "true"); }
-$("#shX").addEventListener("click", closeSheet); sheetBg.addEventListener("click", closeSheet);
-const DLL = ["packing your kitty", "fluffing the pixels", "tying the bow", "almost there"];
-const wait = (ms) => new Promise((r) => setTimeout(r, reduce ? Math.min(ms, 60) : ms));
-async function download(auto) {
-  if (dlMode !== "idle") return;
-  dlMode = "busy";
+function openSheet() { sheet.classList.add("show"); veil.classList.add("show"); sheet.setAttribute("aria-hidden", "false"); $("#shX").focus({ preventScroll: true }); }
+function closeSheet() { sheet.classList.remove("show"); veil.classList.remove("show"); sheet.setAttribute("aria-hidden", "true"); }
+$("#shX").addEventListener("click", closeSheet); veil.addEventListener("click", closeSheet);
+addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
+async function download(auto, from) {
+  if (dlBusy) return;
+  dlBusy = true;
   const btns = $$("[data-dl]");
-  btns.forEach((b) => { b.classList.add("busy"); setLabel(b, "Downloading"); });
-  nav.style.width = nav.offsetWidth + "px";
-  requestAnimationFrame(() => { nav.style.width = Math.min(440, innerWidth - 16) + "px"; nav.classList.add("open"); });
-  nav.classList.remove("done"); $("#dlBar").style.width = "0";
-  $("#dlT1").textContent = version ? `Grabbing NotchBar ${version}` : "Grabbing NotchBar"; $("#dlT2").textContent = DLL[0];
-  gift = { y: -40, vy: 0 };
-  let li = 0; const lt = setInterval(() => { $("#dlT2").textContent = DLL[++li % DLL.length]; }, 420);
-  setTimeout(() => { window.location.href = LATEST; }, auto ? 900 : 350);
-  await Promise.all([progress(reduce ? 1 : 1700), wait(1800)]);
-  clearInterval(lt);
-  nav.classList.add("done"); $("#dlT1").textContent = "On its way"; $("#dlT2").textContent = "check your Downloads folder";
-  dlMode = "done";
-  btns.forEach((b) => { b.classList.remove("busy"); setLabel(b, "Downloaded"); });
-  const r = nav.getBoundingClientRect(); burst(r.left + r.width / 2, r.bottom, 34, 12);
-  await wait(500);
-  sheet.classList.add("show"); sheetBg.classList.add("show"); sheet.setAttribute("aria-hidden", "false");
-  await wait(2800);
-  nav.classList.remove("open"); nav.style.width = "";
-  await wait(1200);
-  dlMode = "idle";
-  btns.forEach((b) => setLabel(b, "Download again"));
+  $$(".dlw").forEach((w) => w.classList.add("busy"));
+  btns.forEach((b) => setLabel(b, "Downloading"));
+  setTimeout(() => { window.location.href = LATEST; }, auto ? 700 : 250);
+  const bars = btns.map((b) => $(".bar", b)), t0 = performance.now(), ms = reduce ? 1 : 1300;
+  await new Promise((res) => { const f = (t) => { const k = clamp((t - t0) / ms); bars.forEach((b) => { b.style.width = (100 * (1 - Math.pow(1 - k, 2.4))).toFixed(1) + "%"; }); k < 1 ? requestAnimationFrame(f) : res(); }; requestAnimationFrame(f); });
+  btns.forEach((b) => setLabel(b, "Downloaded"));
+  const r = (from || btns[1]).getBoundingClientRect(); burst(r.left + r.width / 2, r.top, 46);
+  await wait(450);
+  openSheet();
+  await wait(1400);
+  bars.forEach((b) => { b.style.width = "0"; });
+  $$(".dlw").forEach((w) => w.classList.remove("busy"));
+  btns.forEach((b) => setLabel(b, b.classList.contains("sm") ? "Download" : "Download again"));
+  dlBusy = false;
 }
-$$("[data-dl]").forEach((b) => {
-  b.addEventListener("pointerenter", () => { hoverDl = true; }); b.addEventListener("pointerleave", () => { hoverDl = false; });
-  b.addEventListener("click", (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); download(false); });
-});
+$$("[data-dl]").forEach((b) => b.addEventListener("click", (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); download(false, b); }));
 
-/* ================= Facts, platform, copy, reveal ================= */
+/* ================= Version, platform, reveal, nav ================= */
 fetch(`https://api.github.com/repos/${REPO}/releases/latest`).then((r) => (r.ok ? r.json() : Promise.reject())).then((rel) => {
-  version = (rel.tag_name || "").replace(/^v/, "");
+  const version = (rel.tag_name || "").replace(/^v/, "");
   const dmg = (rel.assets || []).find((a) => a.name === "NotchBar.dmg") || (rel.assets || []).find((a) => /\.dmg$/.test(a.name));
-  const when = rel.published_at ? new Date(rel.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
-  if (version) { $$(".v-ver").forEach((e) => { e.textContent = `v${version}`; }); $("#badge").textContent = `v${version}${when ? ` · ${when}` : ""}`; }
+  if (version) { $("#ver").textContent = `v${version}`; $$(".v-ver").forEach((e) => { e.textContent = `Version ${version}`; }); }
   if (dmg) $$(".v-size").forEach((e) => { e.textContent = `${(dmg.size / 1048576).toFixed(1)} MB`; });
 }).catch(() => {});
 const ua = navigator.userAgent;
@@ -964,24 +937,26 @@ if (!(/Macintosh|Mac OS X/.test(ua) && !/iPhone|iPad/.test(ua) && navigator.maxT
 $("#copy").addEventListener("click", async () => { const link = location.origin + location.pathname.replace(/index\.html$/, "") + "download/"; try { await navigator.clipboard.writeText(link); toast("Link copied"); } catch { prompt("Copy this link", link); } });
 const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .12 });
 $$(".reveal").forEach((el) => io.observe(el));
+const nav = $("#nav");
+const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+addEventListener("scroll", onScroll, { passive: true }); onScroll();
 
 /* ================= Loop ================= */
-function onResize() { layout(); paintAll(); holeSize(); geom = holeGeom(); sizeHeroKitty(); }
-onResize();
-let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(onResize, 120); });
-let lastPet = 0, lastHole = 0;
+layout();
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { layout(); ptrKey = ""; }, 100); });
+let last = 0, lastPet = 0;
 function loop(ts) {
-  const dt = Math.min(.1, (ts - (lastTs || ts)) / 1000); lastTs = ts;
+  const dt = Math.min(.1, (ts - (last || ts)) / 1000); last = ts;
   if (!document.hidden) {
-    if (holeVisible && ts - lastHole > (reduce ? 1e9 : 66)) { lastHole = ts; renderHole(ts / 1000); }
-    if (demoVisible) { T += dt; if (T >= T_END) { T = 0; kbOK = kbNo = false; } renderDemo(T); }
+    if (demoOn) { if (!reduce) T += dt; if (T >= T_END) { T = 0; clicked.clear(); } render(T); }
     if (ts - lastPet > 125) { lastPet = ts; pets.forEach((p) => p.step()); }
   }
   requestAnimationFrame(loop);
 }
-renderHole(0);
+if (reduce) T = 9.5;
+render(T);
 requestAnimationFrame(loop);
-if (new URLSearchParams(location.search).has("download") || location.hash === "#download") setTimeout(() => download(true), reduce ? 0 : 900);
+if (new URLSearchParams(location.search).has("download") || location.hash === "#download") setTimeout(() => download(true), reduce ? 0 : 800);
 })();
 </script>
 </body>
