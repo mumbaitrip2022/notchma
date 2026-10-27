@@ -31,7 +31,6 @@ html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body { background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 a { color: inherit; text-decoration: none; }
 img, canvas, svg { display: block; }
-canvas.px { image-rendering: pixelated; }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .wrap { width: min(1180px, 100% - 32px); margin: 0 auto; }
 ::selection { background: #e3dcff; }
@@ -684,58 +683,105 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 const PINK = "#ff8fb1", INK = "#0c0c0e";
 
-/* ================= Mochi, the pixel kitty ================= */
-const FEET = { stand: "...##....##...", stepA: "..##.....##...", stepB: "...##.....##..", tucked: "...########..." };
-const OUTFIT = { sprout: { y: 1, rows: ["......#.##....", ".......##.....", ".......#......", ".......#......", ".......#......"] }, headphones: { y: 3, rows: ["...########...", "..............", "..............", ".#..........#.", "##..........##"] }, crown: { y: 3, rows: ["....#.##.#....", "....######....", "....######...."] } };
-function kitty(p = {}) {
-  const g = Array.from({ length: 16 }, () => Array(16).fill(0));
-  const up = !p.squash && p.ears !== false;
-  const r = [up ? "..#........#.." : "..............", up ? "..#P......P#.." : "..............", up ? "..#P#....#P#.." : ".##........##.", "..##########..", ".############.", "##############", "##############", "##############", "##############", "##############", ".############.", "..##########..", FEET[p.squash ? "tucked" : (p.feet || "stand")]].map((s) => s.split(""));
-  const set = (row, cols, ch = "o") => cols.forEach((c) => { if (c >= 0 && c < 14 && r[row][c] !== ".") r[row][c] = ch; });
-  const d = Math.max(-1, Math.min(1, p.dx || 0));
-  switch (p.eyes || "open") {
-    case "open": [6, 7].forEach((y) => set(y, [3 + d, 4 + d, 9 + d, 10 + d])); break;
-    case "blink": set(7, [3, 4, 9, 10]); break;
-    case "closed": set(6, [2, 5, 8, 11]); set(7, [3, 4, 9, 10]); break;
-    case "happy": set(6, [3, 4, 9, 10]); set(7, [2, 5, 8, 11]); break;
-    case "wide": [5, 6, 7].forEach((y) => set(y, [3, 4, 9, 10])); break;
-    case "shades": [6, 7].forEach((y) => set(y, [2, 3, 4, 5, 8, 9, 10, 11])); set(6, [6, 7]); break;
-    case "love": set(5, [1, 2, 4, 5, 8, 9, 11, 12]); set(6, [1, 2, 3, 4, 5, 8, 9, 10, 11, 12]); set(7, [2, 3, 4, 9, 10, 11]); set(8, [3, 10]); break;
-  }
-  (p.blush ? [8, 9] : [8]).forEach((y) => [1, 2, 11, 12].forEach((c) => { if (r[y][c] === "#") r[y][c] = "P"; }));
-  switch (p.mouth || "small") {
-    case "small": set(8, [5, 8]); set(9, [6, 7]); break;
-    case "open": set(8, [6, 7]); set(9, [6, 7], "P"); break;
-    case "blep": set(8, [5, 6, 7, 8]); set(9, [7], "P"); break;
-    case "flat": set(8, [6, 7]); set(9, [5, 8]); break;
-  }
-  const rows = p.squash ? r.slice(0, 4).concat(r.slice(5)) : r, top = p.squash ? 4 : 3;
-  rows.forEach((row, y) => row.forEach((ch, x) => { g[top + y][2 + x] = ch === "#" ? 1 : ch === "P" ? 2 : ch === "o" ? 3 : 0; }));
-  (p.squash ? [[11, 2], [11, 3]] : p.tail === "curl" ? [[7, 0], [8, 1]] : [[6, 0], [7, 1]]).forEach(([y, x]) => { g[3 + y][x] = 1; });
-  const o = OUTFIT[p.outfit];
-  if (o) o.rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === "#") g[o.y + (p.squash ? 1 : 0) + y][2 + x] = 1; }));
-  if (p.flip) g.forEach((row) => row.reverse());
-  return g;
-}
-const SPR = { heart: [".P.P.", "PPPPP", ".PPP.", "..P.."], sparkle: [".#.", "###", ".#."], cookie: [".##.", "#P##", "##P#", ".##."], z: ["###", ".#.", "###"], crumb: ["#"], note: [".##", ".#.", "##."] };
+/* ================= Mochi, drawn with smooth vector shapes ================= */
+// Everything is laid out on a 16 by 16 unit box, then scaled to the canvas.
+const LOVE = "#ff4f86";
 function fit(c) {
-  const dpr = Math.max(1, Math.round(window.devicePixelRatio || 1)), w = c.clientWidth, h = c.clientHeight;
+  const dpr = Math.max(1, window.devicePixelRatio || 1), w = c.clientWidth, h = c.clientHeight;
   if (!w || !h) return null;
-  if (c.width !== w * dpr || c.height !== h * dpr) { c.width = w * dpr; c.height = h * dpr; }
-  const ctx = c.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, w, h);
+  const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
+  if (c.width !== bw || c.height !== bh) { c.width = bw; c.height = bh; }
+  const ctx = c.getContext("2d"); ctx.setTransform(bw / w, 0, 0, bh / h, 0, 0); ctx.clearRect(0, 0, w, h);
   return ctx;
 }
-function drawGrid(ctx, g, ox, oy, px, ink, hole) {
-  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
-    const c = g[y][x]; if (!c) continue;
-    ctx.fillStyle = c === 2 ? PINK : c === 3 ? hole : ink;
-    ctx.fillRect(Math.round(ox + x * px), Math.round(oy + y * px), Math.ceil(px), Math.ceil(px));
-  }
+function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function oval(ctx, x, y, rx, ry, rot = 0) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); }
+function heartPath(ctx, cx, cy, s) {
+  const w = s / 2, h = s * .9;
+  ctx.beginPath(); ctx.moveTo(cx, cy + h * .45);
+  ctx.bezierCurveTo(cx - w * 1.15, cy - h * .05, cx - w * .55, cy - h * .7, cx, cy - h * .22);
+  ctx.bezierCurveTo(cx + w * .55, cy - h * .7, cx + w * 1.15, cy - h * .05, cx, cy + h * .45);
+  ctx.closePath();
 }
-function drawSpr(ctx, rows, ox, oy, px, a, ink) {
-  ctx.globalAlpha = clamp(a);
-  rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === ".") return; ctx.fillStyle = ch === "P" ? PINK : ink; ctx.fillRect(Math.round(ox + x * px), Math.round(oy + y * px), Math.ceil(px), Math.ceil(px)); }));
+function drawKitty(ctx, p, ox, oy, u, ink, hole) {
+  ctx.save(); ctx.translate(ox, oy); ctx.scale(u, u);
+  if (p.flip) { ctx.translate(16, 0); ctx.scale(-1, 1); }
+  ctx.lineJoin = ctx.lineCap = "round"; ctx.fillStyle = ctx.strokeStyle = ink;
+  const sq = !!p.squash, up = !sq && p.ears !== false, by = sq ? 7 : 6, sy = sq ? 1 : 0;
+  const mir = (pts) => pts.map(([x, y]) => [18 - x, y]);
+  const poly = (pts) => { ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); };
+  // tail
+  ctx.lineWidth = 1.3; ctx.beginPath();
+  if (sq) { ctx.moveTo(4, 14.4); ctx.quadraticCurveTo(1, 15.2, 1, 13.2); }
+  else if (p.tail === "curl") { ctx.moveTo(3, 12.6); ctx.quadraticCurveTo(.3, 12.9, .9, 10.3); }
+  else { ctx.moveTo(3, 11.6); ctx.quadraticCurveTo(.3, 11.4, 1.1, 8.5); }
+  ctx.stroke();
+  // feet
+  if (sq || p.feet === "tucked") { rr(ctx, 5, 14.2, 8, 1.8, .9); ctx.fill(); }
+  else { const [a, b] = { stepA: [4, 11], stepB: [5, 12] }[p.feet] || [5, 11]; rr(ctx, a, 14.2, 2, 1.8, .9); ctx.fill(); rr(ctx, b, 14.2, 2, 1.8, .9); ctx.fill(); }
+  // ears
+  const ear = up ? [[3.4, 7.6], [4.3, 2.9], [8.2, 6.3]] : [[2.3, by + 2.8], [1.2, by + .6], [5.2, by + .2]];
+  ctx.lineWidth = 1.1; [ear, mir(ear)].forEach((e) => { poly(e); ctx.fill(); ctx.stroke(); });
+  // body
+  rr(ctx, 2, by, 14, 15 - by, 3.8); ctx.fill();
+  // inner ears
+  if (up) { ctx.fillStyle = ctx.strokeStyle = PINK; ctx.lineWidth = .35; const ie = [[4.9, 6.2], [5.05, 4.5], [6.8, 6.2]]; [ie, mir(ie)].forEach((e) => { poly(e); ctx.fill(); ctx.stroke(); }); }
+  // cheeks
+  ctx.fillStyle = PINK; ctx.globalAlpha = p.blush ? .95 : .55;
+  [4, 14].forEach((x) => { oval(ctx, x, 11.9, 1.05, p.blush ? .7 : .5); ctx.fill(); });
   ctx.globalAlpha = 1;
+  // eyes
+  const d = Math.max(-1, Math.min(1, p.dx || 0)) * .7;
+  ctx.fillStyle = ctx.strokeStyle = hole; ctx.lineWidth = .6;
+  const shine = (x, y) => { ctx.fillStyle = ink; oval(ctx, x + .35, y - .45, .32, .32); ctx.fill(); ctx.fillStyle = hole; };
+  [6, 12].forEach((ex) => {
+    switch (p.eyes || "open") {
+      case "open": oval(ctx, ex + d, 10, .95, 1.15); ctx.fill(); shine(ex + d, 10); break;
+      case "wide": oval(ctx, ex, 9.7, 1.1, 1.5); ctx.fill(); shine(ex, 9.6); break;
+      case "blink": ctx.beginPath(); ctx.moveTo(ex - .9, 10.5); ctx.lineTo(ex + .9, 10.5); ctx.stroke(); break;
+      case "closed": ctx.beginPath(); ctx.moveTo(ex - 1, 10); ctx.quadraticCurveTo(ex, 11.4, ex + 1, 10); ctx.stroke(); break;
+      case "happy": ctx.beginPath(); ctx.moveTo(ex - 1, 10.7); ctx.quadraticCurveTo(ex, 9.1, ex + 1, 10.7); ctx.stroke(); break;
+      case "love": ctx.fillStyle = LOVE; heartPath(ctx, ex, 10, 3.2); ctx.fill(); ctx.fillStyle = hole; break;
+      case "shades": rr(ctx, ex - 2.1, 9, 4.2, 2.2, .9); ctx.fill(); break;
+    }
+  });
+  if (p.eyes === "shades") { ctx.beginPath(); ctx.moveTo(8, 9.6); ctx.lineTo(10, 9.6); ctx.stroke(); ctx.strokeStyle = ink; ctx.lineWidth = .35; [5, 11].forEach((x) => { ctx.beginPath(); ctx.moveTo(x, 9.6); ctx.lineTo(x + .8, 9.6); ctx.stroke(); }); ctx.strokeStyle = hole; ctx.lineWidth = .6; }
+  // mouth
+  const w = () => { ctx.beginPath(); ctx.moveTo(7.9, 11.7); ctx.quadraticCurveTo(8.45, 12.6, 9, 11.8); ctx.quadraticCurveTo(9.55, 12.6, 10.1, 11.7); ctx.stroke(); };
+  switch (p.mouth || "small") {
+    case "small": w(); break;
+    case "open": oval(ctx, 9, 12.2, .9, .8); ctx.fill(); ctx.fillStyle = PINK; oval(ctx, 9, 12.6, .55, .35); ctx.fill(); break;
+    case "blep": ctx.fillStyle = PINK; rr(ctx, 8.75, 11.9, 1, 1.3, .5); ctx.fill(); w(); break;
+    case "flat": ctx.beginPath(); ctx.moveTo(8.1, 12.6); ctx.quadraticCurveTo(9, 11.7, 9.9, 12.6); ctx.stroke(); break;
+  }
+  // outfits get a thin outline so they read on top of the body
+  ctx.fillStyle = ctx.strokeStyle = ink;
+  const outline = () => { ctx.save(); ctx.strokeStyle = hole; ctx.lineWidth = .5; ctx.stroke(); ctx.restore(); ctx.fill(); };
+  if (p.outfit === "sprout") {
+    ctx.lineWidth = .7; ctx.beginPath(); ctx.moveTo(9, by + .3); ctx.quadraticCurveTo(9.1, 4 + sy, 9.4, 2.7 + sy); ctx.stroke();
+    oval(ctx, 10.7, 2.3 + sy, 1.3, .65, -.45); ctx.fill(); oval(ctx, 8.3, 2.5 + sy, .95, .5, .5); ctx.fill();
+  } else if (p.outfit === "headphones") {
+    ctx.beginPath(); ctx.moveTo(2.8, 8 + sy); ctx.bezierCurveTo(2.8, 2.4 + sy, 15.2, 2.4 + sy, 15.2, 8 + sy);
+    ctx.strokeStyle = hole; ctx.lineWidth = 1.5; ctx.stroke(); ctx.strokeStyle = ink; ctx.lineWidth = .8; ctx.stroke();
+    rr(ctx, 1.5, 7.2 + sy, 2.4, 3.2, 1); outline(); rr(ctx, 14.1, 7.2 + sy, 2.4, 3.2, 1); outline();
+  } else if (p.outfit === "crown") {
+    const b = by + .2; poly([[6, b], [5.7, b - 3], [7.5, b - 1.6], [9, b - 3.5], [10.5, b - 1.6], [12.3, b - 3], [12, b]]);
+    ctx.lineJoin = "round"; outline(); ctx.fillStyle = PINK; oval(ctx, 9, b - 1, .45, .45); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawSpr(ctx, kind, x, y, s, a, ink) {
+  ctx.save(); ctx.globalAlpha = clamp(a); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = ctx.strokeStyle = ink; ctx.lineCap = ctx.lineJoin = "round";
+  switch (kind) {
+    case "heart": ctx.fillStyle = LOVE; heartPath(ctx, 2.5, 2.1, 4.6); ctx.fill(); break;
+    case "sparkle": ctx.beginPath(); [[1.5, -.2], [1.85, 1.15], [3.2, 1.5], [1.85, 1.85], [1.5, 3.2], [1.15, 1.85], [-.2, 1.5], [1.15, 1.15]].forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py))); ctx.closePath(); ctx.fill(); break;
+    case "cookie": oval(ctx, 2, 2, 1.9, 1.9); ctx.fill(); ctx.fillStyle = PINK; [[1.3, 1.4], [2.7, 2.5], [1.6, 2.9]].forEach(([cx, cy]) => { oval(ctx, cx, cy, .35, .35); ctx.fill(); }); break;
+    case "z": ctx.lineWidth = .55; ctx.beginPath(); ctx.moveTo(.4, .5); ctx.lineTo(2.6, .5); ctx.lineTo(.4, 2.5); ctx.lineTo(2.6, 2.5); ctx.stroke(); break;
+    case "crumb": oval(ctx, .5, .5, .5, .5); ctx.fill(); break;
+    case "note": ctx.lineWidth = .45; ctx.beginPath(); ctx.moveTo(2.3, 2.3); ctx.lineTo(2.3, .3); ctx.quadraticCurveTo(3.1, .7, 3, 1.5); ctx.stroke(); oval(ctx, 1.6, 2.4, .85, .62, -.4); ctx.fill(); break;
+  }
+  ctx.restore();
 }
 const blinkAt = (f) => f % 23 === 0 || f % 69 === 2;
 const sway = (f) => ((f / 6 | 0) % 3 === 2 ? "curl" : "up");
@@ -757,8 +803,8 @@ class Pet {
     const pose = this.brain(this.t, this) || {};
     const ink = this.dark ? "#fff" : INK, hole = this.dark ? "#000" : "#fff";
     const base = H - 16 * px;
-    drawGrid(ctx, kitty(pose), 0, base - (pose.lift || 0) * px, px, ink, hole);
-    this.parts = this.parts.filter((p) => { p.x += p.vx; p.y += p.vy; p.life--; if (p.kind === "crumb") p.vy += .45; drawSpr(ctx, SPR[p.kind], p.x * px, base + p.y * px, px * .75, p.life / 3, ink); return p.life > 0; });
+    drawKitty(ctx, pose, 0, base - (pose.lift || 0) * px, px, ink, hole);
+    this.parts = this.parts.filter((p) => { p.x += p.vx; p.y += p.vy; p.life--; if (p.kind === "crumb") p.vy += .45; drawSpr(ctx, p.kind, p.x * px, base + p.y * px, px * .75, p.life / 3, ink); return p.life > 0; });
   }
 }
 

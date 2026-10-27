@@ -144,18 +144,21 @@ final class PetTests: XCTestCase {
         sub.cancel()
     }
 
-    func testBitmapRendererDrawsEverySpritePixel() {
-        let pose = PetSprite.Pose()
-        let lit = PetSprite.render(pose).joined().filter { $0 != .none }.count
+    func testBitmapRendererDrawsThePet() {
         let w = 40, h = 20
         let c = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
                           space: CGColorSpace(name: CGColorSpace.sRGB)!,
                           bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
         c.translateBy(x: 0, y: CGFloat(h)); c.scaleBy(x: 1, y: -1)
-        PetCanvas.draw(PetBrain.Frame(pose: pose), in: c, stageWidth: w, height: h,
+        PetCanvas.draw(PetBrain.Frame(pose: PetSprite.Pose()), in: c, stageWidth: CGFloat(w), height: CGFloat(h),
                        ink: CGColor(red: 1, green: 1, blue: 1, alpha: 1), roams: false, ground: 1)
         let px = c.data!.bindMemory(to: UInt8.self, capacity: w * h * 4)
-        let drawn = (0..<(w * h)).filter { px[$0 * 4 + 3] > 0 }.count
-        XCTAssertEqual(drawn, lit)
+        let alpha = { (x: Int, y: Int) in px[(y * w + x) * 4 + 3] }
+        // Centered: the sprite box is x 12..<28, y 3..<19.
+        let drawn = (0..<(w * h)).filter { px[$0 * 4 + 3] > 0 }
+        XCTAssertGreaterThan(drawn.count, 100, "the body is filled")
+        XCTAssertTrue(drawn.allSatisfy { (11..<29).contains($0 % w) && (2..<19).contains($0 / w) }, "stays in its box")
+        XCTAssertEqual(alpha(20, 10), 255, "solid body between the eyes")
+        XCTAssertLessThan(alpha(18, 13), 128, "eyes are cut out of the body")
     }
 }
