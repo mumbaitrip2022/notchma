@@ -84,4 +84,50 @@ final class GitHubCITests: XCTestCase {
         XCTAssertEqual(GitHub.failedJob(fromJSON: jobs), "Test (macOS 14)")
         XCTAssertTrue(GitHub.runs(fromJSON: Data("nope".utf8)).isEmpty)
     }
+
+    func testJobsBecomePipelineStages() {
+        let data = Data("""
+        {"jobs":[
+          {"name":"Lint","status":"completed","conclusion":"success","started_at":"2026-10-27T10:28:58Z","steps":[]},
+          {"name":"Test (macOS 15 · Apple silicon)","status":"completed","conclusion":"success","started_at":"2026-10-27T10:28:58Z","steps":[]},
+          {"name":"Test (macOS 14 · Apple silicon)","status":"in_progress","conclusion":null,"started_at":"2026-10-27T10:28:58Z",
+           "steps":[{"name":"Build","status":"completed","conclusion":"success"},{"name":"Run swift test","status":"in_progress","conclusion":null}]},
+          {"name":"Package (Apple silicon app)","status":"queued","conclusion":null,"started_at":null,"steps":[]}]}
+        """.utf8)
+        let jobs = GitHub.jobs(fromJSON: data)
+        XCTAssertEqual(jobs.count, 4)
+        let stages = GitHub.stages(jobs)
+        XCTAssertEqual(stages.map(\.name), ["Lint", "Test", "Package"])
+        XCTAssertEqual(stages.map(\.state), [.passed, .running, .queued])
+        XCTAssertEqual(stages[1].label, "Test 1/2")
+        XCTAssertEqual(GitHub.liveStep(jobs), "Test: swift test")
+    }
+
+    func testFailedStageAndStep() {
+        let jobs = [GitHub.Job(name: "Lint", status: "completed", conclusion: "success"),
+                    GitHub.Job(name: "Test (a)", status: "completed", conclusion: "failure", failedStep: "Test"),
+                    GitHub.Job(name: "Test (b)", status: "in_progress", conclusion: nil),
+                    GitHub.Job(name: "Deploy", status: "completed", conclusion: "skipped")]
+        let stages = GitHub.stages(jobs)
+        XCTAssertEqual(stages.map(\.state), [.passed, .failed, .skipped])
+        XCTAssertEqual(jobs.first(where: \.failed)?.failedStep, "Test")
+    }
+
+    func testRunsFallBackToStages() {
+        let runs = [GitHub.Run(id: 1, name: "CI", status: "in_progress", conclusion: nil, url: nil),
+                    GitHub.Run(id: 2, name: "CodeQL", status: "queued", conclusion: nil, url: nil, path: "codeql.yml")]
+        XCTAssertEqual(GitHub.stages(runs: runs), [CIStage(name: "CI", state: .running)])
+    }
+
+    func testGitHubMarkPathFillsItsBox() {
+        let b = GitHubMark().path(in: CGRect(x: 0, y: 0, width: 32, height: 32)).boundingRect
+        XCTAssertEqual(b.minX, 0, accuracy: 0.6)
+        XCTAssertEqual(b.maxX, 32, accuracy: 0.6)
+        XCTAssertEqual(b.minY, 0, accuracy: 0.6)
+        XCTAssertGreaterThan(b.maxY, 30)
+        // The arc command lands where it should.
+        let arc = SVGPath.parse("M0 8A8 8 0 0 1 16 8").boundingRect
+        XCTAssertEqual(arc.minY, 0, accuracy: 0.05)
+        XCTAssertEqual(arc.width, 16, accuracy: 0.05)
+    }
 }

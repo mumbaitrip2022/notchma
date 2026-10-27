@@ -961,7 +961,7 @@ final class SessionStore: ObservableObject {
             self?.showNextBanner()
         }
         bannerWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + (b.action == .sendDraft ? 8 : 3.6), execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + (b.action == .sendDraft ? 8 : b.kind == .ci ? 7 : 3.6), execute: work)
     }
 
     private func showNextBanner() {

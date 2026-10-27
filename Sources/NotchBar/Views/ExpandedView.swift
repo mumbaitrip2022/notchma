@@ -207,6 +207,13 @@ struct ExpandedView: View {
                                    if ui.openRow == s.id { store.attend(s.id) }
                                })
                         .id(s.id)
+                    if let ci = s.ci, ci.isFresh() {
+                        CICard(ci: ci)
+                            .padding(.leading, 56)
+                            .padding(.trailing, 10)
+                            .padding(.bottom, 8)
+                            .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
+                    }
                     if ui.openRow == s.id {
                         SessionDetail(store: store, ui: ui, prefs: prefs, session: s, actions: actions)
                             .transition(.opacity.combined(with: .move(edge: .top)))
@@ -300,7 +307,6 @@ struct SessionRow: View {
                             .foregroundStyle(Palette.text3)
                             .lineLimit(1)
                     }
-                    if let ci = session.ci { CIBadge(ci: ci) }
                 }
                 HStack(spacing: 0) {
                     if session.alert != nil {
@@ -424,62 +430,6 @@ struct SessionRow: View {
         case .waitingForInput: return .waiting
         case .done: return session.testResult.map { $0.failed > 0 ? Color.danger : .success } ?? .success
         case .idle: return Palette.text3
-        }
-    }
-}
-
-/// GitHub Actions for the session's last push. Click to open the run.
-struct CIBadge: View {
-    let ci: CIStatus
-    @State private var spin = false
-
-    var body: some View {
-        Button {
-            if let url = ci.url { NSWorkspace.shared.open(url) }
-        } label: {
-            HStack(spacing: 4) {
-                icon
-                Text(ci.short).monospacedDigit()
-            }
-            .font(.system(size: 10.5, weight: .semibold))
-            .foregroundStyle(color)
-            .padding(.horizontal, 6)
-            .frame(height: 17)
-            .background(Capsule().fill(color.opacity(0.14)))
-        }
-        .buttonStyle(.plain)
-        .fixedSize()
-        .help(help)
-    }
-
-    @ViewBuilder private var icon: some View {
-        switch ci.state {
-        case .waiting, .running:
-            Circle().trim(from: 0, to: 0.7)
-                .stroke(color, style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
-                .frame(width: 8, height: 8)
-                .rotationEffect(.degrees(spin ? 360 : 0))
-                .onAppear { withAnimation(.linear(duration: 0.9).repeatForever(autoreverses: false)) { spin = true } }
-        case .passed: Image(systemName: "checkmark").font(.system(size: 8.5, weight: .heavy))
-        case .failed: Image(systemName: "xmark").font(.system(size: 8.5, weight: .heavy))
-        }
-    }
-
-    private var color: Color {
-        switch ci.state {
-        case .waiting, .running: return .approval
-        case .passed: return .success
-        case .failed: return .danger
-        }
-    }
-
-    private var help: String {
-        let sha = String(ci.sha.prefix(7))
-        switch ci.state {
-        case .waiting: return "Pushed \(sha). Waiting for GitHub Actions to start"
-        case let .running(d, t): return "GitHub Actions on \(sha): \(d) of \(t) workflows done. Click to open"
-        case .passed: return "GitHub Actions passed on \(sha). Click to open"
-        case let .failed(job): return "GitHub Actions failed on \(sha)\(job.map { ": \($0)" } ?? ""). Click to see why"
         }
     }
 }

@@ -121,8 +121,16 @@ struct RootView: View {
                     .transition(.blurReplace)
             case .banner:
                 if let b = store.banner {
-                    BannerView(banner: b, receipt: store.session(b.sessionID)?.lastTask,
-                               petOutfit: .forLevel(store.ledger.level)) { actions.bannerTap(b) }
+                    Group {
+                    if let snap = b.ci {
+                        // A live banner follows the run as it moves.
+                        let live = store.session(b.sessionID)?.ci.flatMap { $0.sha == snap.sha ? $0 : nil }
+                        CIBannerView(banner: b, ci: snap.isFinished ? snap : (live ?? snap)) { actions.bannerTap(b) }
+                    } else {
+                        BannerView(banner: b, receipt: store.session(b.sessionID)?.lastTask,
+                                   petOutfit: .forLevel(store.ledger.level)) { actions.bannerTap(b) }
+                    }
+                    }
                         .padding(.top, ui.hasHardwareNotch ? ui.bandHeight - 6 : 0)
                         .id(b.id)
                         .transition(.blurReplace)
@@ -249,6 +257,8 @@ struct BannerView: View {
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 24))
                 .foregroundStyle(.black, Color.danger)
+        case .ci:
+            GitHubMark().fill(.white).frame(width: 20, height: 20)
         case .update:
             Image(systemName: "gift.fill")
                 .font(.system(size: 21, weight: .semibold))

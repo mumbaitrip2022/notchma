@@ -401,24 +401,39 @@ final class NotchController: NSObject {
             if self.store.session(sid) == nil { self.ci.forget(sid); return }
             self.store.setCI(sid, st)
         }
+        ci.onStart = { [weak self] sid, st in
+            guard let self, let s = self.store.session(sid) else { return }
+            let jobs = st.stages.reduce(0) { $0 + $1.jobs }
+            self.store.showBanner(Banner(kind: .ci, sessionID: sid, agent: s.agent,
+                                         title: "\(s.projectName) pushed to \(st.branch ?? "GitHub")",
+                                         subtitle: jobs > 1 ? "CI is on it. \(jobs) jobs lined up" : "CI is on it",
+                                         action: st.url.map { .open($0) } ?? .jump, ci: st))
+        }
         ci.onFinish = { [weak self] sid, st in
             guard let self, let s = self.store.session(sid) else { return }
-            let mins = st.finishedAt.map { Int(($0.timeIntervalSince(st.startedAt) / 60).rounded()) } ?? 0
-            let took = mins < 1 ? "under a minute" : "\(mins)m"
+            let took = CIElapsed.format(st.elapsed)
             switch st.state {
             case .failed(let job):
-                self.store.showBanner(Banner(kind: .failed, sessionID: sid, agent: s.agent,
+                let at = st.failedStep.map { " at \"\($0)\"" } ?? ""
+                self.store.showBanner(Banner(kind: .ci, sessionID: sid, agent: s.agent,
                                              title: "\(s.projectName) CI failed",
-                                             subtitle: (job.map { "\($0) broke" } ?? "a check broke") + ". tap to see why",
-                                             action: st.url.map { .open($0) } ?? .jump, important: true))
+                                             subtitle: (job.map { "\($0) broke\(at)" } ?? "a check broke") + ". tap to see why",
+                                             action: st.url.map { .open($0) } ?? .jump, important: true, ci: st))
                 if self.prefs.sounds { Sounds.approval() }
             default:
-                self.store.showBanner(Banner(kind: .done, sessionID: sid, agent: s.agent,
+                self.store.showBanner(Banner(kind: .ci, sessionID: sid, agent: s.agent,
                                              title: "\(s.projectName) CI passed",
                                              subtitle: "all green in \(took). ship it",
-                                             action: st.url.map { .open($0) } ?? .jump))
+                                             action: st.url.map { .open($0) } ?? .jump, ci: st))
             }
         }
+        ci.onNeedsLogin = { [weak self] in
+            self?.store.showBanner(Banner(kind: .info, sessionID: "", agent: .claude,
+                                          title: "Connect GitHub to see this repo's CI",
+                                          subtitle: "it's private. tap to sign in with the GitHub CLI",
+                                          action: .connectGitHub))
+        }
+        GitHubAuth.shared.refresh()
 
         store.onNewApproval = { [weak self] in
             guard let self else { return }
@@ -643,6 +658,7 @@ final class NotchController: NSObject {
         case .update: openUpdate()
         case .report: openReport()
         case let .open(url): NSWorkspace.shared.open(url)
+        case .connectGitHub: GitHubAuth.shared.connect()
         }
     }
 
@@ -990,6 +1006,7 @@ extension NotchController {
             return true
         case "_Hover":
             ui.hovering = (json["on"] as? Bool) ?? false
+            if json["sessions"] as? Bool == true { ui.idleShowsSessions = true }
             return true
         case "_PetDemo":
             // Sample numbers in memory only, to preview the receipt and outfits.
@@ -1039,19 +1056,45 @@ extension NotchController {
             NotificationCenter.default.post(name: .init("NBTourStep"), object: json["step"] as? Int ?? 0)
             return true
         case "_CI":
-            // Fake a CI state on a session: waiting, running, passed or failed.
+            // Fake a CI run on a session: waiting, start, running, passed or failed.
             guard let sid = (json["sid"] as? String) ?? store.primary?.id else { return true }
+            let name = json["state"] as? String ?? "waiting"
+            let k = json["done"] as? Int ?? 2   // stages finished so far
+            let names = ["Lint", "Test", "Package", "Smoke test", "All checks passed"]
+            let jobs = [1, 3, 1, 2, 1]
+            var stages = names.indices.map { i -> CIStage in
+                let st: CIStage.State = i < k ? .passed : i == k ? .running : .queued
+                return CIStage(name: names[i], jobs: jobs[i], done: i < k ? jobs[i] : (i == k ? jobs[i] / 2 : 0), state: st)
+            }
             let state: CIStatus.State
-            switch json["state"] as? String {
-            case "running": state = .running(done: json["done"] as? Int ?? 1, total: json["total"] as? Int ?? 3)
-            case "passed": state = .passed
-            case "failed": state = .failed(job: json["job"] as? String ?? "Test (macOS 14)")
-            default: state = .waiting
+            var failedStep: String?
+            switch name {
+            case "running", "start": state = .running(done: 0, total: 1)
+            case "passed":
+                state = .passed
+                for i in stages.indices { stages[i].state = .passed; stages[i].done = stages[i].jobs }
+            case "failed":
+                state = .failed(job: "Test (macOS 14 · Apple silicon)")
+                failedStep = "Test"
+                for i in stages.indices {
+                    stages[i].state = i == 0 ? .passed : i == 1 ? .failed : .skipped
+                    stages[i].done = i <= 1 ? stages[i].jobs : 0
+                }
+            default:
+                state = .waiting; stages = []
             }
             var st = CIStatus(state: state, repo: "mumbaitrip2022/notchma", sha: "b427fa3e0000000000000000000000000000000",
                               url: URL(string: "https://github.com/mumbaitrip2022/notchma/actions"),
-                              startedAt: Date().addingTimeInterval(-200))
+                              startedAt: Date().addingTimeInterval(-(json["age"] as? Double ?? 200)))
+            st.branch = "main"
+            st.stages = stages
+            st.failedStep = failedStep
+            if case .running = state, k < names.count {
+                st.step = ["Lint: Workflow files", "Test: swift test", "Package: Build DMG and zip",
+                           "Smoke test: Install, launch, drive and quit", "All checks passed: Result"][k]
+            }
             if st.isFinished { st.finishedAt = Date(); ci.onFinish?(sid, st) }
+            if name == "start" { ci.onStart?(sid, st) }
             store.setCI(sid, st)
             return true
         case "_PetAct":

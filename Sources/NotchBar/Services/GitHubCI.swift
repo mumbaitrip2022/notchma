@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 
 /// CI status for the commit a session last pushed.
 struct CIStatus: Equatable {
@@ -14,10 +14,25 @@ struct CIStatus: Equatable {
     var url: URL?         // the run to open (failed one first)
     var startedAt = Date()
     var finishedAt: Date?
+    var branch: String?
+    /// The pipeline: jobs grouped by name ("Test (macOS 14)" and "Test (macOS 15)" are one "Test" stage).
+    var stages: [CIStage] = []
+    /// What's running right now, e.g. "Package: Build DMG and zip".
+    var step: String?
+    /// The step that broke, e.g. "Test".
+    var failedStep: String?
 
     var isFinished: Bool {
         switch state { case .passed, .failed: return true; default: return false }
     }
+
+    /// Worth showing: running, or finished in the last 15 minutes.
+    func isFresh(at now: Date = Date()) -> Bool {
+        guard let f = finishedAt else { return true }
+        return now.timeIntervalSince(f) < 15 * 60
+    }
+
+    var elapsed: TimeInterval { (finishedAt ?? Date()).timeIntervalSince(startedAt) }
 
     var short: String {
         switch state {
@@ -26,6 +41,22 @@ struct CIStatus: Equatable {
         case .passed: return "CI passed"
         case .failed: return "CI failed"
         }
+    }
+}
+
+/// One step of the pipeline: a job, or several jobs of a matrix.
+struct CIStage: Equatable, Identifiable {
+    enum State: Equatable { case queued, running, passed, failed, skipped }
+    var name: String
+    var jobs = 1
+    var done = 0
+    var state: State
+    var id: String { name }
+
+    /// "Test 2/3" while a matrix runs, "Test ×3" otherwise.
+    var label: String {
+        guard jobs > 1 else { return name }
+        return state == .running ? "\(name) \(done)/\(jobs)" : "\(name) ×\(jobs)"
     }
 }
 
@@ -137,9 +168,83 @@ enum GitHub {
     }
 
     static func failedJob(fromJSON data: Data) -> String? {
+        jobs(fromJSON: data).first(where: \.failed)?.name
+    }
+
+    struct Job: Equatable {
+        var name: String
+        var status: String
+        var conclusion: String?
+        var startedAt: Date?
+        var step: String?         // the step in progress
+        var failedStep: String?
+
+        var failed: Bool { ["failure", "timed_out", "startup_failure"].contains(conclusion ?? "") }
+        var finished: Bool { status == "completed" }
+        /// "Test (macOS 14 · Apple silicon)" → "Test".
+        var stage: String {
+            guard let r = name.range(of: " ("), name.hasSuffix(")"), r.lowerBound > name.startIndex else { return name }
+            return String(name[..<r.lowerBound])
+        }
+    }
+
+    static func jobs(fromJSON data: Data) -> [Job] {
         guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let jobs = obj["jobs"] as? [[String: Any]] else { return nil }
-        return jobs.first { ($0["conclusion"] as? String) == "failure" }?["name"] as? String
+              let list = obj["jobs"] as? [[String: Any]] else { return [] }
+        let iso = ISO8601DateFormatter()
+        return list.map { j in
+            let steps = j["steps"] as? [[String: Any]] ?? []
+            return Job(name: j["name"] as? String ?? "Job", status: j["status"] as? String ?? "queued",
+                       conclusion: j["conclusion"] as? String,
+                       startedAt: (j["started_at"] as? String).flatMap(iso.date(from:)),
+                       step: steps.first { ($0["status"] as? String) == "in_progress" }?["name"] as? String,
+                       failedStep: steps.first { ($0["conclusion"] as? String) == "failure" }?["name"] as? String)
+        }
+    }
+
+    /// Jobs → pipeline stages, in the order they started. Matrix jobs share a stage.
+    static func stages(_ jobs: [Job]) -> [CIStage] {
+        let far = Date.distantFuture
+        let ordered = jobs.enumerated().sorted {
+            let a = $0.element.startedAt ?? far, b = $1.element.startedAt ?? far
+            return a == b ? $0.offset < $1.offset : a < b
+        }.map(\.element)
+        var names: [String] = []
+        var groups: [String: [Job]] = [:]
+        for j in ordered {
+            if groups[j.stage] == nil { names.append(j.stage) }
+            groups[j.stage, default: []].append(j)
+        }
+        return names.map { name in
+            let g = groups[name]!
+            let done = g.filter(\.finished).count
+            let state: CIStage.State
+            if g.contains(where: \.failed) { state = .failed }
+            else if done == g.count {
+                state = g.allSatisfy { ["skipped", "cancelled", "neutral"].contains($0.conclusion ?? "") } ? .skipped : .passed
+            } else if done > 0 || g.contains(where: { $0.status == "in_progress" }) { state = .running }
+            else { state = .queued }
+            return CIStage(name: name, jobs: g.count, done: done, state: state)
+        }
+    }
+
+    /// Without job details (no token), each workflow run is one stage.
+    static func stages(runs all: [Run]) -> [CIStage] {
+        relevant(all).map { r in
+            let state: CIStage.State
+            if r.failed { state = .failed }
+            else if r.status == "completed" { state = ["skipped", "cancelled"].contains(r.conclusion ?? "") ? .skipped : .passed }
+            else if r.status == "in_progress" { state = .running }
+            else { state = .queued }
+            return CIStage(name: r.name, state: state)
+        }
+    }
+
+    /// "Package: Build DMG and zip" for the first job that's running.
+    static func liveStep(_ jobs: [Job]) -> String? {
+        guard let j = jobs.first(where: { $0.status == "in_progress" && $0.step != nil }), var step = j.step else { return nil }
+        if step.hasPrefix("Run ") { step.removeFirst(4) }
+        return "\(j.stage): \(step)"
     }
 }
 
@@ -150,12 +255,17 @@ final class CIWatcher {
     var onUpdate: ((String, CIStatus?) -> Void)?
     /// All runs finished.
     var onFinish: ((String, CIStatus) -> Void)?
+    /// GitHub picked up the push and the pipeline is known.
+    var onStart: ((String, CIStatus) -> Void)?
+    /// The repo looks private and there's no GitHub login (fires once per app run).
+    var onNeedsLogin: (() -> Void)?
+    private var askedForLogin = false
 
-    private struct Watch { var sid: String; var status: CIStatus; var token = 0 }
+    private struct Watch { var sid: String; var status: CIStatus; var token = 0; var started = false }
     private var watches: [String: Watch] = [:]   // by session id (main thread)
     private let io = DispatchQueue(label: "notchbar.ci", qos: .utility)
-    private var cachedToken: String?
-    private var tokenCheckedAt: Date?
+    /// ETag → body per URL (io queue). A 304 is free: it doesn't count against GitHub's rate limit.
+    private var etags: [URL: (tag: String, body: Data)] = [:]
 
     /// Start (or restart) watching after a push from `root`.
     func pushed(sessionID sid: String, root folder: String) {
@@ -166,8 +276,11 @@ final class CIWatcher {
         io.async { [weak self] in
             guard let self, let sha = Self.headSHA(root) else { DiagLog.log("ci: push, no commit found"); return }
             DiagLog.log("ci: watching s\(sid.prefix(4))")
+            let branch = Git.branch(at: root)
+            _ = GitHubAuth.shared.token()   // warm the login off the main thread
             DispatchQueue.main.async {
-                let st = CIStatus(state: .waiting, repo: repo, sha: sha, url: URL(string: "https://github.com/\(repo)/actions"))
+                var st = CIStatus(state: .waiting, repo: repo, sha: sha, url: URL(string: "https://github.com/\(repo)/actions"))
+                st.branch = branch
                 self.watches[sid] = Watch(sid: sid, status: st, token: token)
                 self.onUpdate?(sid, st)
                 // GitHub needs a few seconds to register the push.
@@ -185,10 +298,16 @@ final class CIWatcher {
     private func poll(_ sid: String, token: Int) {
         guard let w = watches[sid], w.token == token else { return }
         let age = Date().timeIntervalSince(w.status.startedAt)
+        let authed = GitHubAuth.shared.hasToken
         let url = URL(string: "https://api.github.com/repos/\(w.status.repo)/actions/runs?head_sha=\(w.status.sha)&per_page=30")!
-        fetch(url) { [weak self] data in
+        fetch(url) { [weak self] data, code in
             guard let self, let cur = self.watches[sid], cur.token == token else { return }
             guard let data else {
+                // A private repo answers 404 without a login: say how to fix it, once.
+                if code == 404, !authed {
+                    if !self.askedForLogin { self.askedForLogin = true; self.onNeedsLogin?() }
+                    self.drop(sid); return
+                }
                 // Offline or no access: give up quietly after a while.
                 if age > 300 { self.drop(sid) } else { self.schedule(sid, token: token, after: 20) }
                 return
@@ -203,21 +322,38 @@ final class CIWatcher {
             var st = cur.status
             st.state = GitHub.summarize(runs)
             st.url = GitHub.focus(runs)?.url ?? st.url
-            if case .failed = st.state, let run = GitHub.focus(runs) {
-                // Name the exact job that broke, e.g. "Test (macOS 14)".
-                let jobsURL = URL(string: "https://api.github.com/repos/\(st.repo)/actions/runs/\(run.id)/jobs?per_page=50")!
-                self.fetch(jobsURL) { [weak self] jobs in
-                    guard let self, self.watches[sid]?.token == token else { return }
-                    if let job = jobs.flatMap(GitHub.failedJob(fromJSON:)) { st.state = .failed(job: job) }
-                    self.finish(sid, st)
+            // Job details make the pipeline. Without a login, save the rate limit for the end.
+            let wantJobs = authed || st.isFinished
+            let ids = GitHub.relevant(runs).prefix(3).map(\.id)
+            self.fetchJobs(repo: st.repo, runs: wantJobs ? ids : []) { [weak self] jobs in
+                guard let self, self.watches[sid]?.token == token else { return }
+                st.stages = jobs.isEmpty ? GitHub.stages(runs: runs) : GitHub.stages(jobs)
+                st.step = GitHub.liveStep(jobs)
+                if case .failed = st.state, let bad = jobs.first(where: \.failed) {
+                    st.state = .failed(job: bad.name)   // the exact job, e.g. "Test (macOS 14)"
+                    st.failedStep = bad.failedStep
                 }
-                return
+                if !(self.watches[sid]?.started ?? true) {
+                    self.watches[sid]?.started = true
+                    if !st.isFinished { self.onStart?(sid, st) }
+                }
+                if st.isFinished { self.finish(sid, st); return }
+                self.watches[sid]?.status = st
+                self.onUpdate?(sid, st)
+                if age > 90 * 60 { self.drop(sid); return }
+                self.schedule(sid, token: token, after: authed ? (age < 120 ? 5 : 8) : 15)
             }
-            if st.isFinished { self.finish(sid, st); return }
-            self.watches[sid]?.status = st
-            self.onUpdate?(sid, st)
-            if age > 90 * 60 { self.drop(sid); return }
-            self.schedule(sid, token: token, after: age < 120 ? 8 : 15)
+        }
+    }
+
+    /// Jobs of several runs, in order (empty if none were asked for or all failed to load).
+    private func fetchJobs(repo: String, runs ids: [Int], _ done: @escaping ([GitHub.Job]) -> Void) {
+        guard let id = ids.first else { return done([]) }
+        let url = URL(string: "https://api.github.com/repos/\(repo)/actions/runs/\(id)/jobs?per_page=100")!
+        fetch(url) { [weak self] data, _ in
+            let jobs = data.map(GitHub.jobs(fromJSON:)) ?? []
+            guard let self else { return done(jobs) }
+            self.fetchJobs(repo: repo, runs: Array(ids.dropFirst())) { rest in done(jobs + rest) }
         }
     }
 
@@ -234,29 +370,33 @@ final class CIWatcher {
         onUpdate?(sid, nil)
     }
 
-    /// GET with your gh token when there is one. Calls back on the main thread (nil on any failure).
-    private func fetch(_ url: URL, _ done: @escaping (Data?) -> Void) {
+    /// GET with your gh token when there is one. Calls back on the main thread
+    /// with the body (nil on any failure) and the HTTP status.
+    private func fetch(_ url: URL, _ done: @escaping (Data?, Int) -> Void) {
         io.async { [weak self] in
             var req = URLRequest(url: url, timeoutInterval: 15)
             req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
             req.setValue("NotchBar", forHTTPHeaderField: "User-Agent")
-            if let t = self?.token() { req.setValue("Bearer \(t)", forHTTPHeaderField: "Authorization") }
+            if let t = GitHubAuth.shared.token() { req.setValue("Bearer \(t)", forHTTPHeaderField: "Authorization") }
+            if let tag = self?.etags[url]?.tag { req.setValue(tag, forHTTPHeaderField: "If-None-Match") }
             URLSession.shared.dataTask(with: req) { data, resp, err in
-                let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
-                let ok = (200..<300).contains(code)
-                if !ok { DiagLog.log("ci: http \(code)\(err != nil ? " offline" : "")") }
-                DispatchQueue.main.async { done(ok ? data : nil) }
+                let http = resp as? HTTPURLResponse
+                let code = http?.statusCode ?? 0
+                self?.io.async {
+                    var body: Data?
+                    if code == 304 {
+                        body = self?.etags[url]?.body
+                    } else if (200..<300).contains(code), let data {
+                        body = data
+                        if let tag = http?.value(forHTTPHeaderField: "ETag") { self?.etags[url] = (tag, data) }
+                        if (self?.etags.count ?? 0) > 200 { self?.etags.removeAll() }
+                    } else {
+                        DiagLog.log("ci: http \(code)\(err != nil ? " offline" : "")")
+                    }
+                    DispatchQueue.main.async { done(body, code) }
+                }
             }.resume()
         }
-    }
-
-    /// `gh auth token`, cached; re-checked every 10 minutes so a later `gh auth login` is picked up.
-    private func token() -> String? {
-        if let at = tokenCheckedAt, Date().timeIntervalSince(at) < 600 { return cachedToken }
-        tokenCheckedAt = Date()
-        let gh = ["/opt/homebrew/bin/gh", "/usr/local/bin/gh", "/usr/bin/gh"].first { FileManager.default.isExecutableFile(atPath: $0) }
-        cachedToken = gh.flatMap { Self.run($0, ["auth", "token", "--hostname", "github.com"]) }
-        return cachedToken
     }
 
     private static func headSHA(_ root: String) -> String? {
@@ -264,7 +404,7 @@ final class CIWatcher {
         return sha
     }
 
-    private static func run(_ path: String, _ args: [String]) -> String? {
+    static func run(_ path: String, _ args: [String]) -> String? {
         let p = Process(), out = Pipe()
         p.executableURL = URL(fileURLWithPath: path)
         p.arguments = args
@@ -276,5 +416,99 @@ final class CIWatcher {
         guard p.terminationStatus == 0 else { return nil }
         let s = String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
         return s.isEmpty ? nil : s
+    }
+}
+
+/// Your GitHub login, borrowed from the GitHub CLI (`gh`). NotchBar never stores a token itself.
+final class GitHubAuth: ObservableObject {
+    static let shared = GitHubAuth()
+
+    enum Status: Equatable {
+        case checking
+        case connected(user: String)
+        case signedOut      // gh is installed, not logged in
+        case noCLI          // gh isn't installed
+    }
+    @Published private(set) var status: Status = .checking
+
+    private let lock = NSLock()
+    private var cachedToken: String?
+    private var checkedAt: Date?
+    private var waitTimer: Timer?
+
+    static var ghPath: String? {
+        ["/opt/homebrew/bin/gh", "/usr/local/bin/gh", "/usr/bin/gh"].first { FileManager.default.isExecutableFile(atPath: $0) }
+    }
+
+    /// `gh auth token`, cached for 10 minutes so a later login is picked up. Any thread.
+    func token() -> String? {
+        lock.lock(); defer { lock.unlock() }
+        if let at = checkedAt, Date().timeIntervalSince(at) < 600 { return cachedToken }
+        checkedAt = Date()
+        cachedToken = Self.ghPath.flatMap { CIWatcher.run($0, ["auth", "token", "--hostname", "github.com"]) }
+        return cachedToken
+    }
+
+    /// The last known login, without asking gh again (safe on the main thread).
+    var hasToken: Bool { lock.lock(); defer { lock.unlock() }; return cachedToken != nil }
+
+    /// Re-read the login (e.g. when Settings opens).
+    func refresh() {
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            guard let self else { return }
+            self.lock.lock(); self.checkedAt = nil; self.lock.unlock()
+            let st: Status
+            if let gh = Self.ghPath {
+                st = self.token() != nil
+                    ? .connected(user: CIWatcher.run(gh, ["api", "user", "--jq", ".login"]) ?? "GitHub")
+                    : .signedOut
+            } else {
+                st = .noCLI
+            }
+            DispatchQueue.main.async {
+                self.status = st
+                if case .connected = st { self.waitTimer?.invalidate(); self.waitTimer = nil }
+            }
+        }
+    }
+
+    /// Opens Terminal to install gh if needed and sign in through the browser,
+    /// then watches for the login to land.
+    func connect() {
+        let script = """
+        #!/bin/zsh -l
+        clear
+        echo "Connecting NotchBar to GitHub"
+        echo
+        GH=$(command -v gh || ls /opt/homebrew/bin/gh 2>/dev/null)
+        if [ -z "$GH" ]; then
+          if command -v brew >/dev/null 2>&1; then
+            echo "Installing the GitHub CLI first..."
+            brew install gh || exit 1
+            GH=$(command -v gh)
+          else
+            echo "Get the GitHub CLI from https://cli.github.com, then press Connect again."
+            open "https://cli.github.com"
+            exit 1
+          fi
+        fi
+        "$GH" auth login --hostname github.com --web --git-protocol https
+        echo
+        echo "All set. NotchBar will pick it up in a few seconds. You can close this window."
+        """
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("Connect NotchBar to GitHub.command")
+        do {
+            try script.write(to: file, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: file.path)
+        } catch { return }
+        NSWorkspace.shared.open(file)
+        // Notice the login without making you come back and click anything.
+        waitTimer?.invalidate()
+        var tries = 0
+        waitTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] t in
+            tries += 1
+            if tries > 100 { t.invalidate(); return }
+            self?.refresh()
+        }
     }
 }

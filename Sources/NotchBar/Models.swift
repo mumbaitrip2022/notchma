@@ -68,11 +68,12 @@ enum BannerAction: Equatable {
     case update               // open the update page
     case report               // open Report a Problem
     case open(URL)            // open a page, e.g. a CI run on GitHub
+    case connectGitHub        // sign in to GitHub (for private repo CI)
 }
 
 /// A short Dynamic-Island-style alert shown in the notch.
 struct Banner: Identifiable, Equatable {
-    enum Kind: Equatable { case done, waiting, failed, limit(critical: Bool), attention, info, draft, pet, update }
+    enum Kind: Equatable { case done, waiting, failed, limit(critical: Bool), attention, info, draft, pet, update, ci }
     let id = UUID()
     let kind: Kind
     let sessionID: String
@@ -81,6 +82,7 @@ struct Banner: Identifiable, Equatable {
     let subtitle: String
     var action: BannerAction = .jump
     var important = false // shown even in quiet (meeting) mode
+    var ci: CIStatus?     // CI banners draw the pipeline
 }
 
 struct Session: Identifiable, Equatable {

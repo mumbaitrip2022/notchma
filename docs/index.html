@@ -704,7 +704,7 @@ footer a:hover { color: var(--ink); }
       <details><summary>What does it work with?<i></i></summary><p>Claude Code, Codex and Cursor, on Apple silicon Macs (M1 or newer) running macOS 14 Sonoma or later.</p></details>
       <details><summary>Will it slow my Mac down?<i></i></summary><p>Nope. It's a 2 MB download, uses about 19 MB of memory and averages 0.3% CPU while your agents work. We measured it.</p></details>
       <details><summary>Does my code leave my Mac?<i></i></summary><p>Never. NotchBar talks to your agents locally. It only goes online to check for updates and, after an agent pushes, to ask GitHub how CI is doing. That sends just the repo name and commit, and you can turn it off.</p></details>
-      <details><summary>Does it show GitHub Actions?<i></i></summary><p>Yep. When an agent pushes, the notch watches CI for that commit and taps you when it goes green or breaks, with the exact job that failed. Private repos work through your gh login.</p></details>
+      <details><summary>Does it show GitHub Actions?<i></i></summary><p>Yep. When an agent pushes, the notch shows the commit's pipeline live, stage by stage, with the step that's running now. It taps you when it goes green or breaks, naming the job and step that failed. Public repos work with zero setup. For private repos, hit Connect GitHub in Settings once and sign in through your browser.</p></details>
       <details><summary>macOS won't open it. Help?<i></i></summary><p>It's a one time thing. Open System Settings, go to Privacy &amp; Security, and click Open Anyway. That's it, forever.</p></details>
     </div>
   </section>

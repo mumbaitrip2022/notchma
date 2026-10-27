@@ -108,10 +108,11 @@ struct SettingsView: View {
 
             Section {
                 Toggle("Watch GitHub Actions after an agent pushes", isOn: $prefs.githubCI)
+                GitHubConnectRow()
             } header: {
                 Text("GitHub")
             } footer: {
-                Text("Shows CI for the pushed commit and taps you when it passes or fails. Uses your gh login for private repos. Only the repo name and commit go to GitHub.")
+                Text("Shows CI for the pushed commit and taps you when it passes or fails. Public repos work as is. Private repos use your GitHub CLI login, which NotchBar borrows and never stores. Only the repo name and commit go to GitHub.")
             }
 
             Section {
@@ -200,5 +201,49 @@ final class SettingsWindowController {
         }
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
+    }
+}
+
+/// Who NotchBar talks to GitHub as, and a one-click way to sign in.
+struct GitHubConnectRow: View {
+    @ObservedObject private var auth = GitHubAuth.shared
+
+    var body: some View {
+        HStack(spacing: 10) {
+            GitHubMark().fill(.primary).frame(width: 16, height: 16)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                Text(detail).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            switch auth.status {
+            case .checking:
+                ProgressView().controlSize(.small)
+            case .connected:
+                Button("Refresh") { auth.refresh() }
+            case .signedOut, .noCLI:
+                Button("Connect GitHub") { auth.connect() }
+                    .buttonStyle(.borderedProminent)
+            }
+        }
+        .onAppear { auth.refresh() }
+    }
+
+    private var title: String {
+        switch auth.status {
+        case .checking: return "Checking your GitHub login"
+        case let .connected(user): return "Connected as @\(user)"
+        case .signedOut: return "Not connected"
+        case .noCLI: return "Not connected"
+        }
+    }
+
+    private var detail: String {
+        switch auth.status {
+        case .checking: return " "
+        case .connected: return "Private repos work too"
+        case .signedOut: return "Public repos work. Connect for private ones"
+        case .noCLI: return "Public repos work. Connect installs the GitHub CLI and signs you in"
+        }
     }
 }
