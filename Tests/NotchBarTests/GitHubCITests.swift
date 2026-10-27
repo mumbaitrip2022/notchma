@@ -49,6 +49,18 @@ final class GitHubCITests: XCTestCase {
         XCTAssertEqual(GitHub.summarize([run("completed", "success"), run("completed", "skipped")]), .passed)
         XCTAssertEqual(GitHub.summarize([run("completed", "success"), run("completed", "failure", "Lint")]), .failed(job: "Lint"))
         XCTAssertEqual(GitHub.summarize([run("completed", "cancelled")]), .passed, "a cancelled run isn't a failure")
+        XCTAssertEqual(GitHub.summarize([run("in_progress"), run("completed", "failure", "Lint")]), .failed(job: "Lint"),
+                       "a failure shows right away")
+    }
+
+    func testSlowScansDontHoldUpCI() {
+        var codeql = GitHub.Run(id: 1, name: "CodeQL", status: "in_progress", conclusion: nil, url: nil, path: ".github/workflows/codeql.yml")
+        let pages = GitHub.Run(id: 2, name: "pages build and deployment", status: "in_progress", conclusion: nil, url: nil, event: "dynamic")
+        let ci = GitHub.Run(id: 3, name: "CI", status: "completed", conclusion: "success", url: nil)
+        XCTAssertEqual(GitHub.summarize([codeql, pages, ci]), .passed)
+        XCTAssertEqual(GitHub.summarize([codeql]), .running(done: 0, total: 1), "extras count when they're all there is")
+        codeql.status = "completed"; codeql.conclusion = "success"
+        XCTAssertEqual(GitHub.summarize([codeql]), .passed)
     }
 
     func testParsesRunsAndJobs() {

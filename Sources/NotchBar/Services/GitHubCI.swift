@@ -94,6 +94,18 @@ enum GitHub {
         var status: String        // queued, in_progress, completed…
         var conclusion: String?   // success, failure, cancelled, skipped, neutral…
         var url: URL?
+        var event = "push"
+        var path = ""
+
+        var failed: Bool { ["failure", "timed_out", "startup_failure", "action_required"].contains(conclusion ?? "") }
+        /// Security scans and Pages deploys: slow and not what "did CI pass" means.
+        var isExtra: Bool { event == "dynamic" || path.lowercased().contains("codeql") || name.lowercased().contains("codeql") }
+    }
+
+    /// The runs that decide pass or fail (extras only count when they're all there is).
+    static func relevant(_ runs: [Run]) -> [Run] {
+        let core = runs.filter { !$0.isExtra }
+        return core.isEmpty ? runs : core
     }
 
     static func runs(fromJSON data: Data) -> [Run] {
@@ -102,24 +114,26 @@ enum GitHub {
         return list.compactMap { r in
             guard let id = r["id"] as? Int else { return nil }
             return Run(id: id, name: r["name"] as? String ?? "CI", status: r["status"] as? String ?? "queued",
-                       conclusion: r["conclusion"] as? String, url: (r["html_url"] as? String).flatMap(URL.init(string:)))
+                       conclusion: r["conclusion"] as? String, url: (r["html_url"] as? String).flatMap(URL.init(string:)),
+                       event: r["event"] as? String ?? "push", path: r["path"] as? String ?? "")
         }
     }
 
-    /// One state for all of a commit's workflow runs.
-    static func summarize(_ runs: [Run]) -> CIStatus.State {
+    /// One state for a commit's workflow runs. A failure counts right away;
+    /// passing waits for every run that matters.
+    static func summarize(_ all: [Run]) -> CIStatus.State {
+        let runs = relevant(all)
         guard !runs.isEmpty else { return .waiting }
+        if let bad = runs.first(where: \.failed) { return .failed(job: bad.name) }
         let done = runs.filter { $0.status == "completed" }
         if done.count < runs.count { return .running(done: done.count, total: runs.count) }
-        let bad = done.first { ["failure", "timed_out", "startup_failure", "action_required"].contains($0.conclusion ?? "") }
-        if let bad { return .failed(job: bad.name) }
         return .passed
     }
 
     /// The run worth opening: a failed one, else a running one, else the first.
-    static func focus(_ runs: [Run]) -> Run? {
-        runs.first { ["failure", "timed_out", "startup_failure"].contains($0.conclusion ?? "") }
-            ?? runs.first { $0.status != "completed" } ?? runs.first
+    static func focus(_ all: [Run]) -> Run? {
+        let runs = relevant(all)
+        return runs.first(where: \.failed) ?? runs.first { $0.status != "completed" } ?? runs.first
     }
 
     static func failedJob(fromJSON data: Data) -> String? {
