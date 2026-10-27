@@ -107,6 +107,14 @@ struct SettingsView: View {
             }
 
             Section {
+                Toggle("Watch GitHub Actions after an agent pushes", isOn: $prefs.githubCI)
+            } header: {
+                Text("GitHub")
+            } footer: {
+                Text("Shows CI for the pushed commit and taps you when it passes or fails. Uses your gh login for private repos. Only the repo name and commit go to GitHub.")
+            }
+
+            Section {
                 Toggle("Check for updates automatically", isOn: $prefs.autoUpdate)
                 HStack {
                     Text(updateStatus).foregroundStyle(.secondary)

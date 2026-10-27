@@ -26,6 +26,7 @@ final class NotchController: NSObject {
     let system = SystemMonitor()
     let pet = PetBrain()
     let updater = Updater()
+    let ci = CIWatcher()
 
     var panel: NotchPanel!
     var panelContentView: NSView? { panel.contentView }
@@ -390,6 +391,35 @@ final class NotchController: NSObject {
         }
         store.onProjectSeen = { [weak self] p in self?.prefs.noteProject(p) }
 
+        // GitHub Actions: watch what agents push, tap you when it lands.
+        store.onPush = { [weak self] sid, root in
+            guard let self, self.prefs.githubCI else { return }
+            self.ci.pushed(sessionID: sid, root: root)
+        }
+        ci.onUpdate = { [weak self] sid, st in
+            guard let self else { return }
+            if self.store.session(sid) == nil { self.ci.forget(sid); return }
+            self.store.setCI(sid, st)
+        }
+        ci.onFinish = { [weak self] sid, st in
+            guard let self, let s = self.store.session(sid) else { return }
+            let mins = st.finishedAt.map { Int(($0.timeIntervalSince(st.startedAt) / 60).rounded()) } ?? 0
+            let took = mins < 1 ? "under a minute" : "\(mins)m"
+            switch st.state {
+            case .failed(let job):
+                self.store.showBanner(Banner(kind: .failed, sessionID: sid, agent: s.agent,
+                                             title: "\(s.projectName) CI failed",
+                                             subtitle: (job.map { "\($0) broke" } ?? "a check broke") + ". tap to see why",
+                                             action: st.url.map { .open($0) } ?? .jump, important: true))
+                if self.prefs.sounds { Sounds.approval() }
+            default:
+                self.store.showBanner(Banner(kind: .done, sessionID: sid, agent: s.agent,
+                                             title: "\(s.projectName) CI passed",
+                                             subtitle: "all green in \(took). ship it",
+                                             action: st.url.map { .open($0) } ?? .jump))
+            }
+        }
+
         store.onNewApproval = { [weak self] in
             guard let self else { return }
             self.updateScreen()
@@ -612,6 +642,7 @@ final class NotchController: NSObject {
         case .receipt: openReceipt()
         case .update: openUpdate()
         case .report: openReport()
+        case let .open(url): NSWorkspace.shared.open(url)
         }
     }
 
@@ -1006,6 +1037,22 @@ extension NotchController {
             return true
         case "_TourStep":
             NotificationCenter.default.post(name: .init("NBTourStep"), object: json["step"] as? Int ?? 0)
+            return true
+        case "_CI":
+            // Fake a CI state on a session: waiting, running, passed or failed.
+            guard let sid = (json["sid"] as? String) ?? store.primary?.id else { return true }
+            let state: CIStatus.State
+            switch json["state"] as? String {
+            case "running": state = .running(done: json["done"] as? Int ?? 1, total: json["total"] as? Int ?? 3)
+            case "passed": state = .passed
+            case "failed": state = .failed(job: json["job"] as? String ?? "Test (macOS 14)")
+            default: state = .waiting
+            }
+            var st = CIStatus(state: state, repo: "mumbaitrip2022/notchma", sha: "b427fa3e0000000000000000000000000000000",
+                              url: URL(string: "https://github.com/mumbaitrip2022/notchma/actions"),
+                              startedAt: Date().addingTimeInterval(-200))
+            if st.isFinished { st.finishedAt = Date(); ci.onFinish?(sid, st) }
+            store.setCI(sid, st)
             return true
         case "_PetAct":
             switch json["act"] as? String {

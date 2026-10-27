@@ -67,6 +67,7 @@ enum BannerAction: Equatable {
     case receipt              // open today's receipt
     case update               // open the update page
     case report               // open Report a Problem
+    case open(URL)            // open a page, e.g. a CI run on GitHub
 }
 
 /// A short Dynamic-Island-style alert shown in the notch.
@@ -134,6 +135,8 @@ struct Session: Identifiable, Equatable {
     var lastMessage: String?
     var editedFiles: [String] = []
     var testResult: TestResult?
+    /// GitHub Actions for the last commit this session pushed.
+    var ci: CIStatus?
 
     // Attention queue: when it started waiting on you, and whether you've looked.
     var waitingSince: Date?

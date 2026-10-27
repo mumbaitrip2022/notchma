@@ -41,6 +41,8 @@ final class SessionStore: ObservableObject {
     var sendReply: ((SocketServer.ClientID, [String: Any]) -> Void)?
     /// Recently seen project roots (for the launcher).
     var onProjectSeen: ((String) -> Void)?
+    /// An agent pushed commits (session id, repo folder).
+    var onPush: ((String, String) -> Void)?
 
     // MARK: private state
     private struct Tracking {
@@ -181,6 +183,9 @@ final class SessionStore: ObservableObject {
             t.failStreak[Self.callSignature(tool, input)] = nil // it worked
             finishStep(&s, tool: tool, ok: true)
             noteOutput(&s, tool: tool, e)
+            if tool == "Bash", let cmd = input["command"] as? String, GitHub.isPush(cmd) {
+                onPush?(sid, s.projectRoot.isEmpty ? s.cwd : s.projectRoot)
+            }
 
         case "PermissionRequest":
             tracking[sid] = t
@@ -507,6 +512,13 @@ final class SessionStore: ObservableObject {
             s.actions[i].note = r.short
             s.actions[i].ok = r.failed == 0
         }
+    }
+
+    /// CI news for a session's pushed commit.
+    func setCI(_ sid: String, _ ci: CIStatus?) {
+        guard var s = sessions[sid], s.ci != ci else { return }
+        s.ci = ci
+        sessions[sid] = s
     }
 
     // MARK: - Attention queue

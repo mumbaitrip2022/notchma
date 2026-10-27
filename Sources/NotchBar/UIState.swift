@@ -89,6 +89,8 @@ final class Prefs: ObservableObject {
     @Published var showPet: Bool { didSet { d.set(showPet, forKey: "showPet") } }
     /// Check GitHub once a day for a new NotchBar.
     @Published var autoUpdate: Bool { didSet { d.set(autoUpdate, forKey: "autoUpdate") } }
+    /// Watch GitHub Actions after an agent pushes.
+    @Published var githubCI: Bool { didSet { d.set(githubCI, forKey: "githubCI") } }
     /// Terminal used to start new agents: "auto", or a bundle id.
     @Published var launchTerminal: String { didSet { d.set(launchTerminal, forKey: "launchTerminal") } }
     /// Most-recent-first project folders seen in sessions.
@@ -130,6 +132,7 @@ final class Prefs: ObservableObject {
         showVitals = d.object(forKey: "showVitals") as? Bool ?? true
         showPet = d.object(forKey: "showPet") as? Bool ?? true
         autoUpdate = d.object(forKey: "autoUpdate") as? Bool ?? true
+        githubCI = d.object(forKey: "githubCI") as? Bool ?? true
         launchTerminal = d.string(forKey: "launchTerminal") ?? "auto"
         recentProjects = (d.stringArray(forKey: "recentProjects") ?? [])
             .filter { FileManager.default.fileExists(atPath: $0) }
