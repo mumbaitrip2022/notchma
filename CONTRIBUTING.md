@@ -51,7 +51,7 @@ These commands don't exist in release builds.
 ## House rules
 
 - **Fail safe first.** No change may leave an agent stuck waiting on NotchBar.
-- **Private by default.** No analytics and no new network requests. The only request NotchBar makes is the daily update check.
+- **Private by default.** No analytics and no new network requests. NotchBar only talks to GitHub for the daily update check and for CI status after an agent pushes.
 - **Light.** Nothing polls while idle. Animations stop when they aren't visible.
 - **Look and feel.** Solid colors only, no gradients. Grayscale by default; amber means "needs you", blue means "your reply", green means "done", red means "danger".
 - **Words.** Short, friendly, lowercase for casual lines. No em or en dashes in app text (CI checks this with `./scripts/check-copy.sh`).

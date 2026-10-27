@@ -283,6 +283,13 @@ enum GitHub {
         return out
     }
 
+    /// "Test (macOS 14 · Apple silicon)" → "Test (macOS 14)": short enough for a banner.
+    static func shortJob(_ name: String) -> String {
+        guard let open = name.range(of: " ("), let dot = name.range(of: " · ", range: open.upperBound..<name.endIndex),
+              name.hasSuffix(")") else { return name }
+        return String(name[..<dot.lowerBound]) + ")"
+    }
+
     /// "Package: Build DMG and zip" for the first job that's running.
     static func liveStep(_ jobs: [Job]) -> String? {
         guard let j = jobs.first(where: { $0.status == "in_progress" && $0.step != nil }), var step = j.step else { return nil }
@@ -376,7 +383,7 @@ final class CIWatcher {
                 }
                 st.step = GitHub.liveStep(jobs)
                 if case .failed = st.state, let bad = jobs.first(where: \.failed) {
-                    st.state = .failed(job: bad.name)   // the exact job, e.g. "Test (macOS 14)"
+                    st.state = .failed(job: GitHub.shortJob(bad.name))   // the exact job, e.g. "Test (macOS 14)"
                     st.failedStep = bad.failedStep
                 }
                 if !(self.watches[sid]?.started ?? true) {

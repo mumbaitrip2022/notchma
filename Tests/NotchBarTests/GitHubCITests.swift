@@ -163,4 +163,10 @@ final class GitHubCITests: XCTestCase {
         let ci = try? String(contentsOfFile: #filePath.components(separatedBy: "/Tests/")[0] + "/.github/workflows/ci.yml", encoding: .utf8)
         XCTAssertEqual(ci.map(GitHub.plannedStages(workflow:)), ["Lint", "Test", "Package", "Smoke test", "All checks passed"])
     }
+
+    func testShortJobNames() {
+        XCTAssertEqual(GitHub.shortJob("Test (macOS 14 · Apple silicon)"), "Test (macOS 14)")
+        XCTAssertEqual(GitHub.shortJob("Test (macOS 14)"), "Test (macOS 14)")
+        XCTAssertEqual(GitHub.shortJob("Lint · fast"), "Lint · fast")
+    }
 }

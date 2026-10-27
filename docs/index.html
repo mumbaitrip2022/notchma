@@ -331,6 +331,103 @@ h2 { margin-top: 12px; font-size: clamp(34px, 5vw, 56px); font-weight: 600; lett
 .bench { max-width: 640px; margin: 22px auto 0; text-align: center; font-size: 13.5px; line-height: 1.55; color: var(--ink3); }
 .bench code { font: 500 12.5px var(--mono); color: var(--ink2); }
 
+/* ---------- GitHub Actions ---------- */
+#ci .sub { margin: 18px auto 0; max-width: 610px; color: var(--ink2); font-size: clamp(16px, 1.8vw, 18px); line-height: 1.5; }
+#ci code, .steps code { font: 500 .88em var(--mono); background: rgba(12,12,14,.06); padding: 2px 6px; border-radius: 6px; color: var(--ink); }
+.cidemo { position: relative; height: 420px; border-radius: 28px; overflow: hidden; isolation: isolate;
+  background: radial-gradient(90% 80% at 85% 110%, #ff8a5c55 0%, transparent 60%), radial-gradient(110% 90% at 10% -10%, #5b4bd1 0%, #231c4d 42%, #0d0b19 100%);
+  box-shadow: 0 0 0 1px var(--line), 0 40px 80px -40px rgba(30,15,90,.55); }
+.cidemo .mbar { position: absolute; inset: 0 0 auto; height: 28px; display: flex; align-items: center; gap: 18px; padding: 0 16px; font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,.85); background: rgba(10,8,25,.28); backdrop-filter: blur(10px); }
+.cidemo .mbar .r { margin-left: auto; opacity: .8; }
+.citerm { position: absolute; left: 28px; bottom: 28px; width: min(380px, calc(100% - 56px)); border-radius: 14px; overflow: hidden; background: rgba(14,13,22,.82); backdrop-filter: blur(16px); box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 24px 50px -20px rgba(0,0,0,.7); }
+.citerm .tb { height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 12px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.citerm .tb i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; } .citerm .tb i:nth-child(2) { background: #febc2e; } .citerm .tb i:nth-child(3) { background: #28c840; }
+.citerm .tb span { margin-left: 8px; font-size: 12px; color: rgba(255,255,255,.45); }
+.citerm pre { padding: 12px 16px 14px; min-height: 84px; font: 13px/1.6 var(--mono); color: #ececf1; white-space: pre-wrap; }
+.citerm .dim { color: rgba(255,255,255,.42); } .citerm .ok { color: #3fb950; } .citerm .car { display: inline-block; width: 7px; height: 14px; margin-bottom: -2px; background: #ececf1; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.cisl { --w: 460px; position: absolute; left: 50%; top: 0; z-index: 2; transform: translateX(-50%); width: 190px; height: 30px; background: #000; border-radius: 0 0 16px 16px; overflow: hidden; color: #fff;
+  box-shadow: 0 20px 44px -16px rgba(0,0,0,.75); transition: width .6s var(--spring), height .6s var(--spring), border-radius .6s var(--ease); }
+.cisl.open { width: var(--w); height: var(--h, 170px); border-radius: 0 0 28px 28px; }
+.cisl .in { width: var(--w); padding: 14px 18px 12px; opacity: 0; transition: opacity .25s; }
+.cisl.open .in { opacity: 1; transition: opacity .35s .18s; }
+.cihead { display: flex; align-items: center; gap: 12px; }
+.ghtile { position: relative; flex: none; width: 38px; height: 38px; border-radius: 11px; background: #2b2b2e; display: grid; place-items: center; }
+.ghtile .ghm { width: 22px; height: 22px; color: #fff; }
+.cibadge { position: absolute; right: -5px; bottom: -5px; width: 19px; height: 19px; border-radius: 50%; border: 3px solid #000; background: #e3b341; display: grid; place-items: center; transition: background .3s, transform .45s var(--spring); }
+.cibadge::after { content: ""; width: 7px; height: 7px; border-radius: 50%; border: 1.8px solid rgba(0,0,0,.8); border-right-color: transparent; animation: spin .8s linear infinite; }
+.cibadge.pass { background: #3fb950; } .cibadge.fail { background: #f85149; }
+.cibadge.pass::after, .cibadge.fail::after { animation: none; border: 0; width: 9px; height: 9px; border-radius: 0; background: no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.6 5.2 4 7.5l4.4-5' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.cibadge.fail::after { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 2l6 6M8 2 2 8' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); }
+.cibadge.pop { transform: scale(1.35); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.citx { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.citx b { font-size: 14.5px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.citx span { font-size: 12.5px; color: rgba(255,255,255,.68); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.citx .sw { animation: swap .45s var(--ease); }
+@keyframes swap { from { opacity: 0; filter: blur(6px); transform: translateY(3px); } }
+.cimeta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.cimeta b { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; color: #e3b341; transition: color .3s; }
+.cimeta span { font: 500 11px var(--mono); color: rgba(255,255,255,.45); }
+#ciPipe { display: block; width: 100%; height: 36px; margin-top: 8px; }
+.cilabels { display: flex; }
+.cilabels span { flex: 1; min-width: 0; text-align: center; font-size: 10.5px; font-weight: 500; color: rgba(255,255,255,.45); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; font-variant-numeric: tabular-nums; transition: color .25s; }
+.cilabels .run { color: #e3b341; font-weight: 600; } .cilabels .pass { color: rgba(255,255,255,.72); } .cilabels .fail { color: #f85149; font-weight: 600; } .cilabels .dim { color: rgba(255,255,255,.22); }
+.cistep { margin-top: 7px; height: 16px; display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: rgba(255,255,255,.7); white-space: nowrap; overflow: hidden; }
+.cistep i { flex: none; width: 0; height: 0; border-left: 6px solid #e3b341; border-top: 4px solid transparent; border-bottom: 4px solid transparent; }
+.cistep.fail i, .cistep.pass i { width: 10px; height: 10px; border: 0; border-radius: 50%; background: #f85149; }
+.cistep.pass i { background: #3fb950; }
+.cictl { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+.cifeat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+.cif { padding: 22px 22px 20px; border-radius: 24px; background: var(--card); box-shadow: 0 0 0 1px var(--line), 0 10px 30px -20px rgba(12,12,14,.18); }
+.cif .ic { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--ink); color: #fff; }
+.cif .ic svg { width: 18px; height: 18px; }
+.cif h3 { margin-top: 14px; font-size: 17px; font-weight: 600; letter-spacing: -.015em; }
+.cif p { margin-top: 5px; font-size: 15px; color: var(--ink2); line-height: 1.5; }
+.cisetup { margin-top: 96px; }
+.cisetup .hd { margin-bottom: 36px; }
+.cisetup h2 { font-size: clamp(28px, 3.6vw, 42px); }
+.steps { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: st; }
+.steps li { position: relative; display: flex; flex-direction: column; border-radius: 28px; background: var(--card); box-shadow: 0 0 0 1px var(--line), 0 10px 30px -20px rgba(12,12,14,.18); overflow: hidden; }
+.steps .vz { position: relative; height: 190px; display: grid; place-items: center; background: #f4f2ec; border-bottom: 1px solid var(--line); overflow: hidden; }
+.steps .tx { padding: 20px 22px 22px; }
+.steps .n { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 13px; font-weight: 600; }
+.steps h3 { margin-top: 12px; font-size: 18px; font-weight: 600; letter-spacing: -.015em; }
+.steps p { margin-top: 6px; font-size: 15px; line-height: 1.5; color: var(--ink2); }
+.repo { width: min(260px, 86%); padding: 14px 16px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px var(--line), 0 14px 30px -18px rgba(12,12,14,.3); }
+.repo .rw { display: flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 600; }
+.repo .rw .ghm { width: 18px; height: 18px; }
+.repo .pub { margin-left: auto; font-size: 11px; font-weight: 500; color: var(--ink2); padding: 1px 8px; border-radius: 99px; box-shadow: 0 0 0 1px var(--line2); }
+.repo .ok { margin-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #1a7f37; font-weight: 500; }
+.repo .ok i { width: 18px; height: 18px; border-radius: 50%; background: #2da44e; display: grid; place-items: center; }
+.repo .ok i::after { content: ""; width: 8px; height: 4px; border: solid #fff; border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
+.repo .ln { margin-top: 10px; height: 6px; border-radius: 99px; background: #efede6; } .repo .ln + .ln { width: 64%; }
+.gh2 { width: min(290px, 90%); }
+.gh2 .term2 { border-radius: 12px; background: #121118; padding: 10px 12px; font: 11.5px/1.65 var(--mono); color: #e9e9ee; min-height: 92px; box-shadow: 0 14px 30px -18px rgba(0,0,0,.5); }
+.gh2 .term2 .y { color: #e3b341; } .gh2 .term2 .g { color: #3fb950; } .gh2 .term2 .d { color: rgba(255,255,255,.45); }
+.gh2 .row { margin-top: 10px; display: flex; align-items: center; gap: 9px; padding: 9px 10px 9px 12px; border-radius: 12px; background: #fff; box-shadow: 0 0 0 1px var(--line); font-size: 12.5px; font-weight: 500; }
+.gh2 .row .ghm { width: 16px; height: 16px; flex: none; }
+.gh2 .row .bt { margin-left: auto; padding: 4px 10px; border-radius: 8px; background: #0a84ff; color: #fff; font-size: 12px; transition: transform .12s, background .3s; }
+.gh2 .row .bt.press { transform: scale(.94); }
+.gh2 .row.ok .bt { background: #fff; color: var(--ink2); box-shadow: 0 0 0 1px var(--line2); }
+.gh2 .row.ok .who { color: #1a7f37; }
+.pill3 { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.pill3 .np { height: 34px; padding: 0 14px 0 10px; border-radius: 0 0 17px 17px; background: #000; color: #fff; display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; min-width: 210px; box-shadow: 0 14px 30px -14px rgba(0,0,0,.6); }
+.pill3 .np .ghm { width: 15px; height: 15px; }
+.pill3 .np .st { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; font-variant-numeric: tabular-nums; color: #e3b341; }
+.pill3 .np .st i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #e3b341; border-right-color: transparent; animation: spin .8s linear infinite; }
+.pill3 .np.done .st { color: #3fb950; } .pill3 .np.done .st i { border: 0; background: #3fb950; animation: none; }
+.pill3 .cmd { font: 500 13px var(--mono); color: var(--ink); background: #fff; padding: 7px 12px; border-radius: 10px; box-shadow: 0 0 0 1px var(--line); }
+.cisetup .bench { margin-top: 22px; }
+@media (max-width: 980px) { .steps, .cifeat { grid-template-columns: 1fr; } .steps .vz { height: 170px; } }
+@media (max-width: 640px) {
+  .cidemo { height: 380px; border-radius: 22px; }
+  .citerm { left: 14px; right: 14px; bottom: 14px; width: auto; }
+  .cidemo .mbar .hm { display: none; }
+  .cisl .in { padding: 12px 14px 10px; }
+  .cisetup { margin-top: 72px; }
+}
+
 /* ---------- faq ---------- */
 .faq { max-width: 760px; margin: 0 auto; }
 .faq details { border-bottom: 1px solid var(--line); }
@@ -461,7 +558,7 @@ footer a:hover { color: var(--ink); }
 <header class="isle" id="isle"><div class="isb" id="isb">
   <div class="il" data-s="full">
     <a class="brand" href="#top"><canvas class="px" id="navKitty" width="26" height="26"></canvas>NotchBar</a>
-    <nav class="links"><a href="#features">Features</a><a href="#mochi">Mochi</a><a href="#faq">FAQ</a></nav>
+    <nav class="links"><a href="#features">Features</a><a href="#ci">CI</a><a href="#mochi">Mochi</a><a href="#faq">FAQ</a></nav>
     <a class="gh" href="https://github.com/mumbaitrip2022/notchma" aria-label="GitHub"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.690-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg></a>
     <a class="btn w xs" data-dl href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg"><span class="bar"></span><span class="label">Download</span></a>
   </div>
@@ -472,7 +569,7 @@ footer a:hover { color: var(--ink); }
 <main id="top">
   <section class="hero">
     <div class="wrap">
-      <a class="news rise" href="https://github.com/mumbaitrip2022/notchma/releases/latest"><b id="ver">New</b>Mochi got a glow up<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+      <a class="news rise" href="https://github.com/mumbaitrip2022/notchma/releases/latest"><b id="ver">New</b>GitHub Actions in your notch<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
       <h1 class="rise" style="animation-delay:.06s">Your agents work.<br><span class="soft">Your notch keeps watch</span><span class="inotch"><canvas class="px" id="h1Kitty" width="32" height="32"></canvas></span></h1>
       <p class="lede rise" style="animation-delay:.14s">Claude Code, Codex and Cursor report to the black bar you've been ignoring. Approve in one click. Get back to thinking.</p>
       <div class="ctas rise" style="animation-delay:.22s">
@@ -664,10 +761,49 @@ footer a:hover { color: var(--ink); }
     </div>
   </section>
 
+  <section class="blk wrap" id="ci">
+    <div class="hd reveal"><div class="eyebrow">GitHub Actions</div><h2>Your agent pushed.<br>Your notch watches CI.</h2>
+      <p class="sub">The moment an agent runs <code>git push</code>, the notch plays the pipeline live, stage by stage. Green and it tells you. Red and it names the job and the step that broke, before you even open GitHub.</p></div>
+    <div class="reveal">
+      <div class="cidemo" id="ciDemo" aria-label="Demo: an agent pushes and the notch shows GitHub Actions running live">
+        <div class="mbar"><svg width="12" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.68ZM14.1 5.85c.63-.77 1.06-1.83.94-2.9-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.27Z"/></svg><b>Warp</b><span class="hm">File</span><span class="hm">Edit</span><span class="r" id="ciClock">9:41 AM</span></div>
+        <div class="cisl" id="ciIsl"><div class="in" id="ciIn">
+          <div class="cihead">
+            <div class="ghtile"><svg class="ghm " viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span class="cibadge" id="ciBadge"></span></div>
+            <div class="citx"><b id="ciT">notchbar pushed to main</b><span id="ciS">CI is on it. 8 jobs lined up</span></div>
+            <div class="cimeta"><b id="ciTime">0s</b><span>a6c2765</span></div>
+          </div>
+          <canvas id="ciPipe"></canvas>
+          <div class="cilabels" id="ciLabels"></div>
+          <div class="cistep" id="ciStep"><i></i><span></span></div>
+        </div></div>
+        <div class="citerm"><div class="tb"><i></i><i></i><i></i><span>claude · ~/notchbar</span></div><pre id="ciCmd"></pre></div>
+      </div>
+      <div class="cictl" id="ciCtl"><button class="chip on" type="button" data-run="pass"><i></i><span>Green run</span></button><button class="chip" type="button" data-run="fail"><i></i><span>Red run</span></button></div>
+    </div>
+    <div class="cifeat reveal">
+      <div class="cif"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="12" r="2.5"/><circle cx="12" cy="12" r="2.5"/><path d="M7.5 12h2M14.5 12h2"/></svg></div><h3>Every stage, live</h3><p>Lint, tests, build, deploy. Matrix jobs fold into one stage, and you see the exact step that's running.</p></div>
+      <div class="cif"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg></div><h3>Breaks? You'll know where</h3><p>Failures show up the second they happen, with the job and step that broke. Slow CodeQL scans never hold it up.</p></div>
+      <div class="cif"><div class="ic"><svg class="ghm " viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg></div><h3>One tap to the logs</h3><p>Tap the banner and the failed run opens on GitHub. The session row keeps a CI card for 15 minutes.</p></div>
+    </div>
+    <div class="cisetup" id="setup">
+      <div class="hd reveal"><div class="eyebrow">Setup</div><h2>Ready in about 30 seconds</h2></div>
+      <ol class="steps reveal">
+        <li><div class="vz"><div class="repo"><div class="rw"><svg class="ghm " viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>you/your-app<span class="pub">Public</span></div><div class="ln"></div><div class="ln"></div><div class="ok"><i></i>Works out of the box</div></div></div>
+          <div class="tx"><span class="n">1</span><h3>Public repo? You're done.</h3><p>Nothing to set up. The next push your agent makes shows up in the notch. No token, no account.</p></div></li>
+        <li><div class="vz"><div class="gh2" id="ghConnect"><div class="term2" id="ghTerm"></div><div class="row" id="ghRow"><svg class="ghm " viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span class="who" id="ghWho">Not connected</span><span class="bt" id="ghBt">Connect GitHub</span></div></div></div>
+          <div class="tx"><span class="n">2</span><h3>Private repo? Connect once.</h3><p>Settings › GitHub › <b>Connect GitHub</b>. Terminal opens, you approve a one time code in your browser, and the notch picks it up by itself.</p></div></li>
+        <li><div class="vz"><div class="pill3"><span class="cmd">$ git push</span><div class="np" id="ciMini"><svg class="ghm " viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>notchbar<span class="st"><i></i><span id="ciMiniT">CI 2/5</span></span></div></div></div>
+          <div class="tx"><span class="n">3</span><h3>Let your agent push.</h3><p>Claude Code, Codex or Cursor. Any <code>git push</code> lights up the notch, even from a subfolder of the repo.</p></div></li>
+      </ol>
+      <p class="bench reveal">Already use the GitHub CLI? Then you're connected already. NotchBar borrows your <code>gh</code> login and never stores a token. Only the repo name and commit go to GitHub, and you can turn it off in Settings.</p>
+    </div>
+  </section>
+
   <section class="blk wrap" id="light">
     <div class="hd reveal"><div class="eyebrow">Featherweight</div><h2>Lives in your notch.<br>Not in your RAM.</h2></div>
     <div class="stats reveal">
-      <div class="stat"><div class="sl">Download</div><div class="sv"><b data-n="2.1">2.1</b><small>MB</small></div><p>About one phone photo.</p>
+      <div class="stat"><div class="sl">Download</div><div class="sv"><b data-n="2.3">2.3</b><small>MB</small></div><p>About one phone photo.</p>
         <div class="viz"><div class="vbar dl"><i></i></div><div class="cap"><span>0.2 s</span><span>on 100 Mbps</span></div></div></div>
       <div class="stat"><div class="sl">Memory</div><div class="sv"><b data-n="19">19</b><small>MB</small></div><p>Everything, Mochi included.</p>
         <div class="viz"><div class="vbar ram"><i></i></div><div class="cap"><span>19 MB</span><span>of 8 GB</span></div></div></div>
@@ -1081,6 +1217,176 @@ fetch(`https://api.github.com/repos/${REPO}/releases/latest`).then((r) => (r.ok 
 const ua = navigator.userAgent;
 if (!(/Macintosh|Mac OS X/.test(ua) && !/iPhone|iPad/.test(ua) && navigator.maxTouchPoints < 2)) $$(".notmac").forEach((e) => e.classList.add("show"));
 $("#copy").addEventListener("click", async () => { const link = location.origin + location.pathname.replace(/index\.html$/, "") + "download/"; try { await navigator.clipboard.writeText(link); toast("Link copied"); } catch { prompt("Copy this link", link); } });
+/* ================= GitHub Actions demo ================= */
+(() => {
+  const demo = $("#ciDemo"); if (!demo) return;
+  vis.observe(demo);
+  const islEl = $("#ciIsl"), inEl = $("#ciIn"), cv = $("#ciPipe"), ctx = cv.getContext("2d"), labels = $("#ciLabels");
+  const T = $("#ciT"), S = $("#ciS"), TM = $("#ciTime"), BD = $("#ciBadge"), STEP = $("#ciStep"), CMD = $("#ciCmd");
+  const C = { pass: "#3fb950", fail: "#f85149", run: "#e3b341" };
+  const NAMES = ["Lint", "Test", "Package", "Smoke test", "All checks passed"], JOBS = [1, 3, 1, 2, 1];
+  const STEPS = ["Lint: Workflow files", "Test: swift test", "Package: Build DMG and zip", "Smoke test: Install, launch, drive and quit", "All checks passed: Result"];
+  // When each stage starts, when each of its jobs finishes (seconds after the banner opens).
+  const PLAN = { pass: [[0, [1.1]], [0, [1.8, 2.4, 3.0]], [3.0, [4.4]], [4.4, [5.2, 5.8]], [5.8, [6.5]]],
+                 fail: [[0, [1.1]], [0, [1.8, 2.5]], [9e9, [9e9]], [9e9, [9e9, 9e9]], [9e9, [9e9]]] };
+  const FIN = { pass: 6.5, fail: 2.5 }, SPEED = 38, OPEN = 1.9, HOLD = 3.6;
+  let mode = "pass", pinned = false, t0 = 0, prev = 0, lastKey = "", lastTitle = "";
+  NAMES.forEach(() => labels.appendChild(document.createElement("span")));
+  const chipsCI = $$("#ciCtl .chip");
+  chipsCI.forEach((b) => b.addEventListener("click", () => { mode = b.dataset.run; pinned = true; t0 = performance.now() - 1000 * (OPEN - .2); paint(); }));
+  function paint() { chipsCI.forEach((b) => b.classList.toggle("on", b.dataset.run === mode)); }
+
+  function stages(u) {
+    return PLAN[mode].map(([start, done], i) => {
+      const fin = done[done.length - 1], n = done.filter((d) => d <= u).length;
+      let state = u < start ? "queued" : u >= fin ? "passed" : "running";
+      if (mode === "fail" && i === 1 && u >= fin) state = "failed";
+      if (mode === "fail" && i > 1 && u >= FIN.fail) state = "skipped";
+      return { state, done: n, jobs: JOBS[i], fin: state === "passed" || state === "failed" ? fin : null };
+    });
+  }
+  function size() {
+    const w = Math.min(470, demo.clientWidth - 20);
+    islEl.style.setProperty("--w", w + "px");
+    islEl.style.setProperty("--h", inEl.offsetHeight + "px");
+    const dpr = devicePixelRatio || 1; cv.width = Math.round(cv.clientWidth * dpr); cv.height = Math.round(36 * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  addEventListener("resize", size);
+
+  const circ = (x, y, r) => { ctx.beginPath(); ctx.arc(x, y, Math.max(0, r), 0, Math.PI * 2); };
+  function poly(pts, k) { // stroke the first k (0..1) of a polyline
+    const segs = []; let tot = 0;
+    for (let i = 1; i < pts.length; i++) { const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); segs.push(l); tot += l; }
+    let left = tot * k; ctx.beginPath(); ctx.moveTo(...pts[0]);
+    for (let i = 1; i < pts.length && left > 0; i++) { const f = Math.min(1, left / segs[i - 1]); ctx.lineTo(pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * f, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * f); left -= segs[i - 1]; }
+    ctx.stroke();
+  }
+  function draw(st, u, t) {
+    const W = cv.clientWidth, H = 36, n = st.length, col = W / n, cy = H / 2, r = 7.5, xs = st.map((_, i) => (i + .5) * col);
+    const fi = st.findIndex((s) => s.state === "failed"), dim = (i) => fi >= 0 && i > fi;
+    ctx.clearRect(0, 0, W, H); ctx.lineCap = "round"; ctx.lineJoin = "round";
+    for (let i = 0; i < n - 1; i++) {
+      const a = xs[i] + r + 3, b = xs[i + 1] - r - 3, R = st[i + 1];
+      ctx.globalAlpha = dim(i + 1) ? .45 : 1;
+      ctx.fillStyle = "rgba(255,255,255,.12)"; ctx.fillRect(a, cy - 1, b - a, 2);
+      if (R.state === "passed" || R.state === "failed") { ctx.fillStyle = R.state === "failed" ? C.fail : C.pass; ctx.fillRect(a, cy - 1, b - a, 2); }
+      if (R.state === "running") {
+        ctx.fillStyle = "rgba(227,179,65,.28)"; ctx.fillRect(a, cy - 1, b - a, 2);
+        const len = b - a, tail = Math.min(24, len * .7), p = ((t / .95 + i * .21) % 1), head = a + (len + tail) * p;
+        ctx.save(); ctx.beginPath(); ctx.rect(a, cy - 3, len, 6); ctx.clip();
+        const g = ctx.createLinearGradient(head - tail, 0, head, 0); g.addColorStop(0, "rgba(227,179,65,0)"); g.addColorStop(1, C.run);
+        ctx.fillStyle = g; ctx.fillRect(head - tail, cy - 1, tail, 2); circ(head, cy, 1.8); ctx.fillStyle = C.run; ctx.fill(); ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+    }
+    st.forEach((s, i) => {
+      let x = xs[i]; const age = s.fin != null ? u - s.fin : 99;
+      let rr = r * (age >= 0 && age < .36 ? 1 + .26 * Math.sin(Math.PI * age / .36) : 1);
+      if (s.state === "failed" && age < .55) x += Math.sin(age * 46) * 3.4 * (1 - age / .55);
+      ctx.globalAlpha = dim(i) ? .45 : 1;
+      if (s.state === "queued") { ctx.setLineDash([2.2, 2]); ctx.lineWidth = 1.5; ctx.strokeStyle = "rgba(255,255,255,.28)"; circ(x, cy, rr - .75); ctx.stroke(); ctx.setLineDash([]); }
+      else if (s.state === "skipped") { circ(x, cy, rr); ctx.fillStyle = "rgba(255,255,255,.14)"; ctx.fill(); ctx.strokeStyle = "rgba(255,255,255,.5)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x - rr * .4, cy); ctx.lineTo(x + rr * .4, cy); ctx.stroke(); }
+      else if (s.state === "running") {
+        ctx.lineWidth = 2; ctx.strokeStyle = "rgba(227,179,65,.18)"; circ(x, cy, rr - 1); ctx.stroke();
+        if (ctx.createConicGradient) { const g = ctx.createConicGradient(t * Math.PI * 2 / .9, x, cy); g.addColorStop(0, "rgba(227,179,65,0)"); g.addColorStop(.5, "rgba(227,179,65,.15)"); g.addColorStop(1, C.run); ctx.strokeStyle = g; circ(x, cy, rr - 1); ctx.stroke(); }
+        else { const a0 = t * Math.PI * 2 / .9; ctx.strokeStyle = C.run; ctx.beginPath(); ctx.arc(x, cy, rr - 1, a0, a0 + 4); ctx.stroke(); }
+        const pl = .5 + .5 * Math.sin(t * 5); circ(x, cy, rr * (.3 + .08 * pl)); ctx.fillStyle = `rgba(227,179,65,${.75 + .25 * pl})`; ctx.fill();
+      } else {
+        const col2 = s.state === "passed" ? C.pass : C.fail;
+        if (age < .75) { const q = 1 - Math.pow(1 - age / .75, 3); ctx.globalAlpha = (dim(i) ? .45 : 1) * .7 * (1 - q); ctx.strokeStyle = col2; ctx.lineWidth = 1.6; circ(x, cy, rr + (s.state === "failed" ? 13 : 10) * q); ctx.stroke(); ctx.globalAlpha = dim(i) ? .45 : 1; }
+        if (s.state === "failed" && age > .5) { const b = .5 + .5 * Math.sin((age - .5) * 3.2); circ(x, cy, rr + 3 + 2 * b); ctx.fillStyle = `rgba(248,81,73,${.1 + .12 * b})`; ctx.fill(); }
+        circ(x, cy, rr); ctx.fillStyle = col2; ctx.fill();
+        const k = Math.min(1, Math.max(0, (age - .04) / .26));
+        ctx.strokeStyle = "rgba(0,0,0,.85)"; ctx.lineWidth = Math.max(1.6, rr * .26);
+        if (s.state === "passed") poly([[x - rr * .42, cy + rr * .02], [x - rr * .12, cy + rr * .32], [x + rr * .44, cy - rr * .3]], k);
+        else { const d = rr * .34; poly([[x - d, cy - d], [x + d, cy + d]], Math.min(1, k * 2)); if (k > .5) poly([[x + d, cy - d], [x - d, cy + d]], (k - .5) * 2); }
+      }
+      ctx.globalAlpha = 1;
+    });
+    // Victory shine across the whole pipeline.
+    if (mode === "pass") {
+      const p = (u - FIN.pass - .28) / .85;
+      if (p > 0 && p < 1) {
+        const e = p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2, x = -50 + (W + 100) * e;
+        ctx.save(); ctx.beginPath(); xs.forEach((xx) => { ctx.moveTo(xx + r + 1.5, cy); ctx.arc(xx, cy, r + 1.5, 0, Math.PI * 2); }); ctx.rect(xs[0], cy - 1.5, xs[n - 1] - xs[0], 3); ctx.clip();
+        ctx.globalCompositeOperation = "lighter"; const g = ctx.createLinearGradient(x - 40, 0, x + 40, 0);
+        g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(.5, "rgba(255,255,255,.85)"); g.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = g; ctx.fillRect(x - 40, 0, 80, H); ctx.restore();
+      }
+    }
+  }
+  const fmt = (s) => { s = Math.max(0, Math.round(s)); return s < 60 ? s + "s" : Math.floor(s / 60) + "m " + (s % 60) + "s"; };
+  function setText(el, txt) { if (el.textContent !== txt) { el.textContent = txt; el.classList.remove("sw"); void el.offsetWidth; el.classList.add("sw"); } }
+
+  function frame(ts) {
+    requestAnimationFrame(frame);
+    if (!seen.get(demo) || document.hidden) { t0 += ts - prev; prev = ts; return; }
+    prev = ts;
+    if (!t0) { t0 = ts; size(); }
+    const t = (ts - t0) / 1000, fin = FIN[mode], end = OPEN + .35 + fin + .5 + HOLD;
+    if (t > end + .9) { t0 = ts; if (!pinned) { mode = mode === "pass" ? "fail" : "pass"; paint(); } lastKey = ""; return; }
+    // Terminal: the agent pushes.
+    const cmd = "git push origin main", typed = cmd.slice(0, Math.round(clamp((t - .25) / .8) * cmd.length));
+    const key = typed + (t > 1.25 ? "|out" : "");
+    if (key !== lastKey) {
+      lastKey = key;
+      CMD.innerHTML = `<span class="dim">$</span> ${typed}${t > 1.25 ? `\n<span class="dim">To github.com:you/notchbar.git\n   41c09e2..a6c2765  main -> main</span>` : '<span class="car"></span>'}`;
+    }
+    const open = t >= OPEN && t < end;
+    islEl.classList.toggle("open", open);
+    const hh = inEl.offsetHeight + "px"; // re-measured: the web font can land after the first layout
+    if (islEl.style.getPropertyValue("--h") !== hh) islEl.style.setProperty("--h", hh);
+    const u = t - OPEN - .35, st = stages(Math.max(0, u));
+    const done = u >= fin + (mode === "pass" ? .3 : .45);
+    if (open) draw(st, u, t);
+    // Labels and the step that's running.
+    st.forEach((s, i) => {
+      const el = labels.children[i], lab = NAMES[i] + (JOBS[i] > 1 ? (s.state === "running" ? ` ${s.done}/${s.jobs}` : ` ×${s.jobs}`) : "");
+      if (el.textContent !== lab) el.textContent = lab;
+      el.className = mode === "fail" && i > 1 && u >= FIN.fail ? "dim" : s.state === "running" ? "run" : s.state === "passed" ? "pass" : s.state === "failed" ? "fail" : "";
+    });
+    const ri = st.findIndex((s) => s.state === "running");
+    STEP.classList.toggle("fail", mode === "fail" && done);
+    STEP.classList.toggle("pass", mode === "pass" && done);
+    STEP.lastChild.textContent = done ? (mode === "fail" ? "tap to open the failed run" : "all 8 jobs green") : ri >= 0 ? STEPS[ri] : "";
+    const title = done ? (mode === "pass" ? "notchbar CI passed" : "notchbar CI failed") : "notchbar pushed to main";
+    if (title !== lastTitle) {
+      lastTitle = title; setText(T, title);
+      setText(S, done ? (mode === "pass" ? "all green in 4m 12s. ship it" : 'Test (macOS 14) broke at "Test"') : "CI is on it. 8 jobs lined up");
+      BD.className = "cibadge" + (done ? (mode === "pass" ? " pass pop" : " fail pop") : "");
+      if (done) setTimeout(() => BD.classList.remove("pop"), 260);
+      TM.style.color = done ? (mode === "pass" ? C.pass : C.fail) : "";
+    }
+    TM.textContent = fmt(done ? (mode === "pass" ? 252 : 95) : 7 + Math.max(0, u) * SPEED);
+  }
+  size(); paint(); requestAnimationFrame(frame);
+  $("#ciClock").textContent = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+  // Setup step 2: connecting GitHub, start to finish.
+  const box = $("#ghConnect"), term = $("#ghTerm"), row = $("#ghRow"), who = $("#ghWho"), bt = $("#ghBt"), nap = sleepFor(box);
+  (async function loop() {
+    for (;;) {
+      term.innerHTML = '<span class="d">waiting for you to connect</span>'; row.classList.remove("ok"); who.textContent = "Not connected"; bt.textContent = "Connect GitHub";
+      await nap(1400); press(bt); await nap(500);
+      const lines = ['<span class="d">$</span> gh auth login --web', '<span class="y">!</span> One-time code: <b>4F2A-9C1B</b>', '<span class="d">Opening github.com in your browser…</span>', '<span class="g">✓</span> Logged in as you'];
+      term.innerHTML = "";
+      for (const l of lines) { term.innerHTML += (term.innerHTML ? "\n" : "") + l; await nap(700); }
+      row.classList.add("ok"); who.textContent = "Connected as @you"; bt.textContent = "Refresh";
+      await nap(3200);
+    }
+  })();
+  term.style.whiteSpace = "pre";
+
+  // Setup step 3: the little notch counting up.
+  const mini = $("#ciMini"), miniT = $("#ciMiniT"), nap3 = sleepFor(mini);
+  (async function loop3() {
+    for (;;) {
+      mini.classList.remove("done");
+      for (let k = 0; k <= 5; k++) { miniT.textContent = k < 5 ? `CI ${k}/5` : "passed"; if (k === 5) mini.classList.add("done"); await nap3(k < 5 ? 650 : 2600); }
+    }
+  })();
+})();
 // Benchmark numbers count up the first time they show.
 function countUp(root) {
   $$("[data-n]", root).forEach((b) => {

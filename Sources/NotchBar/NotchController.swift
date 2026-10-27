@@ -414,10 +414,11 @@ final class NotchController: NSObject {
             let took = CIElapsed.format(st.elapsed)
             switch st.state {
             case .failed(let job):
-                let at = st.failedStep.map { " at \"\($0)\"" } ?? ""
+                let what = job ?? "a check"
+                let subtitle = st.failedStep.map { "\(what) broke at \"\($0)\"" } ?? "\(what) broke. tap to see why"
                 self.store.showBanner(Banner(kind: .ci, sessionID: sid, agent: s.agent,
                                              title: "\(s.projectName) CI failed",
-                                             subtitle: (job.map { "\($0) broke\(at)" } ?? "a check broke") + ". tap to see why",
+                                             subtitle: subtitle,
                                              action: st.url.map { .open($0) } ?? .jump, important: true, ci: st))
                 if self.prefs.sounds { Sounds.approval() }
             default:
@@ -1074,7 +1075,7 @@ extension NotchController {
                 state = .passed
                 for i in stages.indices { stages[i].state = .passed; stages[i].done = stages[i].jobs }
             case "failed":
-                state = .failed(job: "Test (macOS 14 · Apple silicon)")
+                state = .failed(job: GitHub.shortJob("Test (macOS 14 · Apple silicon)"))
                 failedStep = "Test"
                 for i in stages.indices {
                     stages[i].state = i == 0 ? .passed : i == 1 ? .failed : .skipped

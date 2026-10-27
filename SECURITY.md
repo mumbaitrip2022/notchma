@@ -19,4 +19,4 @@ Only the latest release gets security fixes. NotchBar updates itself, so most pe
 - The app's socket (`~/Library/Application Support/NotchBar/nb.sock`, readable only by you)
 - The hook helper and the changes it makes to agent settings files
 - The updater: downloading, verifying (GitHub's SHA-256, bundle id, version, code signature) and installing updates
-- Data leaving your Mac (the only request should be the daily update check)
+- Data leaving your Mac (the only requests should be the daily update check and GitHub Actions status after a push)

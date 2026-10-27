@@ -23,6 +23,7 @@ NotchBar turns the top of your Mac screen into a control center for coding agent
 
 - ✅ **Approve or deny agent requests from the notch.** Claude Code, Codex and Cursor ask, you answer with one click or `⌃⌥Y`, from any app.
 - 👀 **Live status for every session.** What each agent is doing right now, its plan, tests and files edited.
+- 🚦 **GitHub Actions in the notch.** When an agent pushes, watch the CI pipeline live and get tapped the second it goes green or breaks, with the job and step that failed.
 - 📊 **Usage limits and cost.** Claude's 5 hour and weekly limits, Codex windows, context fill, and a forecast of when you'll hit the limit.
 - 🐾 **A notch pet and a daily receipt.** Share what your agents shipped today as a receipt image.
 - 🪶 **Native and light.** Swift, SwiftUI and AppKit. About 20 MB of memory and close to 0% CPU when idle. No Electron, no account, no telemetry.
@@ -34,7 +35,7 @@ NotchBar turns the top of your Mac screen into a control center for coding agent
 
 ## Contents
 
-[Install](#install) · [Agents](#agents) · [Notch pet and daily receipt](#notch-pet-and-daily-receipt) · [Usage and cost](#usage-and-cost) · [Smart approvals](#smart-approvals-and-health) · [Flow features](#flow-features) · [How it works](#how-it-works) · [FAQ](#faq)
+[Install](#install) · [Agents](#agents) · [GitHub Actions](#github-actions) · [Notch pet and daily receipt](#notch-pet-and-daily-receipt) · [Usage and cost](#usage-and-cost) · [Smart approvals](#smart-approvals-and-health) · [Flow features](#flow-features) · [How it works](#how-it-works) · [FAQ](#faq)
 
 ## Install
 
@@ -67,6 +68,28 @@ Needs Xcode 16+ (Swift 6). Apps you build yourself never trigger Gatekeeper warn
 
 - **Codex** asks you to review new hooks once before running them: run `/hooks` in Codex and trust the NotchBar entries.
 - **Cursor** calls hooks for *every* shell and MCP command, not just the ones it would ask about, so notch approvals are off by default. Turned on, each command waits for you in the notch.
+
+## GitHub Actions
+
+<div align="center">
+<img src="docs/images/ci.png" width="560" alt="NotchBar CI banners: a passing pipeline with every stage green, a failing one where Test broke and later stages were skipped, and the live CI card under a session with Package running">
+</div>
+
+The moment an agent runs `git push`, NotchBar finds the commit on GitHub and plays its pipeline in the notch.
+
+- **Live pipeline.** Every stage of the workflow, in order, from the first second (read from your `.github/workflows` file). Matrix jobs fold into one stage (`Test 2/3`), and the step that's running shows underneath (`Package: Build DMG and zip`).
+- **Passed:** a banner with the GitHub mark lights the stages up one by one, then says `all green in 4m 12s. ship it`.
+- **Failed:** you hear about it the second a job breaks, not when the slowest one ends. The banner names the job and the step (`Test (macOS 14) broke at "Test"`), the broken stage shakes, and a tap opens that run on GitHub.
+- **CI card:** the expanded notch keeps a card under the session with the pipeline, branch, commit and timer, for 15 minutes after it finishes.
+- Slow extras like CodeQL scans and Pages deploys never hold up the result. Pushes from a subfolder of the repo work too.
+
+### Set it up
+
+1. **Public repo:** nothing to do. The next push shows up in the notch.
+2. **Private repo:** Settings › GitHub › **Connect GitHub**. Terminal opens, installs the [GitHub CLI](https://cli.github.com) with Homebrew if you don't have it, and signs you in through your browser with a one time code. NotchBar notices the login by itself in a few seconds. If you push to a private repo before connecting, a banner offers the same button.
+3. **Already use `gh`?** You're connected already. Settings shows `Connected as @you`.
+
+NotchBar borrows your `gh` login and never stores a token. It sends GitHub only the repo name and commit, uses conditional requests so polling barely touches your rate limit, and stops watching after 90 minutes. Turn it off in Settings › GitHub.
 
 ## Notch pet and daily receipt
 
@@ -158,7 +181,7 @@ agent ──hook JSON──▶ notchbar-hook ──unix socket──▶ NotchBar
 - **Fail safe:** if NotchBar isn't running, crashes, or you don't answer within about 10 minutes, the hook exits quietly and the agent shows its normal prompt. Nothing can get stuck.
 - `AskUserQuestion` and plan approvals always stay in the terminal.
 - The socket lives at `~/Library/Application Support/NotchBar/nb.sock` and only you can read it (mode 0600).
-- Everything stays on your Mac. No account, no analytics. The only network request is a daily check of GitHub for a new version, which you can turn off in Settings.
+- Everything stays on your Mac. No account, no analytics. NotchBar talks to GitHub for two things only: a daily check for a new version, and, after an agent pushes, the Actions status of that commit. Both can be turned off in Settings.
 
 ## FAQ
 
@@ -175,7 +198,10 @@ Yes. Claude Code, OpenAI Codex and Cursor all show live status. Claude Code and 
 Yes. The 5 hour and weekly limits show as rings with reset times, plus a forecast of when you'll hit them at your current pace.
 
 **Is it free? Does it send my code anywhere?**
-It's free and open source (MIT). It never sends your code or activity anywhere. The only request it makes is a daily check for updates on GitHub, and you can turn that off.
+It's free and open source (MIT). It never sends your code or activity anywhere. It asks GitHub for updates once a day and, after an agent pushes, for that commit's CI status (only the repo name and commit). You can turn both off.
+
+**Does it show GitHub Actions?**
+Yes. When an agent pushes, the notch shows the pipeline live and taps you when it passes or fails, naming the job and step that broke. Public repos need no setup. For private repos, click Settings › GitHub › Connect GitHub once.
 
 **How do I update?**
 NotchBar checks once a day. When there's a new version, a banner shows what's new and *Update and restart* installs it in a few seconds. You can also use *Check for Updates…* in the gear menu. Every update is checked against GitHub's checksum and its code signature first.
