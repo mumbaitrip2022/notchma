@@ -130,4 +130,37 @@ final class GitHubCITests: XCTestCase {
         XCTAssertEqual(arc.minY, 0, accuracy: 0.05)
         XCTAssertEqual(arc.width, 16, accuracy: 0.05)
     }
+
+    func testWorkflowFileGivesTheWholePipeline() {
+        let yaml = """
+        name: CI
+        on:
+          push:
+        jobs:
+          # Stage 1
+          lint:
+            name: Lint
+            steps:
+              - name: not a job
+          test:
+            name: Test (${{ matrix.name }})
+            strategy:
+              matrix:
+                include:
+                  - name: macOS 14
+          package:
+            needs: [lint, test]
+            name: "Package (Apple silicon app)"
+          gate:
+            name: ${{ github.event_name }}
+        """
+        let planned = GitHub.plannedStages(workflow: yaml)
+        XCTAssertEqual(planned, ["Lint", "Test", "Package", "gate"])
+        let live = [CIStage(name: "Test", jobs: 3, done: 1, state: .running), CIStage(name: "Lint", state: .passed)]
+        XCTAssertEqual(GitHub.merge(live, planned: planned).map(\.name), ["Lint", "Test", "Package", "gate"])
+        XCTAssertEqual(GitHub.merge(live, planned: planned).map(\.state), [.passed, .running, .queued, .queued])
+        // The real workflow in this repo.
+        let ci = try? String(contentsOfFile: #filePath.components(separatedBy: "/Tests/")[0] + "/.github/workflows/ci.yml", encoding: .utf8)
+        XCTAssertEqual(ci.map(GitHub.plannedStages(workflow:)), ["Lint", "Test", "Package", "Smoke test", "All checks passed"])
+    }
 }

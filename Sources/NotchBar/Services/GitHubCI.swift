@@ -240,6 +240,49 @@ enum GitHub {
         }
     }
 
+    /// Stage names in a workflow file, in order (GitHub only lists a job once the jobs it needs
+    /// are done; this lets the whole pipeline show from the start). Light YAML reading: job keys
+    /// two spaces in under `jobs:`, and their `name:`.
+    static func plannedStages(workflow yaml: String) -> [String] {
+        var out: [String] = []
+        var inJobs = false
+        var key: String?
+        var name: String?
+        func flush() {
+            guard let k = key else { return }
+            var n = name ?? k
+            if n.hasPrefix("${{") { n = k }   // the whole name is an expression
+            let stage = Job(name: n, status: "", conclusion: nil).stage
+            if !out.contains(stage) { out.append(stage) }
+            key = nil; name = nil
+        }
+        for raw in yaml.components(separatedBy: "\n") {
+            let line = raw.replacingOccurrences(of: "\t", with: "  ")
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.isEmpty || trimmed.hasPrefix("#") { continue }
+            let indent = line.prefix { $0 == " " }.count
+            if indent == 0 { flush(); inJobs = trimmed == "jobs:"; continue }
+            guard inJobs else { continue }
+            if indent == 2, trimmed.hasSuffix(":"), !trimmed.contains(" ") {
+                flush(); key = String(trimmed.dropLast())
+            } else if indent == 4, trimmed.hasPrefix("name:"), key != nil {
+                name = trimmed.dropFirst(5).trimmingCharacters(in: .whitespaces)
+                    .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+            }
+        }
+        flush()
+        return out
+    }
+
+    /// Live stages in the workflow's order, with the ones GitHub hasn't listed yet as queued.
+    static func merge(_ stages: [CIStage], planned: [String]) -> [CIStage] {
+        guard !planned.isEmpty, !stages.isEmpty else { return stages }
+        let known = Set(planned)
+        var out = planned.map { name in stages.first { $0.name == name } ?? CIStage(name: name, state: .queued) }
+        out += stages.filter { !known.contains($0.name) }
+        return out
+    }
+
     /// "Package: Build DMG and zip" for the first job that's running.
     static func liveStep(_ jobs: [Job]) -> String? {
         guard let j = jobs.first(where: { $0.status == "in_progress" && $0.step != nil }), var step = j.step else { return nil }
@@ -261,7 +304,7 @@ final class CIWatcher {
     var onNeedsLogin: (() -> Void)?
     private var askedForLogin = false
 
-    private struct Watch { var sid: String; var status: CIStatus; var token = 0; var started = false }
+    private struct Watch { var sid: String; var status: CIStatus; var token = 0; var started = false; var root = "" }
     private var watches: [String: Watch] = [:]   // by session id (main thread)
     private let io = DispatchQueue(label: "notchbar.ci", qos: .utility)
     /// ETag → body per URL (io queue). A 304 is free: it doesn't count against GitHub's rate limit.
@@ -281,7 +324,7 @@ final class CIWatcher {
             DispatchQueue.main.async {
                 var st = CIStatus(state: .waiting, repo: repo, sha: sha, url: URL(string: "https://github.com/\(repo)/actions"))
                 st.branch = branch
-                self.watches[sid] = Watch(sid: sid, status: st, token: token)
+                self.watches[sid] = Watch(sid: sid, status: st, token: token, root: root)
                 self.onUpdate?(sid, st)
                 // GitHub needs a few seconds to register the push.
                 self.schedule(sid, token: token, after: 6)
@@ -328,6 +371,9 @@ final class CIWatcher {
             self.fetchJobs(repo: st.repo, runs: wantJobs ? ids : []) { [weak self] jobs in
                 guard let self, self.watches[sid]?.token == token else { return }
                 st.stages = jobs.isEmpty ? GitHub.stages(runs: runs) : GitHub.stages(jobs)
+                if !jobs.isEmpty, !st.isFinished, let root = self.watches[sid]?.root {
+                    st.stages = GitHub.merge(st.stages, planned: Self.planned(root: root, runs: runs))
+                }
                 st.step = GitHub.liveStep(jobs)
                 if case .failed = st.state, let bad = jobs.first(where: \.failed) {
                     st.state = .failed(job: bad.name)   // the exact job, e.g. "Test (macOS 14)"
@@ -396,6 +442,15 @@ final class CIWatcher {
                     DispatchQueue.main.async { done(body, code) }
                 }
             }.resume()
+        }
+    }
+
+    /// Stage names from the workflow files of the runs that matter (read from your checkout).
+    private static func planned(root: String, runs: [GitHub.Run]) -> [String] {
+        GitHub.relevant(runs).prefix(3).flatMap { r -> [String] in
+            guard r.path.hasPrefix(".github/workflows/"), !r.path.contains(".."),
+                  let yaml = try? String(contentsOfFile: root + "/" + r.path, encoding: .utf8) else { return [] }
+            return GitHub.plannedStages(workflow: yaml)
         }
     }
 
