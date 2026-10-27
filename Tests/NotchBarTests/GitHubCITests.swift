@@ -26,6 +26,12 @@ final class GitHubCITests: XCTestCase {
         \tfetch = +refs/heads/*:refs/remotes/origin/*
         """.write(to: dir.appendingPathComponent(".git/config"), atomically: true, encoding: .utf8)
         XCTAssertEqual(GitHub.repo(atRoot: dir.path), "me/app")
+        // An agent working in a subfolder still finds the repo.
+        let sub = dir.appendingPathComponent("docs")
+        try FileManager.default.createDirectory(at: sub, withIntermediateDirectories: true)
+        XCTAssertEqual(Git.root(at: sub.path).map { URL(fileURLWithPath: $0).standardizedFileURL.path },
+                       dir.standardizedFileURL.path)
+        XCTAssertNil(GitHub.repo(atRoot: sub.path), "the subfolder alone has no git config")
     }
 
     func testPushDetection() {

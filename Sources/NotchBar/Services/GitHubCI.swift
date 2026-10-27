@@ -158,11 +158,14 @@ final class CIWatcher {
     private var tokenCheckedAt: Date?
 
     /// Start (or restart) watching after a push from `root`.
-    func pushed(sessionID sid: String, root: String) {
-        guard let repo = GitHub.repo(atRoot: root) else { return }
+    func pushed(sessionID sid: String, root folder: String) {
+        // The agent may be in a subfolder (e.g. docs/): use the repo it belongs to.
+        let root = Git.root(at: folder) ?? folder
+        guard let repo = GitHub.repo(atRoot: root) else { DiagLog.log("ci: push, not a GitHub repo"); return }
         let token = (watches[sid]?.token ?? 0) + 1
         io.async { [weak self] in
-            guard let self, let sha = Self.headSHA(root) else { return }
+            guard let self, let sha = Self.headSHA(root) else { DiagLog.log("ci: push, no commit found"); return }
+            DiagLog.log("ci: watching s\(sid.prefix(4))")
             DispatchQueue.main.async {
                 let st = CIStatus(state: .waiting, repo: repo, sha: sha, url: URL(string: "https://github.com/\(repo)/actions"))
                 self.watches[sid] = Watch(sid: sid, status: st, token: token)
@@ -191,6 +194,7 @@ final class CIWatcher {
                 return
             }
             let runs = GitHub.runs(fromJSON: data)
+            DiagLog.log("ci: \(runs.count) runs, \(GitHub.summarize(runs))")
             if runs.isEmpty {
                 // No workflows for this commit (or none in this repo): stop after two minutes.
                 if age > 120 { self.drop(sid) } else { self.schedule(sid, token: token, after: 8) }
@@ -237,8 +241,10 @@ final class CIWatcher {
             req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
             req.setValue("NotchBar", forHTTPHeaderField: "User-Agent")
             if let t = self?.token() { req.setValue("Bearer \(t)", forHTTPHeaderField: "Authorization") }
-            URLSession.shared.dataTask(with: req) { data, resp, _ in
-                let ok = (resp as? HTTPURLResponse).map { (200..<300).contains($0.statusCode) } ?? false
+            URLSession.shared.dataTask(with: req) { data, resp, err in
+                let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+                let ok = (200..<300).contains(code)
+                if !ok { DiagLog.log("ci: http \(code)\(err != nil ? " offline" : "")") }
                 DispatchQueue.main.async { done(ok ? data : nil) }
             }.resume()
         }
