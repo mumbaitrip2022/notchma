@@ -61,14 +61,15 @@ These commands don't exist in release builds.
 1. Fork, branch from `main`, keep the change focused.
 2. Make sure `swift test` and `./scripts/check-copy.sh` pass.
 3. Fill in the pull request template, with screenshots for anything visible.
-4. CI builds and tests every pull request. The maintainer reviews and squash merges.
+4. CI checks every pull request: lint, secrets, workflow security and new dependencies first, then tests on macOS 14, 15, 26 and 27 and a smoke test of the packaged app on each. The maintainer reviews and squash merges.
 
 ## Releases (maintainer)
 
 1. Bump `CFBundleShortVersionString` and `CFBundleVersion` in `Resources/Info.plist`.
-2. `make dist` builds the Apple silicon app, zip and DMG in `./dist`.
-3. Tag `vX.Y.Z`, push, and create a GitHub release with the DMG and zip attached.
-4. The release notes' first `## heading` and first six `- ` bullets become the in-app update banner and "what's new" list, so write them for users.
+2. Make sure CI is green on `main`, and run the CodeQL workflow from the Actions tab.
+3. `make dist` builds the Apple silicon app, zip and DMG in `./dist`.
+4. Tag `vX.Y.Z`, push, and create a GitHub release with the DMG and zip attached.
+5. The release notes' first `## heading` and first six `- ` bullets become the in-app update banner and "what's new" list, so write them for users.
 
 See [DISTRIBUTING.md](DISTRIBUTING.md) for signing and notarization.
 

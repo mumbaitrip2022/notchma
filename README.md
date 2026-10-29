@@ -80,6 +80,7 @@ The moment an agent runs `git push`, NotchBar finds the commit on GitHub and pla
 - **Live pipeline.** Every stage of the workflow, in order, from the first second (read from your `.github/workflows` file). Matrix jobs fold into one stage (`Test 2/3`), and the step that's running shows underneath (`Package: Build DMG and zip`).
 - **Passed:** a banner with the GitHub mark lights the stages up one by one, then says `all green in 4m 12s. ship it`.
 - **Failed:** you hear about it the second a job breaks, not when the slowest one ends. The banner names the job and the step (`Test (macOS 14) broke at "Test"`), the broken stage shakes, and a tap opens that run on GitHub.
+- **Closed notch glimpse:** while CI runs and no agent needs you, the closed notch shows the GitHub mark, the project, a mini pipeline and a ticking timer, so you can watch without opening anything.
 - **CI card:** the expanded notch keeps a card under the session with the pipeline, branch, commit and timer, for 15 minutes after it finishes.
 - Slow extras like CodeQL scans and Pages deploys never hold up the result. Pushes from a subfolder of the repo work too.
 

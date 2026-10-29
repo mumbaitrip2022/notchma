@@ -39,7 +39,7 @@ certificate is for the App Store and can't be notarized for outside distribution
 
 ## Compatibility checklist before a release
 
-- `make test` passes (33 tests: parsers, safety rules, real git, shell).
+- `make test` passes, CI is green on `main` (tests and a smoke test of the packaged app on macOS 14, 15, 26 and 27), and the manual CodeQL scan is clean.
 - Debug build with `defaults write dev.notchbar.app simulateNotch -bool true` to preview the notched-MacBook
   layout on a Mac without a notch (the debug snapshot marks the camera area in red).
 - Fresh-user path: delete `~/Library/Preferences/dev.notchbar.app.plist`, open the app from `~/Downloads`
