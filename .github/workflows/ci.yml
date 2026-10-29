@@ -2,9 +2,9 @@ name: CI
 
 # The shape, left to right (this is also what the notch draws, one dot per stage):
 #
-#   Checks ×6 (Linux, seconds)  ──▶  Test ×3 (macOS 14, 15, 26)  ─────────────────────┐
+#   Checks ×6 (Linux, seconds)  ──▶  Test ×4 (macOS 14, 15, 26, 27)  ─────────────────────┐
 #   What changed · Lint · Secrets     Package (Apple silicon app) ──▶ Size budget ─────┼──▶ All checks passed
-#   Workflow security · Dependencies                               ──▶ Smoke test ×3 ──┘
+#   Workflow security · Dependencies                               ──▶ Smoke test ×4 ──┘
 #   Website
 #
 # Fast by design: the cheap Linux checks start everything, tests and packaging run side by side,
@@ -193,6 +193,8 @@ jobs:
             coverage: true
           - name: macOS 26
             os: macos-26
+          - name: macOS 27
+            os: xcode-27      # GitHub's macOS 27 image (preview)
     env:
       MATRIX_NAME: ${{ matrix.name }}
       MATRIX_OS: ${{ matrix.os }}
@@ -357,6 +359,8 @@ jobs:
             os: macos-15
           - name: macOS 26
             os: macos-26
+          - name: macOS 27
+            os: xcode-27      # GitHub's macOS 27 image (preview)
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -388,8 +392,8 @@ jobs:
           needs = json.loads(os.environ["RESULTS"])
           names = {
               "changes": "What changed", "lint": "Lint", "secrets": "Secrets", "workflows": "Workflow security",
-              "dependencies": "Dependencies", "website": "Website", "test": "Test (macOS 14, 15, 26)",
-              "package": "Package", "budget": "Size budget", "smoke": "Smoke test (macOS 14, 15, 26)",
+              "dependencies": "Dependencies", "website": "Website", "test": "Test (macOS 14, 15, 26, 27)",
+              "package": "Package", "budget": "Size budget", "smoke": "Smoke test (macOS 14, 15, 26, 27)",
           }
           icon = {"success": "✅", "skipped": "⏭️", "failure": "❌", "cancelled": "🚫"}
           bad = [k for k, v in needs.items() if v["result"] not in ("success", "skipped")]
