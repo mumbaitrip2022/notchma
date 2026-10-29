@@ -514,6 +514,11 @@ final class SessionStore: ObservableObject {
         }
     }
 
+    /// The session whose pushed commit is still going through CI (newest activity first).
+    var liveCI: Session? {
+        sortedSessions.first { $0.ci.map { !$0.isFinished } ?? false }
+    }
+
     /// CI news for a session's pushed commit.
     func setCI(_ sid: String, _ ci: CIStatus?) {
         guard var s = sessions[sid], s.ci != ci else { return }

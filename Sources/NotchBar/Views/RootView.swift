@@ -69,7 +69,7 @@ struct RootView: View {
 
     private var showsActivity: Bool {
         guard !ui.forceIdle else { return false }
-        return !store.approvals.isEmpty || store.isAnyWorking || store.doneFlash
+        return !store.approvals.isEmpty || store.isAnyWorking || store.doneFlash || store.liveCI != nil
             || store.sessions.values.contains { $0.status == .waitingForInput }
     }
 

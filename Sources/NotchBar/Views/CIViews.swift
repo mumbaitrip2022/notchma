@@ -554,8 +554,10 @@ struct CIElapsed: View {
         if ci.isFinished {
             Text(Self.format(ci.elapsed)).monospacedDigit()
         } else {
-            TimelineView(.periodic(from: .now, by: 1)) { _ in
-                Text(Self.format(ci.elapsed)).monospacedDigit().contentTransition(.numericText())
+            // Read the time from the timeline's own date: a closure that ignores it
+            // can be skipped by SwiftUI, and then the timer looks frozen.
+            TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                Text(Self.format(ci.elapsed(at: ctx.date))).monospacedDigit().contentTransition(.numericText())
             }
         }
     }
@@ -662,5 +664,129 @@ struct CICard: View {
         case .running: return CIColor.run.opacity(0.18)
         default: return Color.white.opacity(0.06)
         }
+    }
+}
+
+// MARK: - Glimpse (collapsed notch)
+
+/// The GitHub mark in a ring that tells the state: an amber arc chasing round while CI runs,
+/// a solid green or red ring once it's done. Sits where the agent glyph usually goes.
+struct CIGlimpseMark: View {
+    let state: CIStage.State
+    var size: CGFloat = 16
+
+    var body: some View {
+        TimelineView(.animation(paused: state != .running && state != .queued)) { ctx in
+            let t = ctx.date.timeIntervalSinceReferenceDate
+            ZStack {
+                Circle().stroke(Color.white.opacity(0.14), lineWidth: 1.6)
+                switch state {
+                case .running, .queued:
+                    let c = state == .running ? CIColor.run : Color.white.opacity(0.7)
+                    Circle().trim(from: 0, to: 0.32)
+                        .stroke(AngularGradient(colors: [c.opacity(0), c], center: .center,
+                                                startAngle: .degrees(0), endAngle: .degrees(115)),
+                                style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
+                        .rotationEffect(.radians(t * 2 * .pi / 1.1))
+                default:
+                    Circle().stroke(CIColor.of(state), lineWidth: 1.8)
+                }
+                GitHubMark().fill(.white).frame(width: size * 0.62, height: size * 0.62)
+            }
+            .frame(width: size, height: size)
+        }
+    }
+}
+
+/// A tiny pipeline for the collapsed notch: one dot per stage, joined by hairlines.
+/// Done stages are green, the running one breathes amber with light flowing into it,
+/// queued ones are hollow. With no stages yet, three ghost dots shimmer in turn.
+struct CIMiniPipeline: View {
+    let stages: [CIStage]
+    var dot: CGFloat = 5.5
+    var gap: CGFloat = 5
+
+    private var count: Int { stages.isEmpty ? 3 : stages.count }
+    var width: CGFloat { CGFloat(count) * dot + CGFloat(count - 1) * gap }
+    private var moving: Bool { stages.isEmpty || stages.contains { $0.state == .running } }
+
+    var body: some View {
+        TimelineView(.animation(paused: !moving)) { ctx in
+            Canvas { g, size in draw(&g, size, ctx.date.timeIntervalSinceReferenceDate) }
+        }
+        .frame(width: width, height: dot + 6)
+    }
+
+    private func draw(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
+        let cy = size.height / 2, r = dot / 2
+        let xs = (0..<count).map { CGFloat($0) * (dot + gap) + r }
+        for i in 0..<(count - 1) {
+            let a = xs[i] + r + 1, b = xs[i + 1] - r - 1
+            let done = !stages.isEmpty && [.passed, .failed, .running].contains(stages[i + 1].state)
+            g.fill(Path(CGRect(x: a, y: cy - 0.5, width: b - a, height: 1)),
+                   with: .color(done ? CIColor.pass.opacity(0.55) : .white.opacity(0.16)))
+            if !stages.isEmpty, stages[i + 1].state == .running {
+                // A spark slides into the running stage.
+                let p = CGFloat((t / 0.8).truncatingRemainder(dividingBy: 1))
+                let x = a + (b - a) * p
+                g.fill(Path(ellipseIn: CGRect(x: x - 1.2, y: cy - 1.2, width: 2.4, height: 2.4)),
+                       with: .color(CIColor.run.opacity(Double(1 - p * 0.4))))
+            }
+        }
+        for i in 0..<count {
+            let c = CGPoint(x: xs[i], y: cy)
+            let rect = CGRect(x: c.x - r, y: cy - r, width: dot, height: dot)
+            if stages.isEmpty {
+                let wave = 0.5 + 0.5 * sin(t * 4 - Double(i) * 0.9)
+                g.fill(Path(ellipseIn: rect), with: .color(.white.opacity(0.18 + 0.4 * wave)))
+                continue
+            }
+            switch stages[i].state {
+            case .queued:
+                g.stroke(Path(ellipseIn: rect.insetBy(dx: 0.6, dy: 0.6)), with: .color(.white.opacity(0.35)), lineWidth: 1.1)
+            case .skipped:
+                g.fill(Path(ellipseIn: rect), with: .color(.white.opacity(0.2)))
+            case .running:
+                let pulse = 0.5 + 0.5 * sin(t * 5)
+                let halo = r + 1.5 + 1.5 * pulse
+                g.fill(Path(ellipseIn: CGRect(x: c.x - halo, y: cy - halo, width: 2 * halo, height: 2 * halo)),
+                       with: .color(CIColor.run.opacity(0.18 + 0.14 * pulse)))
+                g.fill(Path(ellipseIn: rect), with: .color(CIColor.run))
+            case .passed, .failed:
+                g.fill(Path(ellipseIn: rect), with: .color(CIColor.of(stages[i].state)))
+            }
+        }
+    }
+}
+
+/// A line of text with a soft band of light sweeping across it, left to right, every ~2s.
+/// The "something is happening right now" look, without moving the text itself.
+struct CIShimmerLine: View {
+    let text: String
+    var size: CGFloat = 12.5
+    var base: Color = Palette.text3
+    var light: Color = .white
+
+    var body: some View {
+        let label = Text(text).font(.system(size: size)).lineLimit(1).truncationMode(.tail)
+        TimelineView(.animation) { ctx in
+            let p = ctx.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2.2) / 2.2
+            label
+                .foregroundStyle(base)
+                .overlay {
+                    GeometryReader { geo in
+                        let w = geo.size.width, band = max(40, w * 0.45)
+                        let x = -band + (w + 2 * band) * p
+                        label.foregroundStyle(light)
+                            .mask(alignment: .leading) {
+                                LinearGradient(colors: [.clear, .white, .clear], startPoint: .leading, endPoint: .trailing)
+                                    .frame(width: band)
+                                    .offset(x: x)
+                            }
+                    }
+                }
+        }
+        .contentTransition(.interpolate)
+        .animation(.easeInOut(duration: 0.3), value: text)
     }
 }

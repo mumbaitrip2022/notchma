@@ -28,7 +28,20 @@ struct CollapsedView: View {
     private var activity: some View {
         HStack(spacing: 8) {
             leading
-            if showsActivity && !ui.hasHardwareNotch, let s = focus {
+            if showsActivity && !ui.hasHardwareNotch, let c = ciFocus, let ci = c.ci {
+                // CI is running: which project, and the step GitHub is on right now.
+                HStack(spacing: 7) {
+                    Text(c.projectName)
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .fixedSize()
+                    CIShimmerLine(text: ciLine(ci), size: 12.5)
+                        .frame(height: 16)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .transition(.opacity)
+            } else if showsActivity && !ui.hasHardwareNotch, let s = focus {
                 HStack(spacing: 7) {
                     Text(s.projectName)
                         .font(.system(size: 12.5, weight: .semibold))
@@ -55,6 +68,18 @@ struct CollapsedView: View {
         .opacity(showsActivity || !store.sessions.isEmpty ? 1 : 0)
         .contentShape(Rectangle())
         .onTapGesture { ui.pinned.toggle() }
+    }
+
+    /// CI takes the notch when nothing more urgent is on. An agent that just pushed is
+    /// usually waiting for you, so a running pipeline wins over "waiting".
+    private var ciFocus: Session? {
+        guard store.approvals.isEmpty, !store.doneFlash, !store.isAnyWorking else { return nil }
+        return store.liveCI
+    }
+
+    private func ciLine(_ ci: CIStatus) -> String {
+        if case .waiting = ci.state { return "waiting for GitHub" }
+        return ci.step ?? (ci.stages.isEmpty ? "CI running" : "CI \(ci.stages.filter { $0.state == .passed }.count)/\(ci.stages.count)")
     }
 
     private var focus: Session? {
@@ -88,7 +113,10 @@ struct CollapsedView: View {
     }
 
     @ViewBuilder private var leading: some View {
-        if let a = store.approvals.first {
+        if let c = ciFocus, let ci = c.ci {
+            CIGlimpseMark(state: ci.overall, size: 16)
+                .transition(.scale(scale: 0.4).combined(with: .opacity))
+        } else if let a = store.approvals.first {
             Image(systemName: "circle.fill")
                 .font(.system(size: 8.5))
                 .foregroundStyle(a.risky ? Color.danger : Color.approval)
@@ -102,7 +130,18 @@ struct CollapsedView: View {
     }
 
     @ViewBuilder private var trailing: some View {
-        if !store.approvals.isEmpty {
+        if let c = ciFocus, let ci = c.ci {
+            HStack(spacing: 8) {
+                CIMiniPipeline(stages: ci.stages)
+                if !ui.hasHardwareNotch {
+                    CIElapsed(ci: ci)
+                        .font(.system(size: 11.5, weight: .medium))
+                        .foregroundStyle(Palette.text2)
+                }
+            }
+            .animation(.easeInOut(duration: 0.3), value: ci.stages)
+            .transition(.opacity)
+        } else if !store.approvals.isEmpty {
             Text("\(store.approvals.count)")
                 .font(.system(size: 11, weight: .bold))
                 .monospacedDigit()
@@ -120,6 +159,11 @@ struct CollapsedView: View {
                 .transition(.scale.combined(with: .opacity))
         } else if let s = store.sortedSessions.first(where: { $0.status.isWorking }) {
             HStack(spacing: 7) {
+                if let ci = store.liveCI?.ci {
+                    CIGlimpseMark(state: ci.overall, size: 13)
+                        .help("CI is running")
+                        .transition(.scale.combined(with: .opacity))
+                }
                 if let p = s.planProgress {
                     // Real progress through the agent's own plan.
                     Text("\(p.done)/\(p.total)")

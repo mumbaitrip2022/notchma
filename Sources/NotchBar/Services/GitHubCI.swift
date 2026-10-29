@@ -32,7 +32,9 @@ struct CIStatus: Equatable {
         return now.timeIntervalSince(f) < 15 * 60
     }
 
-    var elapsed: TimeInterval { (finishedAt ?? Date()).timeIntervalSince(startedAt) }
+    var elapsed: TimeInterval { elapsed(at: Date()) }
+    /// Time since the push, frozen once the run finishes.
+    func elapsed(at now: Date) -> TimeInterval { max(0, (finishedAt ?? now).timeIntervalSince(startedAt)) }
 
     var short: String {
         switch state {

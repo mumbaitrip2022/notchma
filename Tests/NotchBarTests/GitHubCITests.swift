@@ -169,4 +169,16 @@ final class GitHubCITests: XCTestCase {
         XCTAssertEqual(GitHub.shortJob("Test (macOS 14)"), "Test (macOS 14)")
         XCTAssertEqual(GitHub.shortJob("Lint · fast"), "Lint · fast")
     }
+
+    func testElapsedTicksWhileRunningAndFreezesWhenDone() {
+        let start = Date(timeIntervalSince1970: 1_000)
+        var st = CIStatus(state: .running(done: 1, total: 3), repo: "o/r", sha: String(repeating: "a", count: 40), startedAt: start)
+        XCTAssertEqual(st.elapsed(at: start.addingTimeInterval(61)), 61)
+        XCTAssertEqual(st.elapsed(at: start.addingTimeInterval(62)), 62)
+        XCTAssertEqual(CIElapsed.format(st.elapsed(at: start.addingTimeInterval(62))), "1m 2s")
+        st.state = .passed
+        st.finishedAt = start.addingTimeInterval(200)
+        XCTAssertEqual(st.elapsed(at: start.addingTimeInterval(9_999)), 200)
+        XCTAssertEqual(st.elapsed(at: start.addingTimeInterval(-5)), 200)
+    }
 }
