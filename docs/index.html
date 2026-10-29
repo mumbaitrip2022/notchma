@@ -105,7 +105,6 @@ h1 .soft { color: transparent; background: linear-gradient(180deg, #2a2a30, #8d8
 .meta span + span::before { content: "·"; margin: 0 8px; opacity: .7; }
 .notmac { display: none; margin: 14px auto 0; font-size: 14px; color: var(--ink2); }
 .notmac.show { display: block; }
-.notmac button { text-decoration: underline; text-underline-offset: 3px; color: var(--ink); }
 
 .rise { opacity: 0; transform: translateY(14px); filter: blur(6px); animation: rise .9s var(--ease) forwards; }
 @keyframes rise { to { opacity: 1; transform: none; filter: none; } }
@@ -136,10 +135,17 @@ h1 .soft { color: transparent; background: linear-gradient(180deg, #2a2a30, #8d8
 @keyframes lin { from { opacity: 0; } }
 .c-dim { color: #8b8b93; } .c-org { color: #e0896a; } .c-g { color: #4ade80; } .c-r { color: #f87171; } .c-a { color: #fbbf24; } .c-w { color: #fff; font-weight: 500; }
 .edit { left: 600px; top: 200px; width: 540px; height: 420px; background: rgba(24,24,27,.97); display: grid; grid-template-rows: 34px 1fr; }
-/* Phones see only the middle of the screen (x 330 to 870), so the windows move in. */
-.screen.narrow .term { left: 346px; top: 92px; width: 500px; height: 330px; }
-.screen.narrow .edit { left: 420px; top: 262px; width: 436px; height: 300px; }
-.screen.narrow .edit .ebody { grid-template-columns: 80px 1fr 170px; }
+/* Phones get a close up of the notch: only x 370 to 830 of the screen shows, so everything moves in. */
+.screen.narrow .term { left: 384px; top: 96px; width: 430px; height: 300px; }
+.screen.narrow .edit { left: 444px; top: 250px; width: 372px; height: 260px; }
+.screen.narrow .edit .ebody { grid-template-columns: 56px 1fr 150px; }
+.screen.narrow .lay { max-width: 410px; }
+.screen.narrow .menubar { padding: 0 384px; gap: 14px; font-size: 14px; }
+.screen.narrow .menubar > span, .screen.narrow .menubar > b, .screen.narrow .menubar .r svg, .screen.narrow .wd { display: none; }
+.screen.narrow .lay:is([data-s="work"], [data-s="okc"], [data-s="stop"], [data-s="done"]) { max-width: 290px; }
+.wd { font-style: normal; }
+.screen.narrow .menubar { transition: opacity .3s; }
+.screen.narrow:has(.isl.big) .menubar { opacity: 0; }
 .edit .ebody { display: grid; grid-template-columns: 120px 1fr 190px; min-height: 0; }
 .edit .tree { padding: 12px; border-right: 1px solid rgba(255,255,255,.06); }
 .edit .tree i, .edit .code i { display: block; height: 7px; border-radius: 4px; background: rgba(255,255,255,.12); margin: 0 0 11px; }
@@ -489,6 +495,14 @@ footer a:hover { color: var(--ink); }
 @keyframes pulse { 50% { box-shadow: 0 0 0 5px rgba(10,132,255,.2); } }
 .sheet .ft { margin-top: 24px; font-size: 14px; color: var(--ink3); }
 .sheet .ft a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.send { width: min(480px, 100vw - 32px); }
+.send .lnk { display: flex; align-items: center; gap: 10px; margin: 24px auto 0; padding: 14px 16px; border-radius: 16px; background: #f5f5f7; box-shadow: 0 0 0 1px var(--line); font: 500 14px/1.3 var(--mono); color: var(--ink2); text-align: left; word-break: break-all; }
+.send .lnk svg { width: 16px; height: 16px; flex: none; opacity: .5; }
+.sacts { display: grid; gap: 10px; margin-top: 12px; }
+.sacts .btn { width: 100%; }
+.sacts .btn[hidden] { display: none; }
+.send .tip { margin-top: 16px; font-size: 14px; color: var(--ink2); }
+.send .tip[hidden] { display: none; }
 
 .toast { position: fixed; left: 50%; bottom: 28px; z-index: 100; transform: translate(-50%, 20px); opacity: 0; padding: 12px 18px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 14px; font-weight: 500; transition: opacity .25s, transform .45s var(--spring); pointer-events: none; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -535,7 +549,11 @@ footer a:hover { color: var(--ink); }
   .stat p { font-size: 13.5px; }
   .viz { padding-top: 16px; }
   .steps { grid-template-columns: 1fr; }
-  .sheet { padding: 28px 18px 22px; }
+  .sheet, .send { left: 0; top: auto; bottom: 0; width: 100%; max-height: 90vh; max-height: 90dvh; padding: 30px 18px calc(22px + env(safe-area-inset-bottom)); border-radius: 28px 28px 0 0; transform: translateY(40px); }
+  .sheet.show { transform: none; }
+  .sheet::before { content: ""; position: absolute; left: 50%; top: 8px; width: 38px; height: 5px; margin-left: -19px; border-radius: 9px; background: var(--line2); }
+  .sheet h3 { font-size: 26px; }
+  .sheet .x { right: 12px; top: 12px; }
   .final { padding: 110px 0 96px; }
   footer .wrap { height: auto; padding: 24px 0; flex-direction: column; gap: 12px; }
   footer nav { margin: 0; }
@@ -548,6 +566,28 @@ footer a:hover { color: var(--ink); }
   .stat .sv { font-size: 36px; }
 }
 @media (hover: none) { .try { display: none; } }
+/* Phones: full width buttons, one row of chips, three agents across, softer layered cards. */
+@media (max-width: 640px) {
+  .hero .ctas { flex-direction: column; align-items: stretch; width: min(340px, 100%); margin-left: auto; margin-right: auto; gap: 10px; }
+  .hero .ctas .dlw, .hero .ctas .btn, .final .ctas .btn { width: 100%; }
+  .final .ctas { width: min(340px, 100%); margin-left: auto; margin-right: auto; }
+  .hero .ctas .btn, .final .ctas .btn, .sacts .btn { height: 56px; font-size: 16.5px; }
+  .btn.dark { background: linear-gradient(180deg, #2b2b31, #0b0b0d); }
+  .btn.light { box-shadow: 0 0 0 1px var(--line2), 0 1px 0 #fff inset, 0 8px 20px -12px rgba(12,12,14,.22); }
+  .chips { position: relative; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; margin: 22px -16px 0; padding: 4px 16px 6px;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 18px), transparent); }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; scroll-snap-align: center; height: 38px; }
+  .works { margin-top: 72px; }
+  .agents { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .agent { flex-direction: column; justify-content: center; gap: 10px; height: auto; padding: 18px 6px 16px; border-radius: 22px; font-size: 14.5px; }
+  .agent img { width: 44px; height: 44px; border-radius: 12px; }
+  .cidemo { height: 340px; }
+  .card, .cif, .stat, .agent { box-shadow: 0 0 0 1px var(--line), 0 1px 0 #fff inset, 0 2px 4px -2px rgba(12,12,14,.06), 0 20px 40px -26px rgba(12,12,14,.3); }
+  .card { border-radius: 26px; }
+  .vg { margin: 6px 6px 0; border-radius: 21px; }
+  .txt { padding: 20px 22px 24px; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
@@ -579,7 +619,7 @@ footer a:hover { color: var(--ink); }
         <a class="btn light" href="https://github.com/mumbaitrip2022/notchma"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>Star on GitHub</a>
       </div>
       <p class="meta rise" style="animation-delay:.28s"><span>Free forever</span><span>2 MB</span><span>Open source</span><span class="nsm">Apple silicon</span><span>macOS 14+</span></p>
-      <p class="notmac">NotchBar lives on Macs. <button type="button" id="copy">Copy the link</button> and open it there.</p>
+      <p class="notmac">NotchBar lives on Macs. Send yourself the link and grab it there.</p>
     </div>
 
     <div class="wrap stage rise" style="animation-delay:.36s">
@@ -874,6 +914,20 @@ footer a:hover { color: var(--ink); }
   </div>
   <div class="ft">Download didn't start? <a href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg">Try again</a></div>
 </div>
+<div class="sheet send" id="send" role="dialog" aria-modal="true" aria-labelledby="sdT" aria-hidden="true">
+  <button class="x" type="button" aria-label="Close"><svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11"/></svg></button>
+  <div class="appi"><canvas class="px" id="sendKitty" width="44" height="44"></canvas></div>
+  <h3 id="sdT">Mochi lives on Macs</h3>
+  <p>You're not on one rn. Send this link to your Mac and grab it there.</p>
+  <div class="lnk"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6.5 9.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2l-.8.8"/><path d="M9.5 6.5a3 3 0 0 0-4.2 0L2.7 9.1a3 3 0 0 0 4.2 4.2l.8-.8"/></svg><span id="sdUrl"></span></div>
+  <div class="sacts">
+    <button class="btn dark" id="sdShare" type="button" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V1.5M5 4.5l3-3 3 3"/><path d="M5 7H3.5v7.5h9V7H11"/></svg><span class="label">Send to my Mac</span></button>
+    <button class="btn light" id="sdCopy" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="2"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/></svg><span class="label">Copy link</span></button>
+    <a class="btn light" id="sdMail"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="1.5" y="3" width="13" height="10" rx="2"/><path d="m2 4 6 5 6-5"/></svg>Email it to me</a>
+  </div>
+  <p class="tip" id="sdTip" hidden>Pick AirDrop and it lands right on your Mac.</p>
+  <div class="ft">Need the file here anyway? <a href="https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg">Get the .dmg</a></div>
+</div>
 <canvas id="fx" aria-hidden="true"></canvas>
 <div class="toast" id="toast"></div>
 
@@ -1023,6 +1077,7 @@ new Pet($("#h1Kitty"), { brain: (t, p) => ({ ...idle(t, p), mouth: t % 80 < 8 ? 
 new Pet($("#peekKitty"), { dark: false, brain: (t) => (dlBusy ? { eyes: "happy", mouth: "open", blush: true, tail: wag(t) } : { eyes: blinkAt(t) ? "blink" : "wide", mouth: "open", blush: true, tail: wag(t) }) });
 new Pet($("#iconKitty"), { brain: (t, p) => (hoverDl ? { eyes: "love", mouth: "open", blush: true, tail: wag(t) } : idle(t, p)) });
 new Pet($("#sheetKitty"), { brain: (t) => ({ eyes: t % 30 < 22 ? "happy" : "open", mouth: "open", blush: true, tail: wag(t) }) });
+new Pet($("#sendKitty"), { brain: (t) => ({ eyes: blinkAt(t) ? "blink" : "wide", mouth: "open", blush: true, tail: wag(t) }) });
 const KITS = {
   idle: (t, p) => ({ ...idle(t, p), mouth: t % 70 < 6 ? "blep" : "small" }),
   band: (t) => ({ eyes: blinkAt(t) ? "blink" : "open", tail: sway(t) }),
@@ -1048,14 +1103,14 @@ const fitEl = $("#fit"), screen = $("#screen"), isl = $("#isl"), ptr = $("#ptr")
 let scale = 1;
 function layout() {
   // Narrower screens crop in toward the notch so it stays big enough to read.
-  const W = fitEl.clientWidth, dw = W < 560 ? 540 : W < 700 ? 760 : 1200, dh = W < 560 ? 500 : W < 700 ? 600 : 750;
+  const W = fitEl.clientWidth, dw = W < 560 ? 460 : W < 700 ? 760 : 1200, dh = W < 560 ? 440 : W < 700 ? 600 : 750;
   scale = W / dw;
-  screen.classList.toggle("narrow", W < 560);
+  if (screen.classList.contains("narrow") !== W < 560) { screen.classList.toggle("narrow", W < 560); scene = ""; }
   screen.style.transform = `translateX(${(-(1200 - dw) / 2) * scale}px) scale(${scale})`;
   fitEl.style.height = Math.round(dh * scale) + "px";
 }
 const now = new Date();
-$("#clock").textContent = now.toLocaleDateString("en-US", { weekday: "short" }) + " " + now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+$("#clock").innerHTML = `<i class="wd">${now.toLocaleDateString("en-US", { weekday: "short" })} </i>${now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
 const SC = [["idle", 0], ["work", 2.4], ["list", 5.2], ["ask", 8.8], ["okc", 12.4], ["risk", 14.6], ["stop", 18.0], ["done", 20.2]];
 const T_END = 24;
 const SIZE = { idle: [200, 34, 17], work: [400, 34, 17], list: [480, 196, 30], ask: [480, 186, 30], okc: [330, 34, 17], risk: [480, 186, 30], stop: [370, 34, 17], done: [350, 34, 17] };
@@ -1073,7 +1128,7 @@ function render(t) {
   let s = "idle"; for (const [n, at] of SC) if (t >= at) s = n;
   if (s !== scene) {
     scene = s; const [w, h, r] = SIZE[s];
-    isl.style.width = w + "px"; isl.style.height = h + "px"; isl.style.borderRadius = `0 0 ${r}px ${r}px`;
+    isl.style.width = (screen.classList.contains("narrow") ? Math.min(w, h > 40 ? 410 : 290) : w) + "px"; isl.style.height = h + "px"; isl.style.borderRadius = `0 0 ${r}px ${r}px`;
     isl.classList.toggle("big", h > 40); show(isl, s);
   }
   timed.forEach((o) => o.el.classList.toggle("on", t >= o.t && t < o.u));
@@ -1087,7 +1142,8 @@ function render(t) {
   else movePtr("out", [860, 520]);
   if (t >= 12.0 && t < 12.4) clickAt("allow", $("#bAllow"));
   if (t >= 17.6 && t < 18.0) clickAt("deny", $("#bDeny"));
-  CH.forEach(([, a, b], i) => { const act = t >= a && t < b, el = chipEls[i]; el.classList.toggle("on", act); el.firstChild.style.width = act ? (100 * (t - a) / (b - a)).toFixed(1) + "%" : "0"; });
+  CH.forEach(([, a, b], i) => { const act = t >= a && t < b, el = chipEls[i];
+    if (act && !el.classList.contains("on") && chips.scrollWidth > chips.clientWidth + 2) chips.scrollTo({ left: el.offsetLeft - (chips.clientWidth - el.offsetWidth) / 2, behavior: reduce ? "auto" : "smooth" }); el.classList.toggle("on", act); el.firstChild.style.width = act ? (100 * (t - a) / (b - a)).toFixed(1) + "%" : "0"; });
 }
 let demoOn = false;
 new IntersectionObserver(([e]) => { demoOn = e.isIntersecting; }, { rootMargin: "100px" }).observe(fitEl);
@@ -1175,9 +1231,29 @@ function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("s
 /* ================= Download ================= */
 const sheet = $("#sheet"), veil = $("#veil");
 function setLabel(b, txt) { const l = $(".label", b); if (!l) return; l.classList.add("swap"); setTimeout(() => { l.textContent = txt; l.classList.remove("swap"); }, 170); }
-function openSheet() { sheet.classList.add("show"); veil.classList.add("show"); sheet.setAttribute("aria-hidden", "false"); $("#shX").focus({ preventScroll: true }); }
-function closeSheet() { sheet.classList.remove("show"); veil.classList.remove("show"); sheet.setAttribute("aria-hidden", "true"); }
-$("#shX").addEventListener("click", closeSheet); veil.addEventListener("click", closeSheet);
+function openSheet(s = sheet) { s.classList.add("show"); veil.classList.add("show"); s.setAttribute("aria-hidden", "false"); if (matchMedia("(hover: hover)").matches) $(".x", s).focus({ preventScroll: true }); }
+function closeSheet() { $$(".sheet").forEach((s) => { s.classList.remove("show"); s.setAttribute("aria-hidden", "true"); }); veil.classList.remove("show"); }
+$$(".sheet .x").forEach((x) => x.addEventListener("click", closeSheet)); veil.addEventListener("click", closeSheet);
+
+/* Phones, tablets and PCs can't run NotchBar, so the buttons send the link to a Mac instead of downloading. */
+const ua = navigator.userAgent;
+const onMac = /Macintosh|Mac OS X/.test(ua) && !/iPhone|iPad/.test(ua) && navigator.maxTouchPoints < 2;
+const onIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+const SEND = location.origin + location.pathname.replace(/index\.html$/, "") + "download/";
+$("#sdUrl").textContent = SEND.replace(/^https?:\/\//, "").replace(/\/$/, "");
+$("#sdMail").href = `mailto:?subject=${encodeURIComponent("NotchBar for my Mac")}&body=${encodeURIComponent(`Open this on the Mac:\n${SEND}`)}`;
+if (navigator.share) { $("#sdShare").hidden = false; $("#sdTip").hidden = !onIOS; }
+else $("#sdCopy").classList.replace("light", "dark");
+$("#sdShare").addEventListener("click", () => navigator.share({ title: "NotchBar", text: "NotchBar for my Mac", url: SEND }).catch(() => {}));
+$("#sdCopy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(SEND); } catch { prompt("Copy this link", SEND); return; }
+  setLabel($("#sdCopy"), "Copied"); toast("Link copied, open it on your Mac"); setTimeout(() => setLabel($("#sdCopy"), "Copy link"), 2200);
+});
+const openSend = () => openSheet($("#send"));
+if (!onMac) {
+  $$(".notmac").forEach((e) => e.classList.add("show"));
+  $$("[data-dl] .label").forEach((l) => { l.textContent = l.closest(".il") ? "Get it" : "Send to my Mac"; });
+}
 addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
 const DLL = ["packing mochi's snacks", "fluffing the pixels", "no thoughts, just downloading", "almost there bestie"];
 async function download(auto, from) {
@@ -1205,7 +1281,7 @@ async function download(auto, from) {
   btns.forEach((b) => setLabel(b, b.closest(".il") ? "Download" : "Download again"));
   dlBusy = false;
 }
-$$("[data-dl]").forEach((b) => b.addEventListener("click", (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); download(false, b); }));
+$$("[data-dl]").forEach((b) => b.addEventListener("click", (e) => { if (!onMac) { e.preventDefault(); openSend(); return; } if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); download(false, b); }));
 
 /* ================= Version, platform, reveal, nav ================= */
 fetch(`https://api.github.com/repos/${REPO}/releases/latest`).then((r) => (r.ok ? r.json() : Promise.reject())).then((rel) => {
@@ -1214,9 +1290,6 @@ fetch(`https://api.github.com/repos/${REPO}/releases/latest`).then((r) => (r.ok 
   if (version) { $("#ver").textContent = `v${version}`; $$(".v-ver").forEach((e) => { e.textContent = `Version ${version}`; }); }
   if (dmg) $$(".v-size").forEach((e) => { e.textContent = `${(dmg.size / 1048576).toFixed(1)} MB`; });
 }).catch(() => {});
-const ua = navigator.userAgent;
-if (!(/Macintosh|Mac OS X/.test(ua) && !/iPhone|iPad/.test(ua) && navigator.maxTouchPoints < 2)) $$(".notmac").forEach((e) => e.classList.add("show"));
-$("#copy").addEventListener("click", async () => { const link = location.origin + location.pathname.replace(/index\.html$/, "") + "download/"; try { await navigator.clipboard.writeText(link); toast("Link copied"); } catch { prompt("Copy this link", link); } });
 /* ================= GitHub Actions demo ================= */
 (() => {
   const demo = $("#ciDemo"); if (!demo) return;
@@ -1437,7 +1510,7 @@ function loop(ts) {
 if (reduce) T = 9.5;
 render(T);
 requestAnimationFrame(loop);
-if (new URLSearchParams(location.search).has("download") || location.hash === "#download") setTimeout(() => download(true), reduce ? 0 : 800);
+if (new URLSearchParams(location.search).has("download") || location.hash === "#download") setTimeout(() => (onMac ? download(true) : openSend()), reduce ? 0 : 800);
 })();
 </script>
 </body>
