@@ -61,7 +61,7 @@ These commands don't exist in release builds.
 1. Fork, branch from `main`, keep the change focused.
 2. Make sure `swift test` and `./scripts/check-copy.sh` pass.
 3. Fill in the pull request template, with screenshots for anything visible.
-4. CI checks every pull request: lint, secrets, workflow security and new dependencies first, then tests on macOS 14, 15, 26 and 27 and a smoke test of the packaged app on each. The maintainer reviews and squash merges.
+4. CI checks every pull request: lint, secrets, workflow security and new dependencies first, then tests on macOS 15, 26 and 27 and a smoke test of the packaged app on each. The maintainer reviews and squash merges.
 
 ## Releases (maintainer)
 
