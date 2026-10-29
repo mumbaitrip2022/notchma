@@ -196,7 +196,7 @@ jobs:
     env:
       MATRIX_NAME: ${{ matrix.name }}
       MATRIX_OS: ${{ matrix.os }}
-      COVERAGE_FLAG: ${{ matrix.coverage && '--enable-code-coverage' || '' }}
+      COVERAGE: ${{ matrix.coverage && 'yes' || '' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -230,10 +230,14 @@ jobs:
           restore-keys: build-${{ matrix.os }}-${{ steps.xcode.outputs.swift }}-${{ matrix.coverage && 'cov' || 'std' }}-
 
       - name: Build (warnings are errors)
-        run: swift build --build-tests -Xswiftc -warnings-as-errors $COVERAGE_FLAG
+        run: |
+          flags=(); [ -n "$COVERAGE" ] && flags=(--enable-code-coverage)
+          swift build --build-tests -Xswiftc -warnings-as-errors "${flags[@]}"
 
       - name: Test
-        run: swift test --skip-build --parallel --xunit-output test-results.xml $COVERAGE_FLAG
+        run: |
+          flags=(); [ -n "$COVERAGE" ] && flags=(--enable-code-coverage)
+          swift test --skip-build --parallel --xunit-output test-results.xml "${flags[@]}"
 
       - name: Test report
         if: always()
