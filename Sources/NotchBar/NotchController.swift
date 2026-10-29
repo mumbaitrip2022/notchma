@@ -70,6 +70,9 @@ final class NotchController: NSObject {
         }
         refreshHooksState()
         repairHooksIfMoved()
+        trustCodexHooks()
+        connectNewAgents()
+        newAgentTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in self?.connectNewAgents() }
         store.seedFromClaudeSessionFiles()
         updateScreen(force: true)
         panel.orderFrontRegardless()
@@ -895,8 +898,45 @@ final class NotchController: NSObject {
         prefs.installed = set
     }
 
+    private var newAgentTimer: Timer?
+
+    /// An agent you install after setting NotchBar up connects on its own. Only agents that
+    /// show up for the first time count, so one you turned off stays off, and nothing
+    /// happens before you've connected something (the tour asks first).
+    private func connectNewAgents() {
+        let d = UserDefaults.standard
+        let known = d.stringArray(forKey: "knownAgents").map { Set($0.compactMap(Agent.init(rawValue:))) }
+        let detected = Set(Agent.allCases.filter(Self.agentDetected))
+        let (connect, seen) = Self.newAgents(detected: detected, known: known, installed: prefs.installed)
+        d.set(seen.map(\.rawValue).sorted(), forKey: "knownAgents")
+        for a in connect {
+            DiagLog.log("connect new agent \(a.rawValue)")
+            setHooks(a, installed: true)
+        }
+    }
+
+    /// Which agents to connect, and the agents seen so far. The first check only takes note.
+    static func newAgents(detected: Set<Agent>, known: Set<Agent>?, installed: Set<Agent>) -> (connect: [Agent], seen: Set<Agent>) {
+        guard let known else { return ([], detected) }
+        let fresh = installed.isEmpty ? [] : Agent.allCases.filter { detected.contains($0) && !known.contains($0) && !installed.contains($0) }
+        return (fresh, known.union(detected))
+    }
+
     private func connectDetectedAgents() {
         for a in Agent.allCases where Self.agentDetected(a) { setHooks(a, installed: true) }
+    }
+
+    /// Codex skips hooks until they're trusted (a hook that changed needs trusting again).
+    /// Trust ours in the background at launch so Codex shows up without a trip to /hooks.
+    private func trustCodexHooks() {
+        guard prefs.installed.contains(.codex) else { return }
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: hookBinary)
+        p.arguments = ["trust", "codex"]
+        p.standardOutput = FileHandle.nullDevice
+        p.standardError = FileHandle.nullDevice
+        p.terminationHandler = { p in DiagLog.log("codex trust: exit \(p.terminationStatus)") }
+        try? p.run()
     }
 
     private func setHooks(_ agent: Agent, installed: Bool) {

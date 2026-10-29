@@ -45,11 +45,18 @@ if let cmd = args.first {
     case "uninstall":
         let ok = targets.allSatisfy { Installer.uninstall(agent: $0) }
         exit(ok ? 0 : 1)
+    case "trust":
+        // Codex only: trust NotchBar's hooks so Codex runs them.
+        guard let n = CodexTrust.trustOurHooks(hookPath: Installer.selfPath()) else {
+            fputs("Couldn't reach Codex.\n", stderr); exit(1)
+        }
+        print(n > 0 ? "Trusted \(n) NotchBar hooks in Codex." : "Codex already trusts NotchBar's hooks.")
+        exit(0)
     case "status":
         for a in Agent.allCases { print("\(a.rawValue): \(Installer.isInstalled(agent: a) ? "installed" : "not installed")") }
         exit(0)
     default:
-        fputs("usage: notchbar-hook [--agent claude|codex|cursor] [install|uninstall|status] [agents…]\n", stderr)
+        fputs("usage: notchbar-hook [--agent claude|codex|cursor] [install|uninstall|trust|status] [agents…]\n", stderr)
         exit(2)
     }
 }

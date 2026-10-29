@@ -62,7 +62,7 @@ struct SettingsView: View {
             } header: {
                 Text("Agents")
             } footer: {
-                Text("Codex asks you to trust new hooks once: run /hooks in Codex. Cursor sends every shell command through hooks, so with notch approvals on, each one waits for you.")
+                Text("NotchBar trusts its own hooks in Codex for you, so Codex shows up right away. Cursor sends every shell command through hooks, so with notch approvals on, each one waits for you.")
             }
 
             Section {

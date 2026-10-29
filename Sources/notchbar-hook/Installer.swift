@@ -56,13 +56,23 @@ enum Installer {
         return s.contains(marker)
     }
 
+    private static func quote(_ path: String) -> String {
+        "'" + path.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
+
+    /// The hook command for an agent. If the app is ever deleted without uninstalling,
+    /// `test -x` keeps the agent quiet.
+    static func command(hookPath: String, agent: Agent) -> String {
+        let q = quote(hookPath)
+        return "test -x \(q) && \(q) --agent \(agent.rawValue) || true"
+    }
+
     static func install(agent: Agent, hookPath: String, cursorApprovals: Bool = false) -> Bool {
         let url = configURL(agent)
         guard var root = load(url) else { return false }
         backupOnce(url)
-        let quoted = "'" + hookPath.replacingOccurrences(of: "'", with: "'\\''") + "'"
-        // If the app is ever deleted without uninstalling, `test -x` keeps the agent quiet.
-        let command = "test -x \(quoted) && \(quoted) --agent \(agent.rawValue) || true"
+        let quoted = quote(hookPath)
+        let command = command(hookPath: hookPath, agent: agent)
 
         var hooks = stripAll(root["hooks"] as? [String: Any] ?? [:], agent: agent)
         for (event, matcher, timeout) in events(agent, cursorApprovals: cursorApprovals) {
@@ -95,7 +105,12 @@ enum Installer {
                 print("Kept your existing statusLine; NotchBar won't show Claude cost/limits.")
             }
         }
-        return save(root, to: url, message: "NotchBar hooks installed for \(agent.rawValue) → \(url.path)")
+        guard save(root, to: url, message: "NotchBar hooks installed for \(agent.rawValue) → \(url.path)") else { return false }
+        // Codex ignores hooks until they're trusted. Trust ours so it works without a trip to /hooks.
+        if agent == .codex, let n = CodexTrust.trustOurHooks(hookPath: hookPath), n > 0 {
+            print("Trusted \(n) NotchBar hooks in Codex.")
+        }
+        return true
     }
 
     static func uninstall(agent: Agent) -> Bool {

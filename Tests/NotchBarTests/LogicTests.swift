@@ -125,4 +125,16 @@ final class ForecastAndConflictTests: XCTestCase {
         XCTAssertNil(c.record(file: "/p/x.ts", session: "a", liveSessions: live)) // already reported
         XCTAssertNil(c.record(file: "/p/y.ts", session: "b", liveSessions: ["b"]))
     }
+
+    func testNewAgentsConnectOnlyWhenTheyFirstAppear() {
+        // First launch of this version: just take note, connect nothing.
+        var r = NotchController.newAgents(detected: [.claude, .cursor], known: nil, installed: [.claude])
+        XCTAssertEqual(r.connect, []); XCTAssertEqual(r.seen, [.claude, .cursor])
+        // Codex gets installed later: connect it. Cursor was seen before (turned off), so it stays off.
+        r = NotchController.newAgents(detected: [.claude, .cursor, .codex], known: r.seen, installed: [.claude])
+        XCTAssertEqual(r.connect, [.codex]); XCTAssertEqual(r.seen, [.claude, .cursor, .codex])
+        // Nothing connected yet (tour not done): never connect on our own.
+        r = NotchController.newAgents(detected: [.claude, .codex], known: [.claude], installed: [])
+        XCTAssertEqual(r.connect, [])
+    }
 }

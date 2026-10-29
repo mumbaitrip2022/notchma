@@ -44,9 +44,8 @@ NotchBar turns the top of your Mac screen into a control center for coding agent
 ### Download
 1. Get the latest **[NotchBar.dmg](https://github.com/mumbaitrip2022/notchma/releases/latest/download/NotchBar.dmg)** (or visit the [download page](https://mumbaitrip2022.github.io/notchma/)), open it and drag **NotchBar** into **Applications**.
 2. Open NotchBar. If it starts from somewhere else, it offers to move itself to Applications. Say yes, since agents connect to it by path.
-3. A short tour hosted by your pet opens in the notch and connects your agents. Or click **Connect** in the island. NotchBar adds its hooks to whichever of Claude Code, Codex and Cursor you have. Your other settings stay untouched, and a backup is kept next to each file.
-4. **Codex only:** run `/hooks` in Codex once and trust the NotchBar entries.
-5. Optional, in Settings: launch at login, Accessibility (paste drafts, raise Warp windows), Calendar, Voice.
+3. A short tour hosted by your pet opens in the notch and connects your agents. Or click **Connect** in the island. NotchBar adds its hooks to whichever of Claude Code, Codex and Cursor you have. Your other settings stay untouched, and a backup is kept next to each file. Codex wants new hooks trusted before it runs them, so NotchBar trusts its own entries for you (only those).
+4. Optional, in Settings: launch at login, Accessibility (paste drafts, raise Warp windows), Calendar, Voice.
 
 > NotchBar isn't notarized yet, so macOS says it "can't be opened" the first time. Open **System Settings › Privacy & Security**, scroll down and click **Open Anyway**.
 > Or in Terminal: `xattr -dr com.apple.quarantine /Applications/NotchBar.app`
@@ -66,7 +65,7 @@ Needs Xcode 16+ (Swift 6). Apps you build yourself never trigger Gatekeeper warn
 | Codex | ✓ | ✓ (only when Codex would ask) | `~/.codex/hooks.json` |
 | Cursor | ✓ | opt in: Settings › *Approve Cursor commands in the notch* | `~/.cursor/hooks.json` |
 
-- **Codex** asks you to review new hooks once before running them: run `/hooks` in Codex and trust the NotchBar entries.
+- **Codex** only runs hooks you trust. NotchBar trusts its own entries for you through Codex's app server (the same thing `/hooks` does), and nothing else. If Codex isn't found, run `/hooks` in Codex once instead.
 - **Cursor** calls hooks for *every* shell and MCP command, not just the ones it would ask about, so notch approvals are off by default. Turned on, each command waits for you in the notch.
 
 ## GitHub Actions
