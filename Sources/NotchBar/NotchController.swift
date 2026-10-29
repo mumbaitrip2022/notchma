@@ -1033,8 +1033,10 @@ extension NotchController {
             var pose = PetSprite.Pose(eyes: .happy, mouth: .smile, blush: true, outfit: .forLevel(l.level))
             pose.egg = l.level == 0
             let c = ReceiptContent.make(day: l.today, number: l.receiptNumber, petName: l.petName, streak: l.streak)
-            if let img = MainActor.assumeIsolated({ ReceiptExport.image(ReceiptShareCard(content: c, pose: pose, petName: l.petName, level: l.level)) }),
-               let data = ReceiptExport.png(img) {
+            let png: Data? = MainActor.assumeIsolated {
+                ReceiptExport.image(ReceiptShareCard(content: c, pose: pose, petName: l.petName, level: l.level)).flatMap(ReceiptExport.png)
+            }
+            if let data = png {
                 try? data.write(to: URL(fileURLWithPath: json["path"] as? String ?? "/dev/null"))
             }
             return true
