@@ -285,6 +285,25 @@ enum GitHub {
         return out
     }
 
+    /// The pipeline as it should look once the run is over. Nothing keeps spinning after
+    /// the last poll: a passed run means every job is done, and after a failure the
+    /// unfinished stages stop where they are.
+    static func settle(_ stages: [CIStage], for state: CIStatus.State) -> [CIStage] {
+        let end: CIStage.State
+        switch state {
+        case .passed: end = .passed
+        case .failed: end = .skipped
+        default: return stages
+        }
+        return stages.map { s in
+            guard s.state == .queued || s.state == .running else { return s }
+            var s = s
+            s.state = end
+            if end == .passed { s.done = s.jobs }
+            return s
+        }
+    }
+
     /// "Test (macOS 14 · Apple silicon)" → "Test (macOS 14)": short enough for a banner.
     static func shortJob(_ name: String) -> String {
         guard let open = name.range(of: " ("), let dot = name.range(of: " · ", range: open.upperBound..<name.endIndex),
@@ -392,7 +411,7 @@ final class CIWatcher {
                     self.watches[sid]?.started = true
                     if !st.isFinished { self.onStart?(sid, st) }
                 }
-                if st.isFinished { self.finish(sid, st); return }
+                if st.isFinished { st.stages = GitHub.settle(st.stages, for: st.state); self.finish(sid, st); return }
                 self.watches[sid]?.status = st
                 self.onUpdate?(sid, st)
                 if age > 90 * 60 { self.drop(sid); return }
@@ -429,7 +448,9 @@ final class CIWatcher {
     /// with the body (nil on any failure) and the HTTP status.
     private func fetch(_ url: URL, _ done: @escaping (Data?, Int) -> Void) {
         io.async { [weak self] in
-            var req = URLRequest(url: url, timeoutInterval: 15)
+            // GitHub says answers stay good for 60s. Ask fresh every time instead (the ETag
+            // below makes unchanged answers free), or the last stage can freeze mid run.
+            var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
             req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
             req.setValue("NotchBar", forHTTPHeaderField: "User-Agent")
             if let t = GitHubAuth.shared.token() { req.setValue("Bearer \(t)", forHTTPHeaderField: "Authorization") }

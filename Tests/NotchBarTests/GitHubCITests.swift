@@ -164,6 +164,20 @@ final class GitHubCITests: XCTestCase {
         XCTAssertEqual(ci.map(GitHub.plannedStages(workflow:)), ["Checks", "Test", "Package", "Size budget", "Smoke test", "All checks passed"])
     }
 
+    func testFinishedRunNeverLeavesAStageSpinning() {
+        // The runs list says passed while a slightly older jobs list still has the gate running.
+        let stale = [CIStage(name: "Test", jobs: 3, done: 3, state: .passed),
+                     CIStage(name: "Smoke test", jobs: 3, done: 2, state: .running),
+                     CIStage(name: "All checks passed", state: .queued)]
+        let passed = GitHub.settle(stale, for: .passed)
+        XCTAssertEqual(passed.map(\.state), [.passed, .passed, .passed])
+        XCTAssertEqual(passed[1].label, "Smoke test ×3")
+        let failed = GitHub.settle([CIStage(name: "Lint", state: .failed), CIStage(name: "Test", state: .running)],
+                                   for: .failed(job: "Lint"))
+        XCTAssertEqual(failed.map(\.state), [.failed, .skipped])
+        XCTAssertEqual(GitHub.settle(stale, for: .running(done: 1, total: 2)), stale, "a live run is left alone")
+    }
+
     func testShortJobNames() {
         XCTAssertEqual(GitHub.shortJob("Test (macOS 14 · Apple silicon)"), "Test (macOS 14)")
         XCTAssertEqual(GitHub.shortJob("Test (macOS 14)"), "Test (macOS 14)")
