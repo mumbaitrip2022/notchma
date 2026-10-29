@@ -1,5 +1,15 @@
 name: CI
 
+# The shape, left to right (this is also what the notch draws, one dot per stage):
+#
+#   Checks ×6 (Linux, seconds)  ──▶  Test ×3 (macOS 14, 15, 26)  ─────────────────────┐
+#   What changed · Lint · Secrets     Package (Apple silicon app) ──▶ Size budget ─────┼──▶ All checks passed
+#   Workflow security · Dependencies                               ──▶ Smoke test ×3 ──┘
+#   Website
+#
+# Fast by design: the cheap Linux checks start everything, tests and packaging run side by side,
+# macOS jobs are skipped when only the website changed, and a newer push cancels an older run.
+
 on:
   push:
     branches: [main]
@@ -8,7 +18,7 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -17,13 +27,64 @@ env:
   NSUnbufferedIO: "YES"
 
 jobs:
-  # ── Stage 1 ─────────────────────────────────────────────────────────────
+  # ── Stage 1 · Checks (Linux, each well under a minute) ───────────────────
+  changes:
+    name: Checks (What changed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      app: ${{ steps.diff.outputs.app }}
+      site: ${{ steps.diff.outputs.site }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Decide what to run
+        id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          base=""
+          [ "$EVENT" = "pull_request" ] && base="$PR_BASE"
+          [ "$EVENT" = "push" ] && base="$BEFORE"
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            echo "Nothing to compare with, so everything runs."
+            app=true; site=true; files="(everything)"
+          else
+            files=$(git diff --name-only "$base...$GITHUB_SHA")
+            app=false; site=false
+            grep -qE '^(Sources/|Tests/|Resources/|scripts/|Package\.swift|Makefile|\.github/workflows/ci\.yml)' <<<"$files" && app=true
+            grep -qE '^(docs/|scripts/check-site\.py|\.github/workflows/ci\.yml)' <<<"$files" && site=true
+          fi
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+          echo "site=$site" >> "$GITHUB_OUTPUT"
+          {
+            echo "### 🧭 What changed"
+            echo
+            echo "| Area | Runs |"
+            echo "|---|---|"
+            echo "| App (build, test, package, smoke) | $([ "$app" = true ] && echo '✅ yes' || echo '⏭️ skipped, no app changes') |"
+            echo "| Website | $([ "$site" = true ] && echo '✅ yes' || echo '⏭️ skipped, no site changes') |"
+            echo
+            echo "<details><summary>Files</summary>"
+            echo
+            echo '```'
+            echo "$files"
+            echo '```'
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   lint:
-    name: Lint
+    name: Checks (Lint)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: House style (no em or en dashes in app text)
         run: bash scripts/check-copy.sh
       - name: Workflow files
@@ -36,81 +97,178 @@ jobs:
       - name: Summary
         run: echo "### ✅ Lint passed" >> "$GITHUB_STEP_SUMMARY"
 
+  secrets:
+    name: Checks (Secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GITLEAKS: "8.30.1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install gitleaks (checksum verified)
+        run: |
+          base="https://github.com/gitleaks/gitleaks/releases/download/v$GITLEAKS"
+          curl -sSfLO "$base/gitleaks_${GITLEAKS}_linux_x64.tar.gz"
+          curl -sSfLO "$base/gitleaks_${GITLEAKS}_checksums.txt"
+          sha256sum --check --ignore-missing "gitleaks_${GITLEAKS}_checksums.txt"
+          tar xzf "gitleaks_${GITLEAKS}_linux_x64.tar.gz" gitleaks
+      - name: Scan the whole history for keys and tokens
+        run: |
+          ./gitleaks git . --redact --no-banner --report-format sarif --report-path gitleaks.sarif
+          {
+            echo "### 🔐 No secrets found"
+            echo
+            echo "gitleaks $GITLEAKS checked $(git rev-list --count HEAD) commits."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  workflows:
+    name: Checks (Workflow security)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Audit the workflows (zizmor)
+        env:
+          # Lets zizmor look up actions with known vulnerabilities.
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pipx run zizmor==1.31.1 --format=github --min-severity=medium .github/workflows
+          echo "### 🛡️ Workflows audited: no injection, credential or vulnerable action findings" >> "$GITHUB_STEP_SUMMARY"
+
+  dependencies:
+    name: Checks (Dependencies)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Review new dependencies for known vulnerabilities and licenses
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000')
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+        with:
+          fail-on-severity: moderate
+          deny-licenses: GPL-3.0, AGPL-3.0
+          base-ref: ${{ github.event.pull_request.base.sha || github.event.before }}
+          head-ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Summary
+        run: |
+          {
+            echo "### 📦 Dependencies"
+            echo
+            echo "Every action and package this change adds or bumps was checked against the GitHub Advisory Database."
+            echo "Dependabot keeps the pinned actions current, and opens security fixes on its own."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  website:
+    name: Checks (Website)
+    needs: changes
+    if: needs.changes.outputs.site == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Links, anchors, page weight and script sources
+        run: python3 scripts/check-site.py docs
+
+  # ── Stage 2 · Build and test on every macOS we support, package in parallel ──
   test:
     name: Test (${{ matrix.name }})
+    needs: [changes, lint]
+    if: needs.changes.outputs.app == 'true'
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 40
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: macOS 14 · Apple silicon
+          - name: macOS 14
             os: macos-14
-          - name: macOS 15 · Apple silicon
+          - name: macOS 15
             os: macos-15
-          - name: macOS 26 · Apple silicon
+            coverage: true
+          - name: macOS 26
             os: macos-26
+    env:
+      MATRIX_NAME: ${{ matrix.name }}
+      MATRIX_OS: ${{ matrix.os }}
+      COVERAGE_FLAG: ${{ matrix.coverage && '--enable-code-coverage' || '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Use the newest Xcode on this runner
         id: xcode
         run: ./scripts/select-xcode.sh
 
       - name: Describe the machine
+        env:
+          XCODE: ${{ steps.xcode.outputs.xcode }}
+          SWIFT: ${{ steps.xcode.outputs.swift }}
         run: |
           {
-            echo "### 🖥️ ${{ matrix.name }}"
+            echo "### 🖥️ $MATRIX_NAME"
             echo
             echo "| | |"
             echo "|---|---|"
-            echo "| Runner | \`${{ matrix.os }}\`, $(uname -m) |"
+            echo "| Runner | \`$MATRIX_OS\`, $(uname -m) |"
             echo "| macOS | $(sw_vers -productVersion) |"
-            echo "| Xcode | ${{ steps.xcode.outputs.xcode }} |"
-            echo "| Swift | ${{ steps.xcode.outputs.swift }} |"
+            echo "| Xcode | $XCODE |"
+            echo "| Swift | $SWIFT |"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Cache build
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: .build
-          key: build-${{ matrix.os }}-${{ steps.xcode.outputs.swift }}-${{ hashFiles('Package.swift', 'Sources/**', 'Tests/**') }}
-          restore-keys: build-${{ matrix.os }}-${{ steps.xcode.outputs.swift }}-
+          key: build-${{ matrix.os }}-${{ steps.xcode.outputs.swift }}-${{ matrix.coverage && 'cov' || 'std' }}-${{ hashFiles('Package.swift', 'Sources/**', 'Tests/**') }}
+          restore-keys: build-${{ matrix.os }}-${{ steps.xcode.outputs.swift }}-${{ matrix.coverage && 'cov' || 'std' }}-
 
-      - name: Build
-        run: swift build --build-tests
+      - name: Build (warnings are errors)
+        run: swift build --build-tests -Xswiftc -warnings-as-errors $COVERAGE_FLAG
 
       - name: Test
-        run: swift test --skip-build --parallel --xunit-output test-results.xml
+        run: swift test --skip-build --parallel --xunit-output test-results.xml $COVERAGE_FLAG
 
       - name: Test report
         if: always()
         run: |
           if [ -f test-results.xml ]; then
-            python3 scripts/test-summary.py test-results.xml "${{ matrix.name }}" >> "$GITHUB_STEP_SUMMARY"
+            python3 scripts/test-summary.py test-results.xml "$MATRIX_NAME" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "### ❌ ${{ matrix.name }}: no test results (build failed)" >> "$GITHUB_STEP_SUMMARY"
+            echo "### ❌ $MATRIX_NAME: no test results (build failed)" >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      - name: Coverage
+        if: matrix.coverage
+        run: python3 scripts/coverage-summary.py "$(swift test --show-codecov-path)" "($MATRIX_NAME)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: test-results-${{ matrix.os }}
           path: test-results*.xml
           if-no-files-found: ignore
           retention-days: 14
 
-  # ── Stage 2 ─────────────────────────────────────────────────────────────
   package:
     name: Package (Apple silicon app)
-    needs: [lint, test]
+    needs: [changes, lint]
+    if: needs.changes.outputs.app == 'true'
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 20
     outputs:
       version: ${{ steps.meta.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Use the newest Xcode
         run: ./scripts/select-xcode.sh
       - name: Build DMG and zip
@@ -134,7 +292,7 @@ jobs:
             echo "Download it from the **Artifacts** section of this run to try this exact build."
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload app
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: NotchBar-${{ steps.meta.outputs.version }}-${{ github.sha }}
           path: |
@@ -142,13 +300,44 @@ jobs:
             dist/*.zip
           retention-days: 14
       - name: Upload app bundle for the smoke test
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: app-bundle
           path: dist/NotchBar-*.zip
           retention-days: 1
 
-  # ── Stage 3 ─────────────────────────────────────────────────────────────
+  # ── Stage 3 · Check the packaged app ────────────────────────────────────
+  budget:
+    name: Size budget
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      # The website promises a 2 MB download; leave room, but catch a real regression.
+      MAX_ZIP_KB: 5120
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: app-bundle
+          path: pkg
+      - name: Download stays small
+        run: |
+          zip=$(ls pkg/NotchBar-*.zip)
+          kb=$(( $(stat -c %s "$zip") / 1024 ))
+          pct=$(( kb * 100 / MAX_ZIP_KB ))
+          {
+            echo "### ⚖️ Size budget"
+            echo
+            echo "| | Size | Budget | Used |"
+            echo "|---|---:|---:|---:|"
+            echo "| App download | $kb KB | $MAX_ZIP_KB KB | $pct% |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$kb" -gt "$MAX_ZIP_KB" ]; then
+            echo "::error title=Size budget::The app is $kb KB, over the $MAX_ZIP_KB KB budget"
+            exit 1
+          fi
+          echo "::notice title=Size budget::$kb KB of $MAX_ZIP_KB KB ($pct%)"
+
   smoke:
     name: Smoke test (${{ matrix.name }})
     needs: package
@@ -160,13 +349,16 @@ jobs:
         include:
           - name: macOS 14
             os: macos-14
+          - name: macOS 15
+            os: macos-15
           - name: macOS 26
             os: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           sparse-checkout: scripts
-      - uses: actions/download-artifact@v4
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: app-bundle
           path: pkg
@@ -179,23 +371,31 @@ jobs:
   gate:
     name: All checks passed
     if: always()
-    needs: [lint, test, package, smoke]
+    needs: [changes, lint, secrets, workflows, dependencies, website, test, package, budget, smoke]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Result
+        env:
+          RESULTS: ${{ toJSON(needs) }}
         run: |
-          {
-            echo "### Pipeline"
-            echo
-            echo "| Stage | Result |"
-            echo "|---|---|"
-            echo "| Lint | ${{ needs.lint.result }} |"
-            echo "| Test matrix | ${{ needs.test.result }} |"
-            echo "| Package | ${{ needs.package.result }} |"
-            echo "| Smoke test | ${{ needs.smoke.result }} |"
-          } >> "$GITHUB_STEP_SUMMARY"
-          for r in "${{ needs.lint.result }}" "${{ needs.test.result }}" "${{ needs.package.result }}" "${{ needs.smoke.result }}"; do
-            [ "$r" = "success" ] || { echo "A stage didn't pass: $r"; exit 1; }
-          done
-          echo "✅ Everything passed"
+          python3 - <<'PY'
+          import json, os
+          needs = json.loads(os.environ["RESULTS"])
+          names = {
+              "changes": "What changed", "lint": "Lint", "secrets": "Secrets", "workflows": "Workflow security",
+              "dependencies": "Dependencies", "website": "Website", "test": "Test (macOS 14, 15, 26)",
+              "package": "Package", "budget": "Size budget", "smoke": "Smoke test (macOS 14, 15, 26)",
+          }
+          icon = {"success": "✅", "skipped": "⏭️", "failure": "❌", "cancelled": "🚫"}
+          bad = [k for k, v in needs.items() if v["result"] not in ("success", "skipped")]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write("### Pipeline\n\n| Stage | Result |\n|---|---|\n")
+              for k, label in names.items():
+                  r = needs.get(k, {}).get("result", "skipped")
+                  f.write(f"| {label} | {icon.get(r, '❔')} {r} |\n")
+          if bad:
+              print("A stage didn't pass: " + ", ".join(f"{names.get(k, k)} ({needs[k]['result']})" for k in bad))
+              raise SystemExit(1)
+          print("✅ Everything passed")
+          PY

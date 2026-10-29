@@ -1,7 +1,14 @@
 version: 2
 updates:
+  # Keeps every pinned action current, in one PR a week instead of many.
+  # Security fixes skip the wait and arrive as soon as an advisory lands.
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: monthly
+      interval: weekly
     labels: [dependencies]
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "CI"
