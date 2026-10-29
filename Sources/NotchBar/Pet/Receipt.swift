@@ -69,7 +69,7 @@ struct ReceiptContent: Equatable {
         l.append(.center(quip(day: day, petName: petName, now: now)))
         l.append(.center("thank you for shipping"))
         l.append(.gap)
-        l.append(.center("github.com/mumbaitrip2022/notchma"))
+        l.append(.center("mumbaitrip2022.github.io/notchma"))
         return ReceiptContent(lines: l, number: number, signature: day.signature + petName + "\(streak)")
     }
 

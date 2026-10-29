@@ -2066,7 +2066,7 @@ addEventListener("scroll", pickIsle, { passive: true });
       ["b", "TOTAL", "$4.30"], ["c", "api value. your plan covers it"], ["-"],
       ["r", "top project", "checkout"], ["r", "longest task", "1h 14m"], ["r", "streak", "🔥 5 days"],
       ["g"], ["bar"], ["g"], ["c", h >= 1 && h < 5 ? "late night bestie. touch grass 🌙" : "1k+ lines. absolute cinema 🎬"],
-      ["c", "thank you for shipping"], ["g"], ["c", "github.com/mumbaitrip2022/notchma"]];
+      ["c", "thank you for shipping"], ["g"], ["c", "mumbaitrip2022.github.io/notchma"]];
   }
   const height = (L) => 42 + L.reduce((s, [k]) => s + HT[k], 0) + 1.5 * (L.length - 1) + 18;
   function paint(g, ox, oy) {
@@ -2195,7 +2195,7 @@ addEventListener("scroll", pickIsle, { passive: true });
   const png = () => new Promise((r) => card().toBlob(r, "image/png"));
   let sayT; const tell = (t) => { say.textContent = t; clearTimeout(sayT); sayT = setTimeout(() => { say.textContent = ""; }, 4000); };
   const copy = async () => { try { await navigator.clipboard.write([new ClipboardItem({ "image/png": png() })]); return true; } catch { return false; } };
-  const text = "my AI agents' receipt for today 🧾 4 tasks, 41 files, 148 tests passed. printed by mochi, the pet that lives in my notch 🐾\n\ngithub.com/mumbaitrip2022/notchma";
+  const text = "my AI agents' receipt for today 🧾 4 tasks, 41 files, 148 tests passed. printed by mochi, the pet that lives in my notch 🐾\n\nmumbaitrip2022.github.io/notchma";
   const act = {
     async copy() { tell((await copy()) ? "copied. paste it anywhere ✨" : "couldn't make the image"); },
     async save() { const a = document.createElement("a"); a.href = URL.createObjectURL(await png()); a.download = `NotchBar receipt ${key}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); tell("saved to your downloads"); },

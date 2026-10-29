@@ -202,7 +202,7 @@ struct IdleHero: View {
         if d.files.count > 0 { bits.append("\(d.files.count) files") }
         if d.testsPassed > 0 { bits.append("\(d.testsPassed) tests passed") }
         let stats = bits.isEmpty ? "" : " " + bits.joined(separator: ", ") + "."
-        let text = "my AI agents' receipt for today 🧾\(stats) printed by \(ledger.petName), the pet that lives in my notch 🐾\n\ngithub.com/mumbaitrip2022/notchma"
+        let text = "my AI agents' receipt for today 🧾\(stats) printed by \(ledger.petName), the pet that lives in my notch 🐾\n\nmumbaitrip2022.github.io/notchma"
         var c = URLComponents(string: "https://x.com/intent/post")!
         c.queryItems = [URLQueryItem(name: "text", value: text)]
         if let url = c.url { NSWorkspace.shared.open(url) }
