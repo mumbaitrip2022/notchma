@@ -109,12 +109,14 @@ struct AgentGlyph: View {
                           spinning: active, size: size)
                     .frame(width: size, height: size)
             case .codex:
-                if let icon = AppIcons.icon(for: .codex) {
-                    Image(nsImage: icon)
+                if let mark = AppIcons.codexMark {
+                    // The Codex mark on its own: crisp at small sizes, unlike the full app icon.
+                    Image(nsImage: mark)
                         .resizable()
                         .interpolation(.high)
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: size * 1.25, height: size * 1.25)
+                        .frame(width: size * 1.15, height: size * 1.15)
+                        .opacity(active ? 1 : 0.95)
                 } else {
                     Image(systemName: "hexagon")
                         .font(.system(size: size * 0.92, weight: .bold))
@@ -316,8 +318,8 @@ enum AppIcons {
         return image
     }
 
-    /// The Codex logo: the art OpenAI's app ships for Codex (its own app icon is ChatGPT's),
-    /// else the copy inside NotchBar, for people who only use the Codex CLI.
+    /// The Codex app icon, from the art OpenAI's app ships for Codex (that app's own icon is
+    /// ChatGPT's). Big tiles use it; without it they fall back to the mark below.
     private static func codexLogo() -> NSImage? {
         for id in ["com.openai.codex", "com.openai.chat"] {
             if let app = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id),
@@ -325,6 +327,9 @@ enum AppIcons {
                 return logo
             }
         }
-        return Bundle.main.url(forResource: "codex", withExtension: "png").flatMap(NSImage.init(contentsOf:))
+        return nil
     }
+
+    /// The Codex mark alone (no app icon tile), shipped inside NotchBar for small glyphs.
+    static let codexMark: NSImage? = Bundle.main.url(forResource: "codex", withExtension: "png").flatMap(NSImage.init(contentsOf:))
 }
