@@ -14,6 +14,7 @@ cp "$BIN/NotchBar" "$APP/Contents/MacOS/NotchBar"
 cp "$BIN/notchbar-hook" "$APP/Contents/MacOS/notchbar-hook"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 [ -f Resources/AppIcon.icns ] && cp Resources/AppIcon.icns "$APP/Contents/Resources/"
+cp Resources/codex.png "$APP/Contents/Resources/"
 strip -x "$APP/Contents/MacOS/NotchBar" "$APP/Contents/MacOS/notchbar-hook" 2>/dev/null || true
 
 codesign --force --sign - "$APP/Contents/MacOS/notchbar-hook"

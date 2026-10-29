@@ -27,6 +27,7 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN/NotchBar" "$BIN/notchbar-hook" "$APP/Contents/MacOS/"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/"
+cp Resources/codex.png "$APP/Contents/Resources/"   # Codex logo when the Codex app is not installed
 for b in NotchBar notchbar-hook; do
   [ "$(lipo -archs "$APP/Contents/MacOS/$b")" = "arm64" ] || { echo "✗ $b must be Apple silicon (arm64) only"; exit 1; }
 done

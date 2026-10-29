@@ -92,7 +92,8 @@ final class RingNSView: NSView {
 
 // MARK: - Agent glyph
 
-/// The mark for each agent: Claude's spark, a hexagon for Codex, an arrow for Cursor.
+/// The mark for each agent: Claude's spark, and the real Codex and Cursor logos
+/// (a hexagon and an arrow when those can't be found).
 struct AgentGlyph: View {
     let agent: Agent
     var active = false
@@ -108,10 +109,18 @@ struct AgentGlyph: View {
                           spinning: active, size: size)
                     .frame(width: size, height: size)
             case .codex:
-                Image(systemName: "hexagon")
-                    .font(.system(size: size * 0.92, weight: .bold))
-                    .foregroundStyle(color)
-                    .symbolEffect(.pulse, options: .repeating, isActive: active)
+                if let icon = AppIcons.icon(for: .codex) {
+                    Image(nsImage: icon)
+                        .resizable()
+                        .interpolation(.high)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: size * 1.25, height: size * 1.25)
+                } else {
+                    Image(systemName: "hexagon")
+                        .font(.system(size: size * 0.92, weight: .bold))
+                        .foregroundStyle(color)
+                        .symbolEffect(.pulse, options: .repeating, isActive: active)
+                }
             case .cursor:
                 if let icon = AppIcons.icon(for: .cursor) {
                     // The real Cursor logo, taken from the installed Cursor.app.
@@ -295,11 +304,27 @@ enum AppIcons {
     static func icon(for agent: Agent) -> NSImage? {
         if let cached = cache[agent] { return cached }
         var image: NSImage?
-        if agent == .cursor,
-           let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: TerminalJump.cursorBundle) {
-            image = NSWorkspace.shared.icon(forFile: url.path)
+        switch agent {
+        case .cursor:
+            if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: TerminalJump.cursorBundle) {
+                image = NSWorkspace.shared.icon(forFile: url.path)
+            }
+        case .codex: image = codexLogo()
+        case .claude: break
         }
         cache[agent] = image
         return image
+    }
+
+    /// The Codex logo: the art OpenAI's app ships for Codex (its own app icon is ChatGPT's),
+    /// else the copy inside NotchBar, for people who only use the Codex CLI.
+    private static func codexLogo() -> NSImage? {
+        for id in ["com.openai.codex", "com.openai.chat"] {
+            if let app = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id),
+               let logo = NSImage(contentsOf: app.appendingPathComponent("Contents/Resources/icon-codex-dark-color.png")) {
+                return logo
+            }
+        }
+        return Bundle.main.url(forResource: "codex", withExtension: "png").flatMap(NSImage.init(contentsOf:))
     }
 }
