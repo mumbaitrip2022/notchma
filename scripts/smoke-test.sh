@@ -30,9 +30,10 @@ shot() {
   local f="$SHOTS_DIR/$1.png" w h cw ch
   screencapture -x -m "$f" 2>/dev/null || { echo "(no screenshot: screencapture failed)"; return 0; }
   w=$(sips -g pixelWidth "$f" | awk '/pixelWidth/{print $2}'); h=$(sips -g pixelHeight "$f" | awk '/pixelHeight/{print $2}')
-  cw=$(( w < 1200 ? w : 1200 )); ch=$(( h < 520 ? h : 520 ))
-  sips -c "$ch" "$cw" --cropOffset 0 $(( (w - cw) / 2 )) "$f" >/dev/null 2>&1 || true
-  echo "Saved screenshot $1 (${cw}x${ch} of ${w}x${h})"
+  cw=$(( w < 900 ? w : 900 )); ch=$(( h < 420 ? h : 420 ))
+  # CI screens are 1x, so pixels are points here.
+  screencapture -x -m -R "$(( (w - cw) / 2 )),0,$cw,$ch" "$f" 2>/dev/null || true
+  echo "Saved screenshot $1 (${cw}x${ch} from the top of ${w}x${h})"
 }
 
 { echo "### 🔥 Smoke test"; echo; echo "| | Check |"; echo "|---|---|"; } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
@@ -56,6 +57,8 @@ pass "Cursor hook falls back safely"
 
 # 2. Launch and wait for the socket.
 crashes_before=$(ls "$HOME/Library/Logs/DiagnosticReports" 2>/dev/null | grep -c '^NotchBar' || true)
+# A fresh Mac would open the welcome tour, which covers the session we want to see.
+defaults write dev.notchbar.app welcomed -bool true
 open "$APP"
 for _ in $(seq 1 40); do [ -S "$SOCK" ] && break; sleep 0.5; done
 [ -S "$SOCK" ] || fail "NotchBar didn't open its socket within 20s"
