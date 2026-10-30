@@ -22,6 +22,18 @@ fail() {
   exit 1
 }
 now() { python3 -c 'import time; print(time.time())'; }
+# Saves the top middle of the screen (where the notch lives) to $SHOTS_DIR/<name>.png.
+# Best effort: a missing screenshot never fails the smoke test.
+shot() {
+  [ -n "${SHOTS_DIR:-}" ] || return 0
+  mkdir -p "$SHOTS_DIR"
+  local f="$SHOTS_DIR/$1.png" w h cw ch
+  screencapture -x -m "$f" 2>/dev/null || { echo "(no screenshot: screencapture failed)"; return 0; }
+  w=$(sips -g pixelWidth "$f" | awk '/pixelWidth/{print $2}'); h=$(sips -g pixelHeight "$f" | awk '/pixelHeight/{print $2}')
+  cw=$(( w < 1200 ? w : 1200 )); ch=$(( h < 520 ? h : 520 ))
+  sips -c "$ch" "$cw" --cropOffset 0 $(( (w - cw) / 2 )) "$f" >/dev/null 2>&1 || true
+  echo "Saved screenshot $1 (${cw}x${ch} of ${w}x${h})"
+}
 
 { echo "### 🔥 Smoke test"; echo; echo "| | Check |"; echo "|---|---|"; } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
 
@@ -54,13 +66,34 @@ pass "NotchBar launches and listens"
 for e in \
   '{"session_id":"ci-smoke","hook_event_name":"SessionStart","cwd":"/tmp"}' \
   '{"session_id":"ci-smoke","hook_event_name":"UserPromptSubmit","cwd":"/tmp","prompt":"run the tests"}' \
-  '{"session_id":"ci-smoke","hook_event_name":"PreToolUse","cwd":"/tmp","tool_name":"Bash","tool_input":{"command":"swift test"}}' \
-  '{"session_id":"ci-smoke","hook_event_name":"PostToolUse","cwd":"/tmp","tool_name":"Bash","tool_input":{"command":"swift test"},"tool_response":{"stdout":"Executed 12 tests, with 0 failures"}}' \
-  '{"session_id":"ci-smoke","hook_event_name":"Stop","cwd":"/tmp","last_assistant_message":"All tests pass."}' \
-  '{"session_id":"ci-smoke","hook_event_name":"SessionEnd","cwd":"/tmp"}'; do
+  '{"session_id":"ci-smoke","hook_event_name":"PreToolUse","cwd":"/tmp","tool_name":"Bash","tool_input":{"command":"swift test"}}'; do
   echo "$e" | "$HOOK" --agent claude >/dev/null
 done
+sleep 2
+shot 1-working
+
+# An approval card, the way you'd see it: the hook waits for an answer while we take the picture,
+# then goes away without one. NotchBar has to shrug that off.
+echo '{"session_id":"ci-smoke","hook_event_name":"PermissionRequest","cwd":"/tmp","tool_name":"Bash","tool_input":{"command":"rm -rf .build && swift build"}}' \
+  | "$HOOK" --agent claude >/dev/null 2>&1 &
+ask=$!
 sleep 3
+shot 2-approval
+kill "$ask" 2>/dev/null || true
+wait "$ask" 2>/dev/null || true
+sleep 1
+pgrep -x NotchBar >/dev/null || fail "NotchBar quit when a pending approval went away"
+pass "Shows an approval and survives the agent leaving mid question"
+
+for e in \
+  '{"session_id":"ci-smoke","hook_event_name":"PostToolUse","cwd":"/tmp","tool_name":"Bash","tool_input":{"command":"swift test"},"tool_response":{"stdout":"Executed 12 tests, with 0 failures"}}' \
+  '{"session_id":"ci-smoke","hook_event_name":"Stop","cwd":"/tmp","last_assistant_message":"All tests pass."}'; do
+  echo "$e" | "$HOOK" --agent claude >/dev/null
+done
+sleep 2
+shot 3-done
+echo '{"session_id":"ci-smoke","hook_event_name":"SessionEnd","cwd":"/tmp"}' | "$HOOK" --agent claude >/dev/null
+sleep 2
 pgrep -x NotchBar >/dev/null || fail "NotchBar quit while handling a session"
 pass "Handles a full agent session (start, prompt, tool, stop, end)"
 

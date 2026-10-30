@@ -161,7 +161,7 @@ final class GitHubCITests: XCTestCase {
         XCTAssertEqual(GitHub.merge(live, planned: planned).map(\.state), [.passed, .running, .queued, .queued])
         // The real workflow in this repo.
         let ci = try? String(contentsOfFile: #filePath.components(separatedBy: "/Tests/")[0] + "/.github/workflows/ci.yml", encoding: .utf8)
-        XCTAssertEqual(ci.map(GitHub.plannedStages(workflow:)), ["Checks", "Test", "Package", "Size budget", "Smoke test", "All checks passed"])
+        XCTAssertEqual(ci.map(GitHub.plannedStages(workflow:)), ["Checks", "Test", "Package", "Size budget", "Smoke test", "Screenshots", "All checks passed"])
     }
 
     func testFinishedRunNeverLeavesAStageSpinning() {

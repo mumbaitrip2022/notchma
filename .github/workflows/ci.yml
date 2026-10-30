@@ -2,10 +2,13 @@ name: CI
 
 # The shape, left to right (this is also what the notch draws, one dot per stage):
 #
-#   Checks ×6 (Linux, seconds)  ──▶  Test ×3 (macOS 15, 26, 27)  ─────────────────────┐
-#   What changed · Lint · Secrets     Package (Apple silicon app) ──▶ Size budget ─────┼──▶ All checks passed
-#   Workflow security · Dependencies                               ──▶ Smoke test ×3 ──┘
+#   Checks ×6 (Linux, seconds)  ──▶  Test ×3 (macOS 15, 26, 27)  ───────────────────────────────────┐
+#   What changed · Lint · Secrets     Package (Apple silicon app) ──▶ Size budget ───────────────────┼──▶ All checks passed
+#   Workflow security · Dependencies                               ──▶ Smoke test ×3 ──▶ Screenshots ┘
 #   Website
+#
+# Every run page tells the story: a pipeline diagram colored by result, test tables, and pictures
+# of the real notch taken by the smoke test on each macOS (pushes to main keep them on ci-shots).
 #
 # Fast by design: the cheap Linux checks start everything, tests and packaging run side by side,
 # macOS jobs are skipped when only the website changed, and a newer push cancels an older run.
@@ -240,7 +243,7 @@ jobs:
         if: always()
         run: |
           if [ -f test-results.xml ]; then
-            python3 scripts/test-summary.py test-results.xml "$MATRIX_NAME" >> "$GITHUB_STEP_SUMMARY"
+            python3 scripts/test-summary.py test-results.xml "$MATRIX_NAME"
           else
             echo "### ❌ $MATRIX_NAME: no test results (build failed)" >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -366,13 +369,96 @@ jobs:
       - name: Unpack
         run: ditto -x -k pkg/NotchBar-*.zip pkg/
       - name: Install, launch, drive and quit the packaged app
+        env:
+          SHOTS_DIR: ${{ runner.temp }}/shots
         run: ./scripts/smoke-test.sh pkg/NotchBar.app
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: shots-${{ matrix.os }}
+          path: ${{ runner.temp }}/shots/*.png
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # Pictures of the real notch from each smoke test, right on the run page. Only pushes to main
+  # save them (on the ci-shots branch, newest 40 runs), so this is the one job that can write.
+  screenshots:
+    name: Screenshots
+    needs: [package, smoke]
+    if: always() && needs.package.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        continue-on-error: true   # pictures are a nice extra, never a reason to fail CI
+        with:
+          pattern: shots-*
+          path: shots
+      - name: Save them and show them here
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          if ! ls shots/*/*.png >/dev/null 2>&1; then
+            echo "### 📸 No screenshots this run" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          mkdir site && cd site
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          url="https://github.com/$REPO.git"
+          git checkout -q --orphan ci-shots
+          if git -c http.extraheader="$auth" fetch -q --depth 1 "$url" ci-shots 2>/dev/null; then
+            git checkout -q FETCH_HEAD -- .
+          fi
+          mkdir -p "runs/$RUN"
+          for d in ../shots/shots-*; do
+            os=${d##*/shots-}
+            for f in "$d"/*.png; do cp "$f" "runs/$RUN/$os-$(basename "$f")"; done
+          done
+          if [ -d runs ]; then
+            find runs -mindepth 1 -maxdepth 1 -type d | sort -V | head -n -40 | xargs -r rm -rf
+          fi
+          printf '# CI screenshots\n\nPictures of the notch from the smoke test, newest 40 runs. Rewritten on every push to main.\n' > README.md
+          git add -A
+          git commit -qm "Screenshots for run $RUN"
+          # One commit, replaced every time, so this branch never grows.
+          git -c http.extraheader="$auth" push -q --force "$url" ci-shots
+          base="https://raw.githubusercontent.com/$REPO/ci-shots/runs/$RUN"
+          oses=(macos-15 macos-26 xcode-27)
+          {
+            echo "### 📸 NotchBar on a real Mac"
+            echo
+            echo "Taken by the smoke test while it drove the packaged app."
+            echo
+            echo "| | macOS 15 | macOS 26 | macOS 27 |"
+            echo "|---|:-:|:-:|:-:|"
+            for state in "1-working:Working" "2-approval:Asking" "3-done:Done"; do
+              row="| **${state#*:}** |"
+              for os in "${oses[@]}"; do
+                if [ -f "runs/$RUN/$os-${state%%:*}.png" ]; then
+                  row+=" <img src=\"$base/$os-${state%%:*}.png\" width=\"300\" alt=\"${state#*:} on $os\"> |"
+                else
+                  row+=" n/a |"
+                fi
+              done
+              echo "$row"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # ── Gate ────────────────────────────────────────────────────────────────
   gate:
     name: All checks passed
     if: always()
-    needs: [changes, lint, secrets, workflows, dependencies, website, test, package, budget, smoke]
+    needs: [changes, lint, secrets, workflows, dependencies, website, test, package, budget, smoke, screenshots]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -387,11 +473,34 @@ jobs:
               "changes": "What changed", "lint": "Lint", "secrets": "Secrets", "workflows": "Workflow security",
               "dependencies": "Dependencies", "website": "Website", "test": "Test (macOS 15, 26, 27)",
               "package": "Package", "budget": "Size budget", "smoke": "Smoke test (macOS 15, 26, 27)",
+              "screenshots": "Screenshots",
           }
           icon = {"success": "✅", "skipped": "⏭️", "failure": "❌", "cancelled": "🚫"}
           bad = [k for k, v in needs.items() if v["result"] not in ("success", "skipped")]
+          def result(*keys):
+              rs = [needs.get(k, {}).get("result", "skipped") for k in keys]
+              for r in ("failure", "cancelled", "success"):
+                  if r in rs:
+                      return r
+              return "skipped"
+          checks = result("changes", "lint", "secrets", "workflows", "dependencies", "website")
+          nodes = [("checks", "Checks ×6", checks), ("test", "Test ×3", result("test")),
+                   ("package", "Package", result("package")), ("budget", "Size budget", result("budget")),
+                   ("smoke", "Smoke test ×3", result("smoke")), ("shots", "Screenshots", result("screenshots")),
+                   ("gate", "All checks passed", "failure" if bad else "success")]
+          edges = ["checks --> test --> gate", "checks --> package --> budget --> gate",
+                   "package --> smoke --> shots --> gate"]
+          colors = {"success": "#1a7f37", "failure": "#cf222e", "cancelled": "#9a6700", "skipped": "#8c959f"}
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
-              f.write("### Pipeline\n\n| Stage | Result |\n|---|---|\n")
+              f.write("### 🗺️ Pipeline\n\n```mermaid\nflowchart LR\n")
+              for key, label, r in nodes:
+                  f.write(f'  {key}["{icon.get(r, "❔")} {label}"]:::{r}\n')
+              for e in edges:
+                  f.write(f"  {e}\n")
+              for r, c in colors.items():
+                  f.write(f"  classDef {r} fill:{c},stroke:{c},color:#ffffff\n")
+              f.write("```\n\n")
+              f.write("| Stage | Result |\n|---|---|\n")
               for k, label in names.items():
                   r = needs.get(k, {}).get("result", "skipped")
                   f.write(f"| {label} | {icon.get(r, '❔')} {r} |\n")
