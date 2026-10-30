@@ -22,7 +22,8 @@ fail() {
   exit 1
 }
 now() { python3 -c 'import time; print(time.time())'; }
-# Saves the top middle of the screen (where the notch lives) to $SHOTS_DIR/<name>.png.
+# Saves the top middle of the screen (where the notch lives) to $SHOTS_DIR/<name>.png,
+# $2 points tall (default 420).
 # Best effort: a missing screenshot never fails the smoke test.
 shot() {
   [ -n "${SHOTS_DIR:-}" ] || return 0
@@ -30,7 +31,8 @@ shot() {
   local f="$SHOTS_DIR/$1.png" w h cw ch
   screencapture -x -m "$f" 2>/dev/null || { echo "(no screenshot: screencapture failed)"; return 0; }
   w=$(sips -g pixelWidth "$f" | awk '/pixelWidth/{print $2}'); h=$(sips -g pixelHeight "$f" | awk '/pixelHeight/{print $2}')
-  cw=$(( w < 900 ? w : 900 )); ch=$(( h < 420 ? h : 420 ))
+  local want=${2:-420}
+  cw=$(( w < 900 ? w : 900 )); ch=$(( h < want ? h : want ))
   # CI screens are 1x, so pixels are points here.
   screencapture -x -m -R "$(( (w - cw) / 2 )),0,$cw,$ch" "$f" 2>/dev/null || true
   echo "Saved screenshot $1 (${cw}x${ch} from the top of ${w}x${h})"
@@ -73,7 +75,7 @@ for e in \
   echo "$e" | "$HOOK" --agent claude >/dev/null
 done
 sleep 2
-shot 1-working
+shot 1-working 90
 
 # An approval card, the way you'd see it: the hook waits for an answer while we take the picture,
 # then goes away without one. NotchBar has to shrug that off.
@@ -94,7 +96,7 @@ for e in \
   echo "$e" | "$HOOK" --agent claude >/dev/null
 done
 sleep 2
-shot 3-done
+shot 3-done 90
 echo '{"session_id":"ci-smoke","hook_event_name":"SessionEnd","cwd":"/tmp"}' | "$HOOK" --agent claude >/dev/null
 sleep 2
 pgrep -x NotchBar >/dev/null || fail "NotchBar quit while handling a session"
