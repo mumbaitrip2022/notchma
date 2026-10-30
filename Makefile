@@ -2,11 +2,11 @@ APP_NAME  := NotchBar.app
 DEST      := $(HOME)/Applications
 HOOK      := $(DEST)/$(APP_NAME)/Contents/MacOS/notchbar-hook
 
-.PHONY: all build install uninstall run clean test dist
+.PHONY: all build install uninstall run clean test dist hooks
 
 all: build
 
-build:
+build: hooks
 	@./scripts/build.sh
 
 install: build
@@ -27,7 +27,7 @@ uninstall:
 run: build
 	@pkill -x NotchBar 2>/dev/null; sleep 0.3; open build/$(APP_NAME)
 
-test:
+test: hooks
 	swift test
 
 dist:
@@ -35,3 +35,7 @@ dist:
 
 clean:
 	rm -rf .build build dist
+
+# Turn on the repo's git hooks (same quick checks as CI). Runs on its own with build and test.
+hooks:
+	@git rev-parse --git-dir >/dev/null 2>&1 && git config core.hooksPath .githooks || true

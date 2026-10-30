@@ -1,0 +1,3 @@
+#!/bin/bash
+# Runs the same quick checks as CI. Skip once with: git commit --no-verify
+exec bash "$(git rev-parse --show-toplevel)/scripts/quick-checks.sh"

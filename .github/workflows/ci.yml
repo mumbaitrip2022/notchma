@@ -85,15 +85,12 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - name: House style (no em or en dashes in app text)
-        run: bash scripts/check-copy.sh
+      - name: Quick checks (the same ones the pre-commit hook runs)
+        run: bash scripts/quick-checks.sh
       - name: Workflow files
         run: |
           bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
           ./actionlint -color
-      - name: No leftover merge conflict markers
-        run: |
-          if git grep -nE '^(<{7}|={7}|>{7})( |$)' -- ':!*.md'; then echo "Found conflict markers"; exit 1; fi
       - name: Summary
         run: echo "### ✅ Lint passed" >> "$GITHUB_STEP_SUMMARY"
 
