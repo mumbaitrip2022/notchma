@@ -181,7 +181,7 @@ agent ──hook JSON──▶ notchbar-hook ──unix socket──▶ NotchBar
 - **Fail safe:** if NotchBar isn't running, crashes, or you don't answer within about 10 minutes, the hook exits quietly and the agent shows its normal prompt. Nothing can get stuck.
 - `AskUserQuestion` and plan approvals always stay in the terminal.
 - The socket lives at `~/Library/Application Support/NotchBar/nb.sock` and only you can read it (mode 0600).
-- Everything stays on your Mac. No account, no analytics. NotchBar talks to GitHub for two things only: a daily check for a new version, and, after an agent pushes, the Actions status of that commit. Both can be turned off in Settings.
+- Everything stays on your Mac. No account, no analytics in the app. (The website counts visits with GoatCounter, without cookies.) NotchBar talks to GitHub for two things only: a daily check for a new version, and, after an agent pushes, the Actions status of that commit. Both can be turned off in Settings.
 
 ## FAQ
 

@@ -1296,6 +1296,9 @@ animation: hfloat 1.6s var(--out) forwards; }
 "use strict";
 const REPO = "mumbaitrip2022/notchma";
 const LATEST = `https://github.com/${REPO}/releases/latest/download/NotchBar.dmg`;
+/* Visit counts via GoatCounter: no cookies, nothing personal, only on the live site. */
+const count = (p, t, e) => { if (!location.hostname.endsWith("github.io") || navigator.webdriver) return; const q = new URLSearchParams({ p, t: t || document.title, r: e ? "" : document.referrer, s: `${screen.width},${screen.height},${devicePixelRatio}`, e: e ? "true" : "false", rnd: Math.random().toString(36).slice(2) }); new Image().src = `https://notchbar.goatcounter.com/count?${q}`; };
+count(location.pathname + (location.search === "?download" ? "?download" : ""));
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -1647,12 +1650,12 @@ $("#sdUrl").textContent = SEND.replace(/^https?:\/\//, "").replace(/\/$/, "");
 $("#sdMail").href = `mailto:?subject=${encodeURIComponent("NotchBar for my Mac")}&body=${encodeURIComponent(`Open this on the Mac:\n${SEND}`)}`;
 if (navigator.share) { $("#sdShare").hidden = false; $("#sdTip").hidden = !onIOS; }
 else $("#sdCopy").classList.replace("light", "dark");
-$("#sdShare").addEventListener("click", () => navigator.share({ title: "NotchBar", text: "NotchBar for my Mac", url: SEND }).catch(() => {}));
+$("#sdShare").addEventListener("click", () => count("send-to-mac/share", "Sent to a Mac", 1) || navigator.share({ title: "NotchBar", text: "NotchBar for my Mac", url: SEND }).catch(() => {}));
 $("#sdCopy").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(SEND); } catch { prompt("Copy this link", SEND); return; }
   setLabel($("#sdCopy"), "Copied"); toast("Link copied, open it on your Mac"); setTimeout(() => setLabel($("#sdCopy"), "Copy link"), 2200);
 });
-const openSend = () => openSheet($("#send"));
+const openSend = () => { count("send-to-mac", "Not on a Mac", 1); openSheet($("#send")); };
 if (!onMac) {
   $$(".notmac").forEach((e) => e.classList.add("show"));
   $$("[data-dl] .label").forEach((l) => { l.textContent = l.closest(".il") ? "Get it" : "Send to my Mac"; });
@@ -1662,6 +1665,7 @@ const DLL = ["packing mochi's snacks", "fluffing the pixels", "no thoughts, just
 async function download(auto, from) {
   if (dlBusy) return;
   dlBusy = true; dlState = "go";
+  count(auto ? "download/auto" : "download", "Download NotchBar", 1);
   const btns = $$("[data-dl]");
   $$(".dlw").forEach((w) => w.classList.add("busy"));
   btns.forEach((b) => setLabel(b, "Downloading"));

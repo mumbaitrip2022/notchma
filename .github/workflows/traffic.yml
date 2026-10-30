@@ -1,0 +1,55 @@
+name: Traffic
+
+# GitHub forgets repo traffic after 14 days. This saves it every day to the "traffic"
+# branch (CSV files plus a README with the totals), so you can see how NotchBar grows.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: traffic
+
+jobs:
+  save:
+    name: Save traffic
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write   # to commit to the traffic branch
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: scripts
+          persist-credentials: false
+      - name: Fetch and save
+        env:
+          # Reading traffic needs a token with Administration: read. Without the
+          # TRAFFIC_TOKEN secret the built in token is tried, and the step says what's missing.
+          GH_TOKEN: ${{ secrets.TRAFFIC_TOKEN || github.token }}
+          PUSH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir data && cd data
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$PUSH_TOKEN" | base64 -w0)"
+          url="https://github.com/$REPO.git"
+          if git -c http.extraheader="$auth" fetch -q "$url" traffic 2>/dev/null; then
+            git checkout -q -b traffic FETCH_HEAD
+          else
+            git checkout -q --orphan traffic
+          fi
+          if ! python3 ../scripts/traffic.py "$REPO" .; then
+            echo "::error title=Traffic::GitHub refused the traffic API. Add a TRAFFIC_TOKEN secret (fine grained token, this repo, Administration: read)."
+            exit 1
+          fi
+          git add -A
+          git diff --cached --quiet && { echo "Nothing new today"; exit 0; }
+          git commit -qm "Traffic for $(date -u +%F)"
+          git -c http.extraheader="$auth" push -q "$url" traffic
+          cat README.md >> "$GITHUB_STEP_SUMMARY"
