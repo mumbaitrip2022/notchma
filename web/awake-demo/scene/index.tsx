@@ -507,13 +507,47 @@ function Readout({ s }: { s: S }) {
   )
 }
 
-/** Lets the page's sky follow the demo's clock: night at 11:43, sunrise at 6:58 */
+/** Lets the page's sky follow the demo's clock: the moon rises on the left at
+ * 11:43 PM and crosses to the right, warming into the sun by 6:58 AM. The
+ * laptop's base is the horizon, so the arc is measured off it. */
 function SkySync({ hour }: { hour: number }) {
+  const prev = useRef(hour)
   useEffect(() => {
-    const el = document.getElementById('awake')
-    if (!el) return
-    el.style.setProperty('--awk-p', String(hour / 6))
-    el.toggleAttribute('data-morning', hour === 6)
+    const sec = document.getElementById('awake')
+    if (!sec) return
+    const fit = (): void => {
+      const w = sec.clientWidth
+      if (w <= 720) {
+        // Phones: a low arc across the top, above the heading
+        sec.style.setProperty('--awk-base', '104px')
+        sec.style.setProperty('--awk-rx', `${Math.round(w * 0.42)}px`)
+        return
+      }
+      const base = sec.querySelector('.ka-base')
+      if (!base) { requestAnimationFrame(fit); return }
+      const top = sec.getBoundingClientRect().top
+      const b = base.getBoundingClientRect()
+      sec.style.setProperty('--awk-base', `${Math.round(b.top - top + b.height / 2)}px`)
+      sec.style.setProperty('--awk-rx', `${Math.round(Math.max(b.width / 2 + 60, Math.min(w * 0.44, 640)))}px`)
+    }
+    fit()
+    const ro = new ResizeObserver(fit)
+    ro.observe(sec)
+    return () => ro.disconnect()
+  }, [])
+  useEffect(() => {
+    const sec = document.getElementById('awake')
+    if (!sec) return
+    // Back to night happens during the nap: jump there, never travel backwards
+    const back = hour < prev.current
+    prev.current = hour
+    if (back) sec.setAttribute('data-jump', '')
+    sec.style.setProperty('--awk-p', String(hour / 6))
+    sec.toggleAttribute('data-morning', hour === 6)
+    if (back) {
+      void sec.offsetWidth
+      requestAnimationFrame(() => requestAnimationFrame(() => sec.removeAttribute('data-jump')))
+    }
   }, [hour])
   return null
 }
