@@ -21,7 +21,7 @@ final class NotchUI: ObservableObject {
     /// A recent NotchBar crash report, offered on the Report a Problem page.
     @Published var crash: Diagnostics.Crash?
 
-    enum Page: Equatable { case home, launcher, receipt, update, tour, report }
+    enum Page: Equatable { case home, launcher, receipt, update, tour, report, keepAwake }
 
     /// Height of the menu-bar band on the current screen (the notch's collapsed height).
     @Published var bandHeight: CGFloat = 24
@@ -91,6 +91,12 @@ final class Prefs: ObservableObject {
     @Published var autoUpdate: Bool { didSet { d.set(autoUpdate, forKey: "autoUpdate") } }
     /// Watch GitHub Actions after an agent pushes.
     @Published var githubCI: Bool { didSet { d.set(githubCI, forKey: "githubCI") } }
+    /// Keep the Mac from idle-sleeping while any agent is working.
+    @Published var keepAwake: Bool { didSet { d.set(keepAwake, forKey: "keepAwake") } }
+    /// On battery, keep awake only above this percentage. 100 means only while plugged in.
+    @Published var awakeBatteryFloor: Int { didSet { d.set(awakeBatteryFloor, forKey: "awakeBatteryFloor") } }
+    /// Also keep going with the lid closed (needs the one-time helper).
+    @Published var lidClosedAwake: Bool { didSet { d.set(lidClosedAwake, forKey: "lidClosedAwake") } }
     /// Terminal used to start new agents: "auto", or a bundle id.
     @Published var launchTerminal: String { didSet { d.set(launchTerminal, forKey: "launchTerminal") } }
     /// Most-recent-first project folders seen in sessions.
@@ -133,6 +139,9 @@ final class Prefs: ObservableObject {
         showPet = d.object(forKey: "showPet") as? Bool ?? true
         autoUpdate = d.object(forKey: "autoUpdate") as? Bool ?? true
         githubCI = d.object(forKey: "githubCI") as? Bool ?? true
+        keepAwake = d.object(forKey: "keepAwake") as? Bool ?? true
+        awakeBatteryFloor = (d.object(forKey: "awakeBatteryFloor") as? Int).map { min(max($0, 5), 100) } ?? 20
+        lidClosedAwake = d.object(forKey: "lidClosedAwake") as? Bool ?? false
         launchTerminal = d.string(forKey: "launchTerminal") ?? "auto"
         recentProjects = (d.stringArray(forKey: "recentProjects") ?? [])
             .filter { FileManager.default.fileExists(atPath: $0) }

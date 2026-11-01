@@ -8,6 +8,9 @@ struct SettingsView: View {
     @ObservedObject var calendar: CalendarWatcher
     @ObservedObject var ledger: DayLedger
     @ObservedObject var updater: Updater
+    @ObservedObject var keepAwake: KeepAwake
+    @ObservedObject var lid: LidGuard
+    var setLid: (Bool) -> Void
     var openUpdate: () -> Void = {}
     var openTour: () -> Void = {}
     var openReport: () -> Void = {}
@@ -25,6 +28,13 @@ struct SettingsView: View {
         case let .failed(m): return m
         default: return "Version \(updater.current)"
         }
+    }
+
+    private var keepAwakeStatus: String {
+        if let until = keepAwake.until { return "On, " + KeepAwake.remaining(until: until) }
+        if keepAwake.pausedForBattery { return "Paused, battery is low" }
+        if keepAwake.reason == .agents { return "On while agents work" }
+        return "Off right now"
     }
 
     var body: some View {
@@ -63,6 +73,53 @@ struct SettingsView: View {
                 Text("Agents")
             } footer: {
                 Text("NotchBar trusts its own hooks in Codex for you, so Codex shows up right away. Cursor sends every shell command through hooks, so with notch approvals on, each one waits for you.")
+            }
+
+            Section {
+                Toggle("Keep your Mac awake while agents work", isOn: $prefs.keepAwake)
+                if lid.isLaptop {
+                    HStack {
+                        Toggle("Keep going with the lid closed", isOn: Binding(
+                            get: { prefs.lidClosedAwake && lid.installed }, set: setLid))
+                            .disabled(lid.phase == .installing)
+                        if lid.phase == .installing { ProgressView().controlSize(.small) }
+                    }
+                    if case let .failed(m) = lid.phase { Text(m).foregroundStyle(.orange) }
+                    if lid.installed {
+                        HStack {
+                            Text(keepAwake.lidHeld && lid.ready ? "Ready to close the lid" : "Closed-lid helper is set up")
+                                .foregroundStyle(keepAwake.lidHeld && lid.ready ? .green : .secondary)
+                            Spacer()
+                            Button("Remove Helper…") {
+                                setLid(false)
+                                lid.uninstall()
+                            }
+                        }
+                    }
+                }
+                Picker("On battery", selection: $prefs.awakeBatteryFloor) {
+                    ForEach([10, 20, 30, 50], id: \.self) { Text("Keep going down to \($0)%").tag($0) }
+                    Text("Only while plugged in").tag(100)
+                }
+                HStack {
+                    Text(keepAwakeStatus).foregroundStyle(.secondary)
+                    Spacer()
+                    if keepAwake.isManual {
+                        Button("Stop") { keepAwake.stop() }
+                    } else {
+                        Menu("Keep Awake For…") {
+                            ForEach(KeepAwake.presets, id: \.self) { m in
+                                Button(KeepAwake.presetTitle(m)) { keepAwake.start(minutes: m) }
+                            }
+                            Button("Until I Stop It") { keepAwake.start(minutes: nil) }
+                        }
+                        .fixedSize()
+                    }
+                }
+            } header: {
+                Text("Keep Awake")
+            } footer: {
+                Text("Your Mac won't nap mid-task, and the screen can still turn off. With the lid option on, closing the lid doesn't stop your agents either. That part needs a tiny helper, set up once with your password. It only works while NotchBar keeps it going and lets your Mac sleep again within a minute if NotchBar quits. It also backs off when the battery hits your limit or the Mac runs hot.")
             }
 
             Section {

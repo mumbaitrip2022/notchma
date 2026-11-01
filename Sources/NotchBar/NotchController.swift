@@ -27,6 +27,8 @@ final class NotchController: NSObject {
     let pet = PetBrain()
     let updater = Updater()
     let ci = CIWatcher()
+    let keepAwake = KeepAwake()
+    let lidGuard = LidGuard()
 
     var panel: NotchPanel!
     var panelContentView: NSView? { panel.contentView }
@@ -42,7 +44,8 @@ final class NotchController: NSObject {
     private var bag = Set<AnyCancellable>()
     private lazy var settingsWindow = SettingsWindowController { [unowned self] in
         AnyView(SettingsView(prefs: self.prefs, rules: self.store.rules, calendar: self.calendar, ledger: self.store.ledger,
-                             updater: self.updater, openUpdate: { [weak self] in self?.openUpdate() },
+                             updater: self.updater, keepAwake: self.keepAwake, lid: self.lidGuard,
+                             setLid: { [weak self] on in self?.setLidMode(on) }, openUpdate: { [weak self] in self?.openUpdate() },
                              openTour: { [weak self] in self?.openTour() },
                              openReport: { [weak self] in self?.openReport() },
                              setAgent: { [weak self] a, on in self?.setHooks(a, installed: on) },
@@ -198,11 +201,12 @@ final class NotchController: NSObject {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
         alert.messageText = "Uninstall NotchBar?"
-        alert.informativeText = "This disconnects Claude Code, Codex and Cursor (only NotchBar's entries are removed from their settings), then moves NotchBar to the Trash."
+        alert.informativeText = "This disconnects Claude Code, Codex and Cursor (only NotchBar's entries are removed from their settings), then moves NotchBar to the Trash. If you set up the closed-lid helper, macOS asks for your password to remove it."
         alert.addButton(withTitle: "Uninstall")
         alert.addButton(withTitle: "Cancel")
         alert.buttons.first?.hasDestructiveAction = true
         guard alert.runModal() == .alertFirstButtonReturn else { return }
+        if lidGuard.installed { lidGuard.uninstall() }
         let p = Process()
         p.executableURL = URL(fileURLWithPath: hookBinary)
         p.arguments = ["uninstall", "claude", "codex", "cursor"]
@@ -217,6 +221,7 @@ final class NotchController: NSObject {
     }
 
     func stop() {
+        lidGuard.setHolding(false)   // give sleep back right away, not a minute later
         DiagLog.log("quit")
         DiagLog.shared.flushNow()
         if started { server.stop() }
@@ -249,9 +254,10 @@ final class NotchController: NSObject {
             copySummary: { [weak self] sid in self?.copySummary(sid) },
             openSettings: { [weak self] in self?.openSettings() },
             setAgent: { [weak self] a, on in self?.setHooks(a, installed: on) },
-            finishTour: { [weak self] in self?.finishTour() })
+            finishTour: { [weak self] in self?.finishTour() },
+            setLid: { [weak self] on in self?.setLidMode(on) })
         let root = RootView(store: store, ui: ui, prefs: prefs, trust: store.trust, launcher: launcher,
-                            dictation: dictation, system: system, pet: pet, updater: updater, actions: actions) { [weak self] size in
+                            dictation: dictation, system: system, pet: pet, updater: updater, keepAwake: keepAwake, lid: lidGuard, actions: actions) { [weak self] size in
             // Never resize the window inside SwiftUI's update pass: that re-enters
             // layout and can swallow the state change that triggered it.
             DispatchQueue.main.async { self?.notchSizeChanged(size) }
@@ -594,6 +600,42 @@ final class NotchController: NSObject {
             }
         }.store(in: &bag)
 
+        // Keep the Mac awake while agents work. A session that went quiet for an hour with
+        // no process to check on doesn't count, so a lost agent can't hold the Mac up forever.
+        keepAwake.autoEnabled = { [weak self] in self?.prefs.keepAwake ?? false }
+        keepAwake.batteryFloor = { [weak self] in self?.prefs.awakeBatteryFloor ?? 100 }
+        keepAwake.agentsWorking = { [weak self] in
+            self?.store.sessions.values.contains {
+                $0.status.isWorking && ($0.pid > 1 || Date().timeIntervalSince($0.lastEventAt) < 3600)
+            } ?? false
+        }
+        keepAwake.lidMode = { [weak self] in
+            guard let self, self.prefs.lidClosedAwake, self.lidGuard.installed else { return false }
+            return ProcessInfo.processInfo.thermalState.rawValue < ProcessInfo.ThermalState.serious.rawValue
+        }
+        keepAwake.setLid = { [weak self] on in self?.lidGuard.setHolding(on) }
+        NotificationCenter.default.publisher(for: ProcessInfo.thermalStateDidChangeNotification)
+            .sink { [weak self] _ in DispatchQueue.main.async { self?.keepAwake.refresh() } }
+            .store(in: &bag)
+        prefs.$lidClosedAwake.removeDuplicates()
+            .sink { [weak self] _ in DispatchQueue.main.async { self?.keepAwake.refresh() } }
+            .store(in: &bag)
+        keepAwake.onBatteryStop = { [weak self] in
+            guard let self else { return }
+            self.store.showBanner(Banner(kind: .info, sessionID: "", agent: .claude,
+                                         title: "Letting your Mac sleep again",
+                                         subtitle: "battery got low, so keep awake turned itself off", action: .expand))
+        }
+        store.$sessions.map { $0.values.map(\.status.isWorking) }.removeDuplicates()
+            .sink { [weak self] _ in DispatchQueue.main.async { self?.keepAwake.refresh() } }
+            .store(in: &bag)
+        Publishers.CombineLatest(prefs.$keepAwake, prefs.$awakeBatteryFloor)
+            .sink { [weak self] _, _ in DispatchQueue.main.async { self?.keepAwake.refresh() } }
+            .store(in: &bag)
+        keepAwake.$reason.removeDuplicates().dropFirst()
+            .sink { [weak self] _ in self?.remeasureSoon() }
+            .store(in: &bag)
+
         // System vitals: sample only while you can see them; warn before the disk fills up.
         system.agentRoots = { [weak self] in
             self?.store.sessions.values.compactMap { $0.pid > 1 ? $0.pid : nil } ?? []
@@ -823,6 +865,7 @@ final class NotchController: NSObject {
                 self?.updater.check(manual: true)
             })
         }
+        menu.addItem(keepAwakeMenuItem())
         menu.addItem(MenuItem("Settings…", key: ",") { [weak self] in self?.openSettings() })
         menu.addItem(MenuItem("Report a Problem…") { [weak self] in self?.openReport() })
         menu.addItem(MenuItem("Show Tour") { [weak self] in self?.openTour() })
@@ -862,6 +905,76 @@ final class NotchController: NSObject {
         ui.menuOpen = false
         // Collapse if the pointer left while the menu was open.
         ui.hovering = NSMouseInRect(NSEvent.mouseLocation, panel.frame, false)
+    }
+
+    /// Turn closed-lid mode on or off. The first time, this installs the helper (one password prompt).
+    func setLidMode(_ on: Bool) {
+        guard on else {
+            prefs.lidClosedAwake = false
+            keepAwake.refresh()
+            return
+        }
+        if lidGuard.installed {
+            prefs.lidClosedAwake = true
+            keepAwake.refresh()
+            return
+        }
+        ui.pinned = true   // keep the page open behind the password prompt
+        lidGuard.install { [weak self] ok in
+            guard let self else { return }
+            self.ui.pinned = false
+            self.prefs.lidClosedAwake = ok
+            self.keepAwake.refresh()
+            guard ok else { return }
+            self.store.showBanner(Banner(kind: .info, sessionID: "", agent: .claude,
+                                         title: "Closed lid is a go",
+                                         subtitle: self.keepAwake.lidHeld ? "close it whenever, your agents keep going"
+                                             : "whenever your Mac is kept awake, the lid can close too",
+                                         action: .expand))
+        }
+    }
+
+    func openKeepAwake() {
+        ui.page = .keepAwake
+    }
+
+    /// Gear menu › Keep Awake: start, extend or stop a manual session.
+    private func keepAwakeMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Keep Awake", action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+        sub.autoenablesItems = false
+        if let until = keepAwake.until {
+            let status = NSMenuItem(title: "On, " + KeepAwake.remaining(until: until), action: nil, keyEquivalent: "")
+            status.isEnabled = false
+            sub.addItem(status)
+            if !keepAwake.isUnlimited {
+                sub.addItem(MenuItem("Add 15 Minutes") { [weak self] in self?.keepAwake.extend(minutes: 15) })
+            }
+            sub.addItem(MenuItem("Stop Keeping Awake") { [weak self] in self?.keepAwake.stop() })
+            sub.addItem(.separator())
+            item.state = .on
+        }
+        for m in KeepAwake.presets {
+            sub.addItem(MenuItem("For " + KeepAwake.presetTitle(m)) { [weak self] in self?.keepAwake.start(minutes: m) })
+        }
+        sub.addItem(MenuItem("Until I Stop It") { [weak self] in self?.keepAwake.start(minutes: nil) })
+        sub.addItem(.separator())
+        let auto = MenuItem("While Agents Work") { [weak self] in self?.prefs.keepAwake.toggle() }
+        auto.state = prefs.keepAwake ? .on : .off
+        sub.addItem(auto)
+        if lidGuard.isLaptop {
+            let on = prefs.lidClosedAwake && lidGuard.installed
+            let lidItem = MenuItem(on ? "With the Lid Closed" : "With the Lid Closed…") { [weak self] in
+                self?.openKeepAwake()
+                self?.setLidMode(!on)
+            }
+            lidItem.state = on ? .on : .off
+            sub.addItem(lidItem)
+        }
+        sub.addItem(.separator())
+        sub.addItem(MenuItem("Open Keep Awake") { [weak self] in self?.openKeepAwake() })
+        item.submenu = sub
+        return item
     }
 
     // MARK: - Hooks
@@ -1032,6 +1145,24 @@ extension NotchController {
             return true
         case "_Open":
             ui.openRow = json["sid"] as? String
+            return true
+        case "_KeepAwakePage":
+            ui.page = .keepAwake
+            return true
+        case "_Lid":
+            setLidMode(json["on"] as? Bool ?? false)
+            return true
+        case "_LidState":
+            let txt = "installed=\(lidGuard.installed) pref=\(prefs.lidClosedAwake) lidHeld=\(keepAwake.lidHeld) holding=\(lidGuard.holding) ready=\(lidGuard.ready) laptop=\(lidGuard.isLaptop) phase=\(lidGuard.phase)\n"
+            try? txt.write(toFile: json["path"] as? String ?? "/dev/null", atomically: true, encoding: .utf8)
+            return true
+        case "_KeepAwake":
+            // minutes > 0: timed session, -1: until stopped, 0: stop.
+            switch json["minutes"] as? Int ?? 0 {
+            case 0: keepAwake.stop()
+            case let m where m < 0: keepAwake.start(minutes: nil)
+            case let m: keepAwake.start(minutes: m)
+            }
             return true
         case "_Page":
             switch json["page"] as? String {

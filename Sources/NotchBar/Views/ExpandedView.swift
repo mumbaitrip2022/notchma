@@ -9,6 +9,8 @@ struct ExpandedView: View {
     let system: SystemMonitor
     let pet: PetBrain
     @ObservedObject var updater: Updater
+    @ObservedObject var keepAwake: KeepAwake
+    let lid: LidGuard
     var actions: NotchActions
 
     var body: some View {
@@ -30,6 +32,9 @@ struct ExpandedView: View {
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             case .report:
                 ReportView(ui: ui, prefs: prefs, pet: pet, crash: ui.crash)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .keepAwake:
+                KeepAwakeView(keepAwake: keepAwake, lid: lid, prefs: prefs, ui: ui, setLid: actions.setLid)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
@@ -146,6 +151,9 @@ struct ExpandedView: View {
             }
             if let r = updater.release, updater.phase == .available {
                 UpdateChip(version: r.version) { ui.page = .update }
+            }
+            if keepAwake.reason != nil || keepAwake.pausedForBattery {
+                KeepAwakeChip(keepAwake: keepAwake, compact: ui.hasHardwareNotch) { ui.page = .keepAwake }
             }
             if prefs.showPet && !idle {
                 PetButton(ledger: store.ledger, brain: pet) { ui.page = .receipt }
@@ -715,5 +723,37 @@ struct ActivityTrail: View {
             }
         }
         .padding(.horizontal, 2)
+    }
+}
+
+/// Header chip while NotchBar is keeping the Mac awake. Click for the Keep Awake menu.
+struct KeepAwakeChip: View {
+    @ObservedObject var keepAwake: KeepAwake
+    var compact: Bool
+    let open: () -> Void
+
+    var body: some View {
+        Button(action: open) {
+            HStack(spacing: 5) {
+                Image(systemName: keepAwake.pausedForBattery ? "battery.25" : keepAwake.lidHeld ? "laptopcomputer" : "cup.and.saucer.fill")
+                    .font(.system(size: 10.5, weight: .bold))
+                if !compact, let until = keepAwake.until, !keepAwake.isUnlimited {
+                    TimelineView(.periodic(from: .now, by: 30)) { ctx in
+                        Text(KeepAwake.remaining(until: until, now: ctx.date).replacingOccurrences(of: " left", with: ""))
+                            .monospacedDigit()
+                    }
+                }
+            }
+            .foregroundStyle(keepAwake.pausedForBattery ? Palette.text3 : .white)
+        }
+        .buttonStyle(NBButtonStyle(kind: .secondary, compact: true))
+        .help(help)
+    }
+
+    private var help: String {
+        if keepAwake.pausedForBattery { return "Agents are working, but the battery is low, so your Mac can sleep. Plug in to keep it awake" }
+        if keepAwake.lidHeld { return "Keeping your Mac awake, lid closed too. Safe to close the lid" }
+        if let until = keepAwake.until { return "Keeping your Mac awake, " + KeepAwake.remaining(until: until) + ". Click for options" }
+        return "Keeping your Mac awake while agents work. Click for options"
     }
 }

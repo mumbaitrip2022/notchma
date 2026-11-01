@@ -10,6 +10,7 @@ struct NotchActions {
     var openSettings: () -> Void
     var setAgent: (Agent, Bool) -> Void = { _, _ in }
     var finishTour: () -> Void = {}
+    var setLid: (Bool) -> Void = { _ in }
 }
 
 struct RootView: View {
@@ -22,6 +23,8 @@ struct RootView: View {
     let system: SystemMonitor
     let pet: PetBrain
     let updater: Updater
+    let keepAwake: KeepAwake
+    let lid: LidGuard
     var actions: NotchActions
     var onSize: (CGSize) -> Void
 
@@ -117,7 +120,7 @@ struct RootView: View {
             switch mode {
             case .expanded:
                 ExpandedView(store: store, ui: ui, prefs: prefs, trust: trust, launcher: launcher, system: system,
-                             pet: pet, updater: updater, actions: actions)
+                             pet: pet, updater: updater, keepAwake: keepAwake, lid: lid, actions: actions)
                     .transition(.blurReplace)
             case .banner:
                 if let b = store.banner {
