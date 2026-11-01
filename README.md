@@ -24,6 +24,7 @@ NotchBar turns the top of your Mac screen into a control center for coding agent
 - ✅ **Approve or deny agent requests from the notch.** Claude Code, Codex and Cursor ask, you answer with one click or `⌃⌥Y`, from any app.
 - 👀 **Live status for every session.** What each agent is doing right now, its plan, tests and files edited.
 - 🚦 **GitHub Actions in the notch.** When an agent pushes, watch the CI pipeline live and get tapped the second it goes green or breaks, with the job and step that failed.
+- 🌙 **Close the lid. Your agents keep going.** Your Mac stays awake while agents work, even with the lid shut, then naps the moment they're done.
 - 📊 **Usage limits and cost.** Claude's 5 hour and weekly limits, Codex windows, context fill, and a forecast of when you'll hit the limit.
 - 🐾 **A notch pet and a daily receipt.** Share what your agents shipped today as a receipt image.
 - 🪶 **Native and light.** Swift, SwiftUI and AppKit. About 20 MB of memory and close to 0% CPU when idle. No Electron, no account, no telemetry.
@@ -35,7 +36,7 @@ NotchBar turns the top of your Mac screen into a control center for coding agent
 
 ## Contents
 
-[Install](#install) · [Agents](#agents) · [GitHub Actions](#github-actions) · [Notch pet and daily receipt](#notch-pet-and-daily-receipt) · [Usage and cost](#usage-and-cost) · [Smart approvals](#smart-approvals-and-health) · [Flow features](#flow-features) · [How it works](#how-it-works) · [FAQ](#faq)
+[Install](#install) · [Agents](#agents) · [GitHub Actions](#github-actions) · [Keep Awake](#keep-awake) · [Notch pet and daily receipt](#notch-pet-and-daily-receipt) · [Usage and cost](#usage-and-cost) · [Smart approvals](#smart-approvals-and-health) · [Flow features](#flow-features) · [How it works](#how-it-works) · [FAQ](#faq)
 
 ## Install
 
@@ -90,6 +91,38 @@ The moment an agent runs `git push`, NotchBar finds the commit on GitHub and pla
 3. **Already use `gh`?** You're connected already. Settings shows `Connected as @you`.
 
 NotchBar borrows your `gh` login and never stores a token. It sends GitHub only the repo name and commit, uses conditional requests so polling barely touches your rate limit, and stops watching after 90 minutes. Turn it off in Settings › GitHub.
+
+## Keep Awake
+
+<div align="center">
+<img src="docs/images/keep-awake.jpg" width="720" alt="2:01 AM, the MacBook's lid is closed, and the NotchBar island says 212 tests passed: the agents kept working all night">
+</div>
+
+**Close the lid. Your agents keep going.** Kick off a three hour refactor, shut your MacBook, go to bed. Your agents keep shipping. When they're done, your Mac naps by itself. No more coming back to a half-finished task because macOS decided it was bedtime.
+
+- **Stays up while agents work.** The second Claude Code, Codex or Cursor starts working, your Mac stops dozing off. When they finish, normal sleep comes back. Nothing to switch on, nothing to remember. The screen can still turn off, so your battery barely notices.
+- **Lid closed? Still going.** Flip one switch, type your password once, and closing the lid no longer stops your agents. The notch tells you when it's **Ready to close the lid**.
+- **On your terms too.** Keep it up for 30 minutes, 1, 2 or 4 hours, or until you say stop, with a `+15 min` button and a countdown in the notch.
+- **Plays it safe.** Your Mac sleeps again when the battery hits your limit (20% by default, or only while plugged in), when it runs hot, and the moment the work is done with the lid shut. If NotchBar quits, crashes or hangs, sleep comes back within a minute, on its own.
+
+### Set it up
+
+1. Open the notch and click the ☕ chip, or gear menu › **Keep Awake** › **Open Keep Awake**.
+2. *Stay awake while agents work* is already on. That's it for the lid-open part.
+3. For lid closed: flip **Keep going with the lid closed**. macOS asks for your password once.
+4. When the notch says **Ready to close the lid**, close it and walk away.
+
+Everything lives in Settings › Keep Awake too, including the battery limit and *Remove Helper…*.
+
+<details>
+<summary><b>How lid-closed mode works (and why it can't get stuck)</b></summary>
+
+macOS sleeps when you close the lid no matter which app asks it not to. Only `pmset disablesleep` can stop that, and it needs admin rights. So the first time you flip the switch, NotchBar installs a tiny helper: a 20 line shell script (`/Library/Application Support/NotchBar/lidguard.sh`) run by launchd (`/Library/LaunchDaemons/dev.notchbar.lidguard.plist`).
+
+The helper does one thing. While NotchBar keeps a heartbeat file fresh (`~/Library/Application Support/NotchBar/lid-awake`, touched every 15 seconds), sleep stays off. When the heartbeat is gone or older than a minute, it turns sleep back on. So if NotchBar quits, crashes, hangs or gets deleted, your Mac goes back to normal by itself. The helper only reads the heartbeat's age, never writes to your folder, and never undoes a sleep setting it didn't change. Read it before you trust it: it's in [`LidGuard.swift`](Sources/NotchBar/Services/LidGuard.swift).
+
+Without the lid switch, NotchBar uses the same request as `caffeinate -i` and needs no permissions at all.
+</details>
 
 ## Notch pet and daily receipt
 
@@ -181,6 +214,7 @@ agent ──hook JSON──▶ notchbar-hook ──unix socket──▶ NotchBar
 - **Fail safe:** if NotchBar isn't running, crashes, or you don't answer within about 10 minutes, the hook exits quietly and the agent shows its normal prompt. Nothing can get stuck.
 - `AskUserQuestion` and plan approvals always stay in the terminal.
 - The socket lives at `~/Library/Application Support/NotchBar/nb.sock` and only you can read it (mode 0600).
+- **Keep Awake** uses the same power request as `caffeinate -i`. The optional closed-lid helper only runs while NotchBar's heartbeat is fresh, so sleep comes back within a minute if NotchBar quits. See [Keep Awake](#keep-awake).
 - Everything stays on your Mac. No account, no analytics in the app. (The website counts visits with GoatCounter, without cookies.) NotchBar talks to GitHub for two things only: a daily check for a new version, and, after an agent pushes, the Actions status of that commit. Both can be turned off in Settings.
 
 ## FAQ
@@ -212,12 +246,15 @@ A tiny pixel pet that lives in the notch while your agents are idle. It levels u
 **Something broke. How do I report it?**
 Gear menu › *Report a Problem…* opens a page in the notch. Describe what happened, and NotchBar adds your Mac and app details and a short activity log (event names and timings only, never prompts, commands, code or paths). You can read every word before anything is shared, then it opens a ready-to-submit GitHub issue. If NotchBar ever crashes, it offers this on the next launch with the crash details attached.
 
+**Can my agents keep working with the lid closed?**
+Yes. Open Keep Awake in the notch and flip *Keep going with the lid closed*. macOS asks for your password once. Your Mac then stays up while agents work or a timer runs, and naps when they're done. It backs off at your battery limit or if your Mac runs hot.
+
 **What happens if NotchBar quits?**
-Your agents fall back to their normal prompts. Every hook checks that the app exists first.
+Your agents fall back to their normal prompts. Every hook checks that the app exists first. If Keep Awake was holding your Mac up, normal sleep comes back within a minute.
 
 ## Uninstall
 
-Settings › **Uninstall NotchBar…** removes only NotchBar's entries from the agents' settings and moves the app to the Trash. From source: `make uninstall`.
+Settings › **Uninstall NotchBar…** removes only NotchBar's entries from the agents' settings and the closed-lid helper if you set it up (macOS asks for your password), then moves the app to the Trash. From source: `make uninstall`.
 
 If the app is ever deleted without uninstalling, nothing breaks: each hook checks the app exists first, and the agents fall back to their own prompts.
 

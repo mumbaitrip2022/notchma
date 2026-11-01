@@ -1,0 +1,115 @@
+/* Keep Awake: a scroll-driven night. The lid closes, the clock races to dawn,
+   the agents keep shipping, then the Mac naps. Driven by --close, --night and
+   --dawn (0 to 1), which awake.js sets from the scroll position. */
+.awake { --close: 0; --night: 0; --dawn: 0; position: relative; isolation: isolate; color: #fff; background: #06050d; margin-top: 150px; scroll-margin-top: 0; }
+.awk-track { height: 340vh; position: relative; }
+.awk-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: minmax(0, 1fr); justify-items: center; padding: 108px 24px 30px; }
+
+/* sky */
+.awk-sky, .awk-night, .awk-dawn, .awk-stars { position: absolute; inset: 0; pointer-events: none; }
+.awk-moon, .awk-sun, .awk-shoot { position: absolute; pointer-events: none; }
+.awk-sky { z-index: -1; overflow: hidden; }
+.awk-night { background: radial-gradient(ellipse 70% 50% at 50% 100%, #2a2160 0%, transparent 70%), linear-gradient(180deg, #03041a 0%, #090c2c 40%, #171339 72%, #06050d 100%); }
+.awk-dawn { opacity: var(--dawn); background: radial-gradient(ellipse 60% 42% at 62% 84%, #ffd59a 0%, rgba(255,170,120,.55) 30%, transparent 70%), linear-gradient(180deg, #1c2c63 0%, #59508f 34%, #d98b8b 62%, #f4b57c 78%, #06050d 100%); }
+.awk-stars { width: 2px; height: 2px; border-radius: 50%; opacity: calc(1 - var(--dawn) * 1.2); animation: awkTw 4.8s ease-in-out infinite alternate; }
+.awk-stars.b { animation-delay: -2.4s; animation-duration: 6.2s; }
+@keyframes awkTw { from { filter: brightness(.55); } to { filter: brightness(1.15); } }
+.awk-moon { left: calc(9% + var(--night) * 12%); top: calc(22% - var(--night) * 10%); width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle at 36% 34%, #fffdf2, #e8e2cf 60%, #cfc7ad); box-shadow: 0 0 40px 10px rgba(255,248,220,.22), 0 0 120px 40px rgba(170,160,255,.12); opacity: calc(1 - var(--dawn) * 1.6); }
+.awk-moon::after { content: ""; position: absolute; left: 12px; top: 20px; width: 9px; height: 9px; border-radius: 50%; background: rgba(0,0,0,.08); box-shadow: 14px -8px 0 -2px rgba(0,0,0,.06), 8px 9px 0 -3px rgba(0,0,0,.06); }
+.awk-sun { left: 74%; bottom: 17%; width: 110px; height: 110px; margin-left: -55px; border-radius: 50%; background: radial-gradient(circle, #fff6dc, #ffd28a 55%, rgba(255,190,110,0) 72%); transform: translateY(calc((1 - var(--dawn)) * 160px)); opacity: var(--dawn); }
+.awk-shoot { top: 18%; left: 70%; width: 140px; height: 1.5px; background: linear-gradient(90deg, #fff, transparent); border-radius: 2px; transform: rotate(-24deg) translateX(0); opacity: 0; animation: awkShoot 9s 3s ease-in infinite; }
+@keyframes awkShoot { 0%, 92% { opacity: 0; transform: rotate(-24deg) translateX(0); } 94% { opacity: calc(1 - var(--dawn)); } 100% { opacity: 0; transform: rotate(-24deg) translateX(-360px); } }
+.awk-hills { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 22%; }
+
+/* copy */
+.awk-copy { text-align: center; max-width: 720px; }
+.awk-copy .eyebrow { color: rgba(255,255,255,.6); }
+.awk-copy h2 { color: #fff; text-shadow: 0 2px 30px rgba(0,0,0,.4); }
+.awk-copy .ser { color: rgba(255,255,255,.7); }
+.awk-cap { margin-top: 14px; min-height: 1.5em; font-size: clamp(15px, 1.7vw, 18px); color: rgba(255,255,255,.8); transition: opacity .35s, filter .35s, transform .35s var(--out); }
+.awk-cap.swap { opacity: 0; filter: blur(6px); transform: translateY(6px); }
+
+/* scene */
+.awk-scene { position: relative; width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; align-content: center; gap: clamp(14px, 3vh, 30px); }
+.awk-mac { --s: 1; position: relative; width: 430px; height: 400px; transform: scale(var(--s)); transform-origin: 50% 0; perspective: 1500px; perspective-origin: 50% -30%; margin-bottom: calc((var(--s) - 1) * 400px); justify-self: start; margin-left: calc(50% - 215px); }
+.awk-rig { position: absolute; left: 0; top: 253px; width: 430px; height: 0; transform-style: preserve-3d; transform: translateY(calc(var(--close) * -46px)) rotateX(calc(-16deg - var(--close) * 14deg)); }
+.awk-deck { position: absolute; left: 0; top: 0; width: 430px; height: 240px; border-radius: 6px 6px 18px 18px; transform-origin: 50% 0; transform: rotateX(90deg); transform-style: preserve-3d;
+background: linear-gradient(180deg, #b9bac2, #d7d8de 30%, #c9cad1); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 0 0 1px rgba(0,0,0,.08); }
+.awk-keys { position: absolute; left: 30px; right: 30px; top: 20px; height: 116px; border-radius: 6px; background: #1a1a20;
+background: repeating-linear-gradient(90deg, #2a2a33 0 26px, transparent 26px 29px);
+-webkit-mask-image: repeating-linear-gradient(180deg, #000 0 22px, transparent 22px 25px); mask-image: repeating-linear-gradient(180deg, #000 0 22px, transparent 22px 25px); }
+.awk-pad { position: absolute; left: 50%; top: 150px; width: 160px; height: 74px; margin-left: -80px; border-radius: 10px; background: linear-gradient(180deg, #c3c4cb, #cfd0d6); box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.awk-lip { position: absolute; left: 0; right: 0; top: 240px; height: 11px; border-radius: 0 0 12px 12px; transform-origin: 50% 0; transform: rotateX(-90deg); background: linear-gradient(180deg, #a9aab2, #77787f); }
+.awk-lid { position: absolute; left: 15px; top: -253px; width: 400px; height: 250px; transform-origin: 50% 100%; transform: rotateX(var(--lid, 10deg)); transform-style: preserve-3d; }
+.awk-face, .awk-back { position: absolute; inset: 0; border-radius: 16px 16px 6px 6px; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.awk-face { background: #0b0b0e; padding: 11px 11px 16px; box-shadow: inset 0 0 0 1.5px #3a3b42; }
+.awk-back { transform: rotateY(180deg); background: radial-gradient(ellipse 80% 70% at 50% 40%, #e3e4ea, #b5b6bf); box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); }
+.awk-back span { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #f4f5f8, #c9cad2); box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+.awk-scr { position: relative; height: 100%; border-radius: 7px 7px 3px 3px; overflow: hidden; background: radial-gradient(ellipse 90% 70% at 70% 0%, #6d4fb0, transparent 60%), linear-gradient(160deg, #2b1f55, #120e2a 60%, #0d0b20);
+filter: brightness(calc(1 - var(--close) * 1.4)); }
+.awk-notch { position: absolute; left: 50%; top: 0; width: 64px; height: 12px; margin-left: -32px; background: #000; border-radius: 0 0 7px 7px; z-index: 2; }
+.awk-term { position: absolute; left: 20px; right: 56px; top: 30px; padding: 0 0 10px; border-radius: 9px; background: rgba(12,11,22,.86); box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 20px 40px -18px #000; font: 500 10.5px/1.75 var(--mono); color: #e7e6f0; }
+.awk-term .tb { display: flex; gap: 5px; padding: 8px 10px; margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.awk-term .tb i { width: 7px; height: 7px; border-radius: 50%; background: #ff5f57; } .awk-term .tb i:nth-child(2) { background: #febc2e; } .awk-term .tb i:nth-child(3) { background: #28c840; }
+.awk-term p { padding: 0 12px; white-space: nowrap; overflow: hidden; }
+.awk-term .d { color: rgba(255,255,255,.42); } .awk-term .o { color: #d97757; } .awk-term .g { color: #3fb950; }
+.awk-term .l1, .awk-term .l2, .awk-term .l3, .awk-term .l4 { animation: awkLine 7s steps(1) infinite; }
+.awk-term .l2 { animation-name: awkLine2; } .awk-term .l3 { animation-name: awkLine3; } .awk-term .l4 { animation-name: awkLine4; }
+@keyframes awkLine { 0% { opacity: 0; } 8%, 100% { opacity: 1; } }
+@keyframes awkLine2 { 0%, 22% { opacity: 0; } 24%, 100% { opacity: 1; } }
+@keyframes awkLine3 { 0%, 40% { opacity: 0; } 42%, 100% { opacity: 1; } }
+@keyframes awkLine4 { 0%, 58% { opacity: 0; } 60%, 100% { opacity: 1; } }
+.awk-term .car { display: inline-block; width: 6px; height: 11px; margin: 0 0 -2px 4px; background: #e7e6f0; animation: blink 1s steps(1) infinite; }
+.awk-glow { position: absolute; left: 50%; top: 300px; width: 520px; height: 110px; margin-left: -260px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(0,0,0,.6), transparent 70%); transform: translateY(56px); z-index: -1; }
+/* a slow "still alive" breath under the closed lid while the night runs */
+.awk-glow::after { content: ""; position: absolute; inset: 20% 22%; border-radius: 50%; background: radial-gradient(ellipse, rgba(120,255,170,.55), transparent 70%); opacity: calc(var(--close) * (1 - var(--dawn)) * .55); animation: awkBreath 3.4s ease-in-out infinite; }
+@keyframes awkBreath { 50% { transform: scale(1.15); filter: brightness(1.4); } }
+
+/* the island */
+.awk-isle { position: relative; z-index: 2; display: flex; align-items: center; gap: 11px; height: 54px; padding: 0 12px 0 9px; border-radius: 28px; background: #000; color: #fff;
+box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 24px 50px -20px rgba(0,0,0,.9), 0 0 60px -10px rgba(120,110,255,.25); min-width: 300px; max-width: min(460px, 92vw); transition: min-width .6s var(--spring), box-shadow .6s; }
+.awk-isle[data-s="night"] { min-width: 380px; box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 24px 50px -20px rgba(0,0,0,.9), 0 0 70px -6px rgba(63,185,80,.32); }
+.awk-ic { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; background: #1c1b22; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+.awk-ic img { width: 20px; height: 20px; }
+.awk-tx { flex: 1; min-width: 0; display: grid; transition: opacity .25s, filter .25s, transform .3s var(--out); }
+.awk-tx b { font-size: 14px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.awk-tx span { font-size: 12.5px; color: rgba(255,255,255,.58); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.awk-tx.swap { opacity: 0; filter: blur(5px); transform: translateY(4px); }
+.awk-isle[data-s="ready"] .awk-tx b, .awk-isle[data-s="done"] .awk-tx b { color: #4ade80; }
+.awk-isle[data-s="ready"] .awk-tx b::before { content: ""; display: inline-block; width: 7px; height: 7px; margin: 0 7px 1px 0; border-radius: 50%; background: #4ade80; box-shadow: 0 0 10px #4ade80; animation: awkDot 1.6s ease-in-out infinite; }
+@keyframes awkDot { 50% { opacity: .35; } }
+.awk-ring { flex: none; width: 22px; height: 22px; transform: rotate(-90deg); }
+.awk-ring circle { fill: none; stroke: rgba(255,255,255,.14); stroke-width: 2.4; }
+.awk-ring .p { stroke: #4ade80; stroke-linecap: round; stroke-dasharray: 50.27; stroke-dashoffset: calc(50.27 * (1 - var(--ring, 0))); }
+
+/* hud */
+.awk-hud { width: min(1180px, 100%); display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.awk-clock { display: flex; align-items: baseline; gap: 8px; font: 500 clamp(34px, 4.4vw, 56px)/1 var(--mono); letter-spacing: -.04em; font-variant-numeric: tabular-nums; text-shadow: 0 2px 24px rgba(0,0,0,.5); }
+.awk-clock small { font-size: .36em; letter-spacing: .08em; color: rgba(255,255,255,.6); }
+.awk-tally { display: flex; gap: clamp(18px, 3vw, 40px); }
+.awk-tally div { display: grid; text-align: right; }
+.awk-tally b { font: 600 clamp(24px, 2.8vw, 34px)/1.05 var(--sans); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.awk-tally span { font-size: 12.5px; color: rgba(255,255,255,.6); }
+.awk-tally b.bump { animation: awkBump .5s var(--spring); }
+@keyframes awkBump { 40% { transform: scale(1.18); color: #4ade80; } }
+
+.awk-more { padding: 30px 0 130px; }
+.awk-more .flow { margin-top: 0; }
+.awk-more .flow li { background: rgba(255,255,255,.05); }
+.awk-more .bench { color: rgba(255,255,255,.7); }
+
+@media (max-width: 640px) {
+.awake { margin-top: 110px; }
+.awk-track { height: 300vh; }
+.awk-stage { padding: 92px 16px 22px; }
+.awk-isle { min-width: 0; width: 100%; height: 50px; }
+.awk-isle[data-s="night"] { min-width: 0; }
+.awk-moon { width: 28px; height: 28px; left: 5%; top: 10.5%; }
+.awk-moon::after { display: none; }
+.awk-hud { flex-direction: column; align-items: center; gap: 12px; }
+.awk-tally div { text-align: center; }
+.awk-more { padding-bottom: 100px; }
+}
+/* No scroll scene with reduced motion: one still frame of the night, then the cards. */
+.awake.still .awk-track { height: auto; }
+.awake.still .awk-stage { position: relative; height: auto; min-height: 640px; }

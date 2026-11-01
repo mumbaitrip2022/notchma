@@ -17,6 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="awake.css">
 <style>
 :root {
 --bg: #f7f6f2; --ink: #0c0c0e; --ink2: #56565e; --ink3: #8d8d95;
@@ -1117,6 +1118,55 @@ animation: hfloat 1.6s var(--out) forwards; }
 </div>
 </section>
 
+<section class="awake" id="awake" aria-labelledby="awkH">
+<div class="awk-track" id="awkTrack">
+<div class="awk-stage">
+<div class="awk-sky" aria-hidden="true"><i class="awk-night"></i><i class="awk-dawn"></i><div class="awk-stars" id="awkStars"></div><div class="awk-stars b" id="awkStars2"></div><i class="awk-moon"></i><i class="awk-sun"></i><i class="awk-shoot"></i><svg class="awk-hills" viewBox="0 0 1440 220" preserveAspectRatio="none"><path d="M0 120c120-40 230-62 350-40s210 64 330 54 220-80 360-84 260 40 400 22v148H0Z" fill="#0d0b1c"/><path d="M0 170c160-30 300-36 460-12s300 34 470 8 330-36 510-6v60H0Z" fill="#06050d"/></svg></div>
+<div class="awk-copy">
+<div class="eyebrow">Keep awake</div>
+<h2 id="awkH">Close the lid.<br><em class="ser">They keep going.</em></h2>
+<p class="awk-cap" id="awkCap">Your agents are mid-task. Flip one switch.</p>
+</div>
+<div class="awk-scene">
+<div class="awk-isle" id="awkIsle" data-s="ready" role="status" aria-live="polite">
+<span class="awk-ic" id="awkIc"><img src="images/agents/claude.svg" alt=""></span>
+<span class="awk-tx"><b id="awkT">Ready to close the lid</b><span id="awkS">claude · refactoring checkout</span></span>
+<svg class="awk-ring" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><circle class="p" id="awkRing" cx="10" cy="10" r="8"/></svg>
+</div>
+<div class="awk-mac" aria-hidden="true">
+<div class="awk-rig">
+<div class="awk-deck"><div class="awk-keys"></div><div class="awk-pad"></div><div class="awk-lip"></div></div>
+<div class="awk-lid" id="awkLid">
+<div class="awk-face"><div class="awk-scr"><i class="awk-notch"></i>
+<div class="awk-term"><div class="tb"><i></i><i></i><i></i></div>
+<p><span class="d">~/shop $</span> claude</p>
+<p class="l1"><span class="o">✻</span> Refactor checkout, keep tests green</p>
+<p class="l2"><span class="g">●</span> Edit src/cart/total.ts</p>
+<p class="l3"><span class="g">●</span> Bash npm test <span class="d">148/212</span></p>
+<p class="l4"><span class="d">…still cooking</span><i class="car"></i></p>
+</div></div></div>
+<div class="awk-back"><span></span></div>
+</div>
+</div>
+<div class="awk-glow"></div>
+</div>
+</div>
+<div class="awk-hud">
+<div class="awk-clock"><b id="awkClock">11:42</b><small id="awkAmpm">PM</small></div>
+<div class="awk-tally"><div><b id="awkTasks">0</b><span>tasks shipped</span></div><div><b id="awkTests">0</b><span>tests passed</span></div><div><b id="awkNaps">0</b><span>surprise naps</span></div></div>
+</div>
+</div>
+</div>
+<div class="wrap awk-more">
+<ol class="flow">
+<li><span class="n">1</span><h3>Stays up while they work.</h3><p>The second an agent starts, your Mac stops dozing off. When they're done, it naps again. Nothing to remember.</p></li>
+<li><span class="n">2</span><h3>Lid closed? Still going.</h3><p>Flip one switch and type your password <b>once</b>. Then close the lid on a three hour refactor and go touch grass.</p></li>
+<li><span class="n">3</span><h3>Plays it safe.</h3><p>Backs off at your battery limit or when your Mac runs hot. If NotchBar ever quits, sleep comes back within a minute.</p></li>
+</ol>
+<p class="bench rv">Want it on your terms? Keep it up for 30 min, 1, 2 or 4 hours, or until you say stop, right from the notch. The screen still turns off, so your battery barely notices.</p>
+</div>
+</section>
+
 <section class="rcpt" id="receipt">
 <div class="wrap rgrid">
 <div class="rstage reveal" id="rStage">
@@ -1223,6 +1273,7 @@ animation: hfloat 1.6s var(--out) forwards; }
 <details><summary>Will it slow my Mac down?<i></i></summary><p>Nope. It's a 2 MB download, uses about 19 MB of memory and averages 0.3% CPU while your agents work. We measured it.</p></details>
 <details><summary>Does my code leave my Mac?<i></i></summary><p>Never. NotchBar talks to your agents locally. It only goes online to check for updates and, after an agent pushes, to ask GitHub how CI is doing. That sends just the repo name and commit, and you can turn it off.</p></details>
 <details><summary>Does it show GitHub Actions?<i></i></summary><p>Yep. When an agent pushes, the notch shows the commit's pipeline live, stage by stage, with the step that's running now. It taps you when it goes green or breaks, naming the job and step that failed. Public repos work with zero setup. For private repos, hit Connect GitHub in Settings once and sign in through your browser.</p></details>
+<details><summary>Can my agents keep working with the lid closed?<i></i></summary><p>Yep. Open Keep Awake in the notch and flip "Keep going with the lid closed". macOS asks for your password once to set up a tiny helper. It only keeps your Mac up while agents work or a timer runs, backs off at your battery limit or when things get hot, and hands sleep back within a minute if NotchBar ever quits.</p></details>
 <details><summary>macOS won't open it. Help?<i></i></summary><p>It's a one time thing. Open System Settings, go to Privacy &amp; Security, and click Open Anyway. That's it, forever.</p></details>
 </div>
 </div>
@@ -2211,7 +2262,7 @@ addEventListener("scroll", pickIsle, { passive: true });
   layout(); at(reduce ? 1 : 0);
   new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); print(); } }, { threshold: .45 }).observe($("#rStage"));
 })();
-const SECT = [[".stage", "Live demo"], ["#features", "Features"], ["#receipt", "Daily receipt"], ["#light", "Featherweight"], ["#faq", "FAQ"], [".final", "Get NotchBar"]];
+const SECT = [[".stage", "Live demo"], ["#features", "Features"], ["#awake", "Keep awake"], ["#receipt", "Daily receipt"], ["#light", "Featherweight"], ["#faq", "FAQ"], [".final", "Get NotchBar"]];
 const secIO = new IntersectionObserver((es) => es.forEach((e) => { if (!e.isIntersecting) return; const hit = SECT.find(([q]) => e.target.matches(q)); if (hit && $("#mt").textContent !== hit[1]) { $("#mt").textContent = hit[1]; if (iState === "mini") sizeIsle(); } }), { rootMargin: "-40% 0px -55% 0px" });
 SECT.forEach(([q]) => secIO.observe($(q)));
 pickIsle();
@@ -2235,5 +2286,6 @@ requestAnimationFrame(loop);
 if (new URLSearchParams(location.search).has("download") || location.hash === "#download") setTimeout(() => (onMac ? download(true) : openSend()), reduce ? 0 : 800);
 })();
 </script>
+<script src="awake.js" defer></script>
 </body>
 </html>
