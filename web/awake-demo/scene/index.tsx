@@ -1,4 +1,4 @@
-import { useRef, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { BatteryMedium, Check, ChevronLeft, Coffee, Laptop, Moon, Plus, Settings, Wifi } from 'lucide-react'
 import { Stage } from '../kit/stage'
 import type { Act } from '../kit/act'
@@ -507,6 +507,17 @@ function Readout({ s }: { s: S }) {
   )
 }
 
+/** Lets the page's sky follow the demo's clock: night at 11:43, sunrise at 6:58 */
+function SkySync({ hour }: { hour: number }) {
+  useEffect(() => {
+    const el = document.getElementById('awake')
+    if (!el) return
+    el.style.setProperty('--awk-p', String(hour / 6))
+    el.toggleAttribute('data-morning', hour === 6)
+  }, [hour])
+  return null
+}
+
 export default function KeepAwake() {
   return (
     <Stage<S>
@@ -527,6 +538,7 @@ export default function KeepAwake() {
         const focus = !compact ? null : s.auth ? { x: 124, y: 126, width: 110, height: 118 } : panel ? { x: 89, y: 64, width: 180, height: 92 } : null
         return (
           <div className="ka-world" data-act={s.act} data-dawn={s.dawn || undefined} data-zoom={focus ? true : undefined}>
+            <SkySync hour={s.hour} />
             <div className="ka-sky" />
             <div className="ka-chip" data-act={s.act}>
               <Swap id={s.act}>

@@ -39,7 +39,8 @@
   /* ---- which act ---- */
   .ka-chip {
     position: absolute;
-    left: 24px;
+    left: 50%;
+    translate: -50% 0;
     top: 0;
     z-index: 10;
     height: 30px;
@@ -78,8 +79,6 @@
   }
 
   .ss-stage[data-layout='compact'] .ka-chip {
-    left: 50%;
-    translate: -50% 0;
     font-size: 12.5px;
   }
 
