@@ -18,6 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="awake.css">
+<link rel="stylesheet" href="awake-demo.css">
 <style>
 :root {
 --bg: #f7f6f2; --ink: #0c0c0e; --ink2: #56565e; --ink3: #8d8d95;
@@ -1119,44 +1120,12 @@ animation: hfloat 1.6s var(--out) forwards; }
 </section>
 
 <section class="awake" id="awake" aria-labelledby="awkH">
-<div class="awk-track" id="awkTrack">
-<div class="awk-stage">
-<div class="awk-sky" aria-hidden="true"><i class="awk-night"></i><i class="awk-dawn"></i><div class="awk-stars" id="awkStars"></div><div class="awk-stars b" id="awkStars2"></div><i class="awk-moon"></i><i class="awk-sun"></i><i class="awk-shoot"></i><svg class="awk-hills" viewBox="0 0 1440 220" preserveAspectRatio="none"><path d="M0 120c120-40 230-62 350-40s210 64 330 54 220-80 360-84 260 40 400 22v148H0Z" fill="#0d0b1c"/><path d="M0 170c160-30 300-36 460-12s300 34 470 8 330-36 510-6v60H0Z" fill="#06050d"/></svg></div>
-<div class="awk-copy">
+<div class="wrap awk-head">
 <div class="eyebrow">Keep awake</div>
 <h2 id="awkH">Close the lid.<br><em class="ser">They keep going.</em></h2>
-<p class="awk-cap" id="awkCap">Your agents are mid-task. Flip one switch.</p>
+<p class="awk-cap">Flip one switch in the notch, close the lid, go to bed. Your agents ship all night, then your Mac naps.</p>
 </div>
-<div class="awk-scene">
-<div class="awk-isle" id="awkIsle" data-s="ready" role="status" aria-live="polite">
-<span class="awk-ic" id="awkIc"><img src="images/agents/claude.svg" alt=""></span>
-<span class="awk-tx"><b id="awkT">Ready to close the lid</b><span id="awkS">claude · refactoring checkout</span></span>
-<svg class="awk-ring" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><circle class="p" id="awkRing" cx="10" cy="10" r="8"/></svg>
-</div>
-<div class="awk-mac" aria-hidden="true">
-<div class="awk-rig">
-<div class="awk-deck"><div class="awk-keys"></div><div class="awk-pad"></div><div class="awk-lip"></div></div>
-<div class="awk-lid" id="awkLid">
-<div class="awk-face"><div class="awk-scr"><i class="awk-notch"></i>
-<div class="awk-term"><div class="tb"><i></i><i></i><i></i></div>
-<p><span class="d">~/shop $</span> claude</p>
-<p class="l1"><span class="o">✻</span> Refactor checkout, keep tests green</p>
-<p class="l2"><span class="g">●</span> Edit src/cart/total.ts</p>
-<p class="l3"><span class="g">●</span> Bash npm test <span class="d">148/212</span></p>
-<p class="l4"><span class="d">…still cooking</span><i class="car"></i></p>
-</div></div></div>
-<div class="awk-back"><span></span></div>
-</div>
-</div>
-<div class="awk-glow"></div>
-</div>
-</div>
-<div class="awk-hud">
-<div class="awk-clock"><b id="awkClock">11:42</b><small id="awkAmpm">PM</small></div>
-<div class="awk-tally"><div><b id="awkTasks">0</b><span>tasks shipped</span></div><div><b id="awkTests">0</b><span>tests passed</span></div><div><b id="awkNaps">0</b><span>surprise naps</span></div></div>
-</div>
-</div>
-</div>
+<div class="awk-demo" id="awakeDemo" role="img" aria-label="Demo: in the notch, the switch Keep going with the lid closed turns on. The lid closes, a clock races from 11:42 PM to 6:58 AM while Claude and Codex keep shipping, and at dawn the notch says All done. Napping now, 4 tasks shipped while you slept."></div>
 <div class="wrap awk-more">
 <ol class="flow">
 <li><span class="n">1</span><h3>Stays up while they work.</h3><p>The second an agent starts, your Mac stops dozing off. When they're done, it naps again. Nothing to remember.</p></li>
@@ -2282,6 +2251,6 @@ requestAnimationFrame(loop);
 if (new URLSearchParams(location.search).has("download") || location.hash === "#download") setTimeout(() => (onMac ? download(true) : openSend()), reduce ? 0 : 800);
 })();
 </script>
-<script src="awake.js" defer></script>
+<script src="awake-demo.js" defer></script>
 </body>
 </html>
