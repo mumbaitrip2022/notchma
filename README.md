@@ -215,7 +215,7 @@ agent ──hook JSON──▶ notchbar-hook ──unix socket──▶ NotchBar
 - `AskUserQuestion` and plan approvals always stay in the terminal.
 - The socket lives at `~/Library/Application Support/NotchBar/nb.sock` and only you can read it (mode 0600).
 - **Keep Awake** uses the same power request as `caffeinate -i`. The optional closed-lid helper only runs while NotchBar's heartbeat is fresh, so sleep comes back within a minute if NotchBar quits. See [Keep Awake](#keep-awake).
-- Everything stays on your Mac. No account, no analytics in the app. (The website counts visits with GoatCounter, without cookies.) NotchBar talks to GitHub for two things only: a daily check for a new version, and, after an agent pushes, the Actions status of that commit. Both can be turned off in Settings.
+- Everything stays on your Mac. No account, no analytics. NotchBar talks to GitHub for two things only: a daily check for a new version, and, after an agent pushes, the Actions status of that commit. Both can be turned off in Settings.
 
 ## FAQ
 

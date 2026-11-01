@@ -959,7 +959,7 @@ animation: hfloat 1.6s var(--out) forwards; }
 <video class="bgv" data-src="media/dusk.mp4" data-src-sm="media/dusk-sm.mp4" poster="media/dusk.jpg" muted loop playsinline autoplay preload="auto"></video>
 </div>
 <div class="wrap">
-<a class="news rise" href="https://github.com/mumbaitrip2022/notchma/releases/latest"><b id="ver">New</b>GitHub Actions in your notch<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+<a class="news rise" href="https://github.com/mumbaitrip2022/notchma/releases/latest"><b id="ver">New</b>Close the lid, agents keep going<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
 <h1><span class="hw" style="--i:0">Your</span> <span class="hw" style="--i:1">agents</span> <span class="hw" style="--i:2">work.</span><br><em class="ser"><span class="hw" style="--i:3">Your</span> <span class="hw" style="--i:4">notch</span> <span class="hw" style="--i:5">keeps</span> <span class="hw" style="--i:6">watch.</span></em></h1>
 <p class="lede rise" style="animation-delay:.14s"><span class="ag"><img src="images/agents/claude.svg" alt="">Claude Code</span>, <span class="ag"><img src="images/agents/codex.png" alt="">Codex</span> and <span class="ag"><img src="images/agents/cursor.png" alt="">Cursor</span> report to the black bar you've been ignoring. Approve in one click. Get back to thinking.</p>
 <div class="ctas rise" style="animation-delay:.22s">
@@ -1347,9 +1347,6 @@ animation: hfloat 1.6s var(--out) forwards; }
 "use strict";
 const REPO = "mumbaitrip2022/notchma";
 const LATEST = `https://github.com/${REPO}/releases/latest/download/NotchBar.dmg`;
-/* Visit counts via GoatCounter: no cookies, nothing personal, only on the live site. */
-const count = (p, t, e) => { if (!location.hostname.endsWith("github.io") || navigator.webdriver) return; const q = new URLSearchParams({ p, t: t || document.title, r: e ? "" : document.referrer, s: `${window.screen.width},${window.screen.height},${devicePixelRatio}`, e: e ? "true" : "false", rnd: Math.random().toString(36).slice(2) }); new Image().src = `https://notchbar.goatcounter.com/count?${q}`; };
-count(location.pathname + (location.search === "?download" ? "?download" : ""));
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -1701,12 +1698,12 @@ $("#sdUrl").textContent = SEND.replace(/^https?:\/\//, "").replace(/\/$/, "");
 $("#sdMail").href = `mailto:?subject=${encodeURIComponent("NotchBar for my Mac")}&body=${encodeURIComponent(`Open this on the Mac:\n${SEND}`)}`;
 if (navigator.share) { $("#sdShare").hidden = false; $("#sdTip").hidden = !onIOS; }
 else $("#sdCopy").classList.replace("light", "dark");
-$("#sdShare").addEventListener("click", () => count("send-to-mac/share", "Sent to a Mac", 1) || navigator.share({ title: "NotchBar", text: "NotchBar for my Mac", url: SEND }).catch(() => {}));
+$("#sdShare").addEventListener("click", () => navigator.share({ title: "NotchBar", text: "NotchBar for my Mac", url: SEND }).catch(() => {}));
 $("#sdCopy").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(SEND); } catch { prompt("Copy this link", SEND); return; }
   setLabel($("#sdCopy"), "Copied"); toast("Link copied, open it on your Mac"); setTimeout(() => setLabel($("#sdCopy"), "Copy link"), 2200);
 });
-const openSend = () => { count("send-to-mac", "Not on a Mac", 1); openSheet($("#send")); };
+const openSend = () => openSheet($("#send"));
 if (!onMac) {
   $$(".notmac").forEach((e) => e.classList.add("show"));
   $$("[data-dl] .label").forEach((l) => { l.textContent = l.closest(".il") ? "Get it" : "Send to my Mac"; });
@@ -1716,7 +1713,6 @@ const DLL = ["packing mochi's snacks", "fluffing the pixels", "no thoughts, just
 async function download(auto, from) {
   if (dlBusy) return;
   dlBusy = true; dlState = "go";
-  count(auto ? "download/auto" : "download", "Download NotchBar", 1);
   const btns = $$("[data-dl]");
   $$(".dlw").forEach((w) => w.classList.add("busy"));
   btns.forEach((b) => setLabel(b, "Downloading"));
