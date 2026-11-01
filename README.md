@@ -107,7 +107,7 @@ NotchBar borrows your `gh` login and never stores a token. It sends GitHub only 
 
 ### Set it up
 
-1. Open the notch and click the ☕ chip, or gear menu › **Keep Awake** › **Open Keep Awake**.
+1. Open the notch and click the ☕ button next to **+**. It turns green while your Mac is kept awake and shows a 💻 once it's safe to close the lid (that shows in the closed notch too).
 2. *Stay awake while agents work* is already on. That's it for the lid-open part.
 3. For lid closed: flip **Keep going with the lid closed**. macOS asks for your password once.
 4. When the notch says **Ready to close the lid**, close it and walk away.

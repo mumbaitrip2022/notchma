@@ -5,6 +5,8 @@ struct CollapsedView: View {
     @ObservedObject var store: SessionStore
     @ObservedObject var ui: NotchUI
     let pet: PetBrain
+    @ObservedObject var keepAwake: KeepAwake
+    @ObservedObject var lid: LidGuard
     let showPet: Bool
     let showsActivity: Bool
     @Environment(\.displayScale) private var displayScale
@@ -61,6 +63,14 @@ struct CollapsedView: View {
                 .transition(.opacity)
             }
             if ui.hasHardwareNotch || !showsActivity { Spacer(minLength: ui.hasHardwareNotch ? ui.hardwareNotchWidth : 4) }
+            if keepAwake.lidHeld && lid.ready {
+                // Safe to close the lid: a small promise you can see without opening anything.
+                Image(systemName: "laptopcomputer")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.29, green: 0.87, blue: 0.5))
+                    .help("Safe to close the lid. Your agents keep going")
+                    .transition(.scale.combined(with: .opacity))
+            }
             trailing
         }
         .padding(.leading, 12)

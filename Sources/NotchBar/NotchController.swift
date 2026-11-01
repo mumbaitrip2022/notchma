@@ -633,6 +633,12 @@ final class NotchController: NSObject {
             .sink { [weak self] _, _ in DispatchQueue.main.async { self?.keepAwake.refresh() } }
             .store(in: &bag)
         keepAwake.$reason.removeDuplicates().dropFirst()
+            .sink { [weak self] r in
+                self?.remeasureSoon()
+                if r == .agents { self?.offerLidTipSoon() }
+            }
+            .store(in: &bag)
+        keepAwake.$lidHeld.removeDuplicates().dropFirst()
             .sink { [weak self] _ in self?.remeasureSoon() }
             .store(in: &bag)
 
@@ -705,6 +711,7 @@ final class NotchController: NSObject {
         case .report: openReport()
         case let .open(url): NSWorkspace.shared.open(url)
         case .connectGitHub: GitHubAuth.shared.connect()
+        case .keepAwake: openKeepAwake(); ui.pinned = true
         }
     }
 
@@ -936,6 +943,27 @@ final class NotchController: NSObject {
 
     func openKeepAwake() {
         ui.page = .keepAwake
+    }
+
+    /// Once per Mac: after agents have worked a few minutes on a MacBook, mention
+    /// that they can keep going with the lid closed. Never again after that.
+    private var lidTipWork: DispatchWorkItem?
+    private func offerLidTipSoon() {
+        let key = "tipLidClosed"
+        guard lidGuard.isLaptop, !UserDefaults.standard.bool(forKey: key),
+              !(prefs.lidClosedAwake && lidGuard.installed) else { return }
+        lidTipWork?.cancel()
+        let w = DispatchWorkItem { [weak self] in
+            guard let self, self.keepAwake.reason == .agents, !(self.prefs.lidClosedAwake && self.lidGuard.installed),
+                  !UserDefaults.standard.bool(forKey: key) else { return }
+            UserDefaults.standard.set(true, forKey: key)
+            self.store.showBanner(Banner(kind: .info, sessionID: "", agent: .claude,
+                                         title: "Close the lid, they keep going 🌙",
+                                         subtitle: "your agents can work with the lid shut. tap to set it up",
+                                         action: .keepAwake))
+        }
+        lidTipWork = w
+        DispatchQueue.main.asyncAfter(deadline: .now() + 180, execute: w)
     }
 
     /// Gear menu › Keep Awake: start, extend or stop a manual session.

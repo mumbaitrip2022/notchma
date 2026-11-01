@@ -69,6 +69,7 @@ enum BannerAction: Equatable {
     case report               // open Report a Problem
     case open(URL)            // open a page, e.g. a CI run on GitHub
     case connectGitHub        // sign in to GitHub (for private repo CI)
+    case keepAwake            // open the Keep Awake page
 }
 
 /// A short Dynamic-Island-style alert shown in the notch.

@@ -143,7 +143,7 @@ struct RootView: View {
                     .padding(.top, ui.hasHardwareNotch ? ui.bandHeight - 6 : 0)
                     .transition(.blurReplace)
             case .compact:
-                CollapsedView(store: store, ui: ui, pet: pet, showPet: prefs.showPet, showsActivity: showsActivity)
+                CollapsedView(store: store, ui: ui, pet: pet, keepAwake: keepAwake, lid: lid, showPet: prefs.showPet, showsActivity: showsActivity)
                     .frame(height: ui.bandHeight)
                     .transition(.blurReplace)
             }

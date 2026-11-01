@@ -152,12 +152,10 @@ struct ExpandedView: View {
             if let r = updater.release, updater.phase == .available {
                 UpdateChip(version: r.version) { ui.page = .update }
             }
-            if keepAwake.reason != nil || keepAwake.pausedForBattery {
-                KeepAwakeChip(keepAwake: keepAwake, compact: ui.hasHardwareNotch) { ui.page = .keepAwake }
-            }
             if prefs.showPet && !idle {
                 PetButton(ledger: store.ledger, brain: pet) { ui.page = .receipt }
             }
+            KeepAwakeButton(keepAwake: keepAwake, lid: lid, compact: ui.hasHardwareNotch) { ui.page = .keepAwake }
             Button { ui.page = .launcher } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 12, weight: .bold))
@@ -726,34 +724,61 @@ struct ActivityTrail: View {
     }
 }
 
-/// Header chip while NotchBar is keeping the Mac awake. Click for the Keep Awake menu.
-struct KeepAwakeChip: View {
+/// Always in the header: the way into Keep Awake, and its status at a glance.
+/// Gray when the Mac sleeps normally, green while it's kept awake (with a countdown
+/// for timers), a laptop once it's safe to close the lid.
+struct KeepAwakeButton: View {
     @ObservedObject var keepAwake: KeepAwake
+    @ObservedObject var lid: LidGuard
     var compact: Bool
     let open: () -> Void
+    @State private var hover = false
+
+    private let green = Color(red: 0.29, green: 0.87, blue: 0.5)
+    private var on: Bool { keepAwake.reason != nil }
+    private var lidReady: Bool { keepAwake.lidHeld && lid.ready }
+    private var timer: Date? { keepAwake.isManual && !keepAwake.isUnlimited ? keepAwake.until : nil }
 
     var body: some View {
         Button(action: open) {
             HStack(spacing: 5) {
-                Image(systemName: keepAwake.pausedForBattery ? "battery.25" : keepAwake.lidHeld ? "laptopcomputer" : "cup.and.saucer.fill")
-                    .font(.system(size: 10.5, weight: .bold))
-                if !compact, let until = keepAwake.until, !keepAwake.isUnlimited {
-                    TimelineView(.periodic(from: .now, by: 30)) { ctx in
+                Image(systemName: icon)
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .contentTransition(.symbolEffect(.replace))
+                if !compact, let until = timer {
+                    TimelineView(.periodic(from: .now, by: 15)) { ctx in
                         Text(KeepAwake.remaining(until: until, now: ctx.date).replacingOccurrences(of: " left", with: ""))
+                            .font(.system(size: 11.5, weight: .semibold))
                             .monospacedDigit()
+                            .contentTransition(.numericText(countsDown: true))
                     }
                 }
             }
-            .foregroundStyle(keepAwake.pausedForBattery ? Palette.text3 : .white)
+            .foregroundStyle(keepAwake.pausedForBattery ? Color.orange : on ? green : (hover ? .white : Palette.text2))
+            .padding(.horizontal, timer != nil && !compact ? 9 : 0)
+            .frame(minWidth: 26, minHeight: 26)
+            .background(Capsule().fill(on ? green.opacity(hover ? 0.26 : 0.18) : (hover ? Color(white: 0.22) : Palette.surface3)))
+            .overlay(Capsule().strokeBorder(on ? green.opacity(0.35) : .clear, lineWidth: 1))
+            .contentShape(Capsule())
         }
-        .buttonStyle(NBButtonStyle(kind: .secondary, compact: true))
+        .buttonStyle(.plain)
+        .onHover { hover = $0 }
+        .animation(.easeOut(duration: 0.2), value: on)
+        .animation(.easeOut(duration: 0.2), value: lidReady)
         .help(help)
     }
 
+    private var icon: String {
+        if keepAwake.pausedForBattery { return "battery.25" }
+        if lidReady { return "laptopcomputer" }
+        return on ? "cup.and.saucer.fill" : "cup.and.saucer"
+    }
+
     private var help: String {
-        if keepAwake.pausedForBattery { return "Agents are working, but the battery is low, so your Mac can sleep. Plug in to keep it awake" }
-        if keepAwake.lidHeld { return "Keeping your Mac awake, lid closed too. Safe to close the lid" }
-        if let until = keepAwake.until { return "Keeping your Mac awake, " + KeepAwake.remaining(until: until) + ". Click for options" }
-        return "Keeping your Mac awake while agents work. Click for options"
+        if keepAwake.pausedForBattery { return "Battery's low, so your Mac can sleep. Plug in to keep your agents going" }
+        if lidReady { return "Keeping your Mac awake. Safe to close the lid" }
+        if let until = keepAwake.until { return "Keeping your Mac awake, " + KeepAwake.remaining(until: until) }
+        if on { return "Keeping your Mac awake while agents work" }
+        return "Keep awake: stay up while agents work, even with the lid closed"
     }
 }
