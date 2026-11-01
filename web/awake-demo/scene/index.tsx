@@ -516,19 +516,22 @@ function SkySync({ hour }: { hour: number }) {
     const sec = document.getElementById('awake')
     if (!sec) return
     const fit = (): void => {
-      const w = sec.clientWidth
-      if (w <= 720) {
-        // Phones: a low arc across the top, above the heading
-        sec.style.setProperty('--awk-base', '104px')
-        sec.style.setProperty('--awk-rx', `${Math.round(w * 0.42)}px`)
-        return
-      }
-      const base = sec.querySelector('.ka-base')
-      if (!base) { requestAnimationFrame(fit); return }
+      const stage = sec.querySelector<HTMLElement>('.ss-stage')
+      if (!stage) { requestAnimationFrame(fit); return }
+      // Read the laptop off the stage box (the phone's camera zoom never moves it)
+      const compact = stage.dataset.layout === 'compact'
+      const st = stage.getBoundingClientRect()
       const top = sec.getBoundingClientRect().top
-      const b = base.getBoundingClientRect()
-      sec.style.setProperty('--awk-base', `${Math.round(b.top - top + b.height / 2)}px`)
-      sec.style.setProperty('--awk-rx', `${Math.round(Math.max(b.width / 2 + 60, Math.min(w * 0.44, 640)))}px`)
+      const k = st.width / (compact ? 358 : 1040)
+      // Base center and half width, and the lid's top, in the design's px
+      const g = compact ? { base: 50 + 610 * 0.344, half: 470 * 0.344, lid: 50 + 40 * 0.344 } : { base: 610, half: 470, lid: 40 }
+      const y0 = st.top - top
+      const room = sec.clientWidth / 2 - (compact ? 20 : 40)
+      sec.style.setProperty('--awk-base', `${Math.round(y0 + g.base * k)}px`)
+      // Wide: the top of the arc sits between the act label and the clock.
+      // Phone: just above the label, so the sides clear the clock
+      sec.style.setProperty('--awk-peak', `${Math.round(y0 + (compact ? -30 : 78) * k)}px`)
+      sec.style.setProperty('--awk-rx', `${Math.round(compact ? room : Math.min(g.half * k + 70, room))}px`)
     }
     fit()
     const ro = new ResizeObserver(fit)
