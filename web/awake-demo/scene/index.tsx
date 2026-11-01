@@ -1,8 +1,9 @@
-import { useRef, type CSSProperties } from 'react'
-import { BatteryMedium, Check, Coffee, Laptop, Moon, Wifi } from 'lucide-react'
+import { useRef, type CSSProperties, type ReactNode } from 'react'
+import { BatteryMedium, Check, ChevronLeft, Coffee, Laptop, Moon, Plus, Settings, Wifi } from 'lucide-react'
 import { Stage } from '../kit/stage'
 import type { Act } from '../kit/act'
 import { Bar, Caret, Prompt, Window } from '../kit/window'
+import { Camera } from '../kit/motion/Camera'
 import { Collapse } from '../kit/motion/Collapse'
 import { Roll } from '../kit/motion/Roll'
 import { Swap } from '../kit/motion/Swap'
@@ -10,58 +11,65 @@ import { Spinner } from '../kit/parts/Spinner'
 import { Toggle } from '../kit/controls/Toggle'
 import claude from './claude.svg'
 import codex from './codex.png'
+import appIcon from './notchbar.png'
 import './keep-awake.css'
 
-// NotchBar's Keep Awake, told on the Mac's own screen. The stage is the
-// display: menu bar, the black notch, a terminal where Claude is mid-task.
+// Why Keep Awake exists, on a MacBook Pro, in two acts.
 //
-// Beats (about 16s):
-//   1. The pointer reaches the notch; it springs open on the Keep Awake page.
-//   2. One click on "Keep going with the lid closed": Getting ready, then
-//      Ready to close the lid, in green.
-//   3. The pointer leaves the screen (the person goes to close the lid). The
-//      notch folds to its bar with the green laptop; the lid comes down over
-//      the screen and a big clock appears.
-//   4. Night as a time-lapse: the clock rolls 11:42 PM to 6:58 AM while the
-//      terminal under the lid keeps shipping and the notch narrates.
-//   5. Dawn: the lid lifts, the notch opens on "All done. Napping now".
-//      After the hold the Mac naps (the screen goes black), which is the
-//      cause of the reset; it wakes on the opening frame.
+// Act 1, without it: Claude is mid-task, the lid closes, the Mac sleeps.
+//   The night races by and nothing moves. Next morning the tests are still
+//   at 148/212.
+// Act 2, with it: the pointer opens the notch, taps the cup, flips "Keep
+//   going with the lid closed" and types the password once. The lid closes
+//   and the night races by again, but the agents keep shipping. Morning:
+//   "All done. Napping now".
+// The Mac napping (the screen going black) is the cut between the acts.
 //
-// One shape for the notch: its box and radius spring between bar, page and
-// done, while the content sits on its own layer and fades (dynamic-island).
-//
-// Real strings: the agent's task and its test run, the two switches on the
-// Keep Awake page, the notch's status lines, the clock, the payoff.
+// The notch is the MacBook's real one: NotchBar grows out of it, keeps its
+// words clear of the camera, and is one black shape whose box springs
+// between bar, home, the Keep Awake page and done, with content on its own
+// layer (dynamic-island).
 
-type Mode = 'bar' | 'open' | 'done'
+type Mode = 'bar' | 'home' | 'page' | 'done'
 type S = {
+  act: 1 | 2
   mode: Mode
-  lid: boolean
+  closed: boolean
+  screen: boolean
+  hour: number
+  step: number
+  froze: boolean
+  sw: boolean
+  auth: boolean
+  dots: number
   pending: boolean
   ready: boolean
-  closed: boolean
   dawn: boolean
-  step: number
-  asleep: boolean
 }
 
-const START: S = { mode: 'bar', lid: false, pending: false, ready: false, closed: false, dawn: false, step: 0, asleep: false }
-const POSTER: S = { ...START, lid: true, ready: true, closed: true, step: 3 }
+const START: S = { act: 1, mode: 'bar', closed: false, screen: true, hour: 0, step: 0, froze: false, sw: false, auth: false, dots: 0, pending: false, ready: false, dawn: false }
+const ACT2: S = { ...START, act: 2 }
+const POSTER: S = { ...ACT2, sw: true, ready: true, closed: true, hour: 3, step: 3 }
 
-const CLOCK = ['11:42', '12:36', '1:58', '3:15', '4:41', '5:52', '6:58']
-const AMPM = (step: number) => (step === 0 ? 'PM' : 'AM')
+const CLOCK = ['11:43', '12:37', '1:58', '3:15', '4:41', '5:52', '6:58']
+const ampm = (h: number) => (h === 0 ? 'PM' : 'AM')
 
-// What the notch says through the night, one per clock step
-const NIGHT: { icon: string; text: string }[] = [
-  { icon: claude, text: 'Lid closed. Still going.' },
-  { icon: claude, text: '212 tests passed' },
-  { icon: claude, text: 'Pushed to main' },
-  { icon: codex, text: 'Codex took the next task' },
-  { icon: codex, text: 'CI all green' },
-  { icon: codex, text: 'Last task wrapped' },
-  { icon: codex, text: 'Last task wrapped' },
+// What NotchBar reports through the night in act 2, one per clock step
+const FEED: { icon: string; text: string }[] = [
+  { icon: claude, text: 'claude · running the tests' },
+  { icon: claude, text: 'claude · 212 tests passed' },
+  { icon: claude, text: 'claude · pushed to main' },
+  { icon: codex, text: 'codex · took the next task' },
+  { icon: codex, text: 'codex · CI all green' },
+  { icon: codex, text: 'codex · last task wrapped' },
+  { icon: codex, text: 'codex · last task wrapped' },
 ]
+
+// ---- geometry, in the wide design's px ----
+const LID = { x: 90, y: 40, w: 860, h: 560 }
+const BEZEL = { side: 12, top: 12, chin: 26 }
+const SCREEN = { w: LID.w - BEZEL.side * 2, h: LID.h - BEZEL.top - BEZEL.chin }
+const CAM = { w: 124, h: 30 }
 
 /** A damped spring as a CSS linear() easing */
 function spring(zeta: number, omega: number, ms: number, n = 48) {
@@ -74,23 +82,54 @@ function spring(zeta: number, omega: number, ms: number, n = 48) {
   }
   return `linear(${pts.join(', ')})`
 }
-const GROW = { ease: spring(0.72, 14, 560), ms: 560 }
+const GROW = { ease: spring(0.74, 14, 560), ms: 560 }
 const SHRINK = { ease: spring(0.98, 18, 420), ms: 420 }
 
-type Box = { w: number; h: number; r: number }
-const SIZE: Record<Mode, number> = { bar: 0, done: 1, open: 2 }
-const geo = (compact: boolean): Record<Mode, Box> => ({
-  bar: { w: compact ? 300 : 360, h: 32, r: 12 },
-  open: { w: compact ? 340 : 480, h: 206, r: 26 },
-  done: { w: compact ? 340 : 480, h: 104, r: 26 },
-})
+const BOX: Record<Mode, { w: number; h: number; r: number }> = {
+  bar: { w: CAM.w + 92, h: CAM.h, r: 10 },
+  home: { w: 520, h: 108, r: 24 },
+  page: { w: 520, h: 248, r: 26 },
+  done: { w: 520, h: 112, r: 24 },
+}
+const RANK: Record<Mode, number> = { bar: 0, home: 1, done: 1, page: 2 }
 
-function Notch({ s, compact }: { s: S; compact: boolean }) {
-  const G = geo(compact)
+function Item({ on, w, children, className = '' }: { on: boolean; w: number; children: ReactNode; className?: string }) {
+  return (
+    <div className={`ka-item ${className}`} data-on={on || undefined} style={{ width: w }}>
+      {children}
+    </div>
+  )
+}
+
+/** The menu-bar band: left of the camera, a gap the camera's width, right of it */
+function Band({ left, right }: { left: ReactNode; right?: ReactNode }) {
+  return (
+    <div className="ka-band">
+      <span className="ka-band__side">{left}</span>
+      <span className="ka-band__cam" />
+      <span className="ka-band__side ka-band__right">{right}</span>
+    </div>
+  )
+}
+
+function CupButton({ on, lid, target }: { on: boolean; lid: boolean; target?: boolean }) {
+  return (
+    <span className="ka-circle ka-cup" data-on={on || undefined} data-target={target ? 'cup' : undefined}>
+      <span className="ka-cup__glyph" data-on={!lid || undefined}>
+        <Coffee size={14} strokeWidth={2.4} />
+      </span>
+      <span className="ka-cup__glyph" data-on={lid || undefined}>
+        <Laptop size={14} strokeWidth={2.4} />
+      </span>
+    </span>
+  )
+}
+
+function Notch({ s }: { s: S }) {
   const last = useRef<{ mode: Mode; grow: boolean }>({ mode: s.mode, grow: true })
-  if (last.current.mode !== s.mode) last.current = { mode: s.mode, grow: SIZE[s.mode] > SIZE[last.current.mode] }
+  if (last.current.mode !== s.mode) last.current = { mode: s.mode, grow: RANK[s.mode] >= RANK[last.current.mode] }
   const grow = last.current.grow
-  const b = G[s.mode]
+  const b = BOX[s.mode]
   const shape: CSSProperties = {
     width: b.w,
     height: b.h,
@@ -100,86 +139,157 @@ function Notch({ s, compact }: { s: S; compact: boolean }) {
     transitionTimingFunction: grow ? GROW.ease : SHRINK.ease,
     transitionDelay: grow ? '0ms' : '110ms',
   }
-  const line = s.closed || s.step > 0 ? NIGHT[s.step]! : s.ready ? { icon: claude, text: 'Ready to close the lid' } : { icon: claude, text: 'Running the tests' }
-  const held = s.ready || s.closed
+  const working = s.act === 2 // Keep Awake is on while agents work
+  const agent = FEED[s.step]!.icon
   return (
-    <div className="ka-notch" style={{ width: G.open.w }}>
+    <div className="ka-notch">
       <span className="ka-notch__shape" style={shape} />
 
-      {/* The bar: agent, what it's doing, and on the right the ring or the laptop */}
-      <div className="ka-item ka-bar" data-on={s.mode === 'bar' || undefined} style={{ width: G.bar.w }}>
-        <Swap id={line.icon} className="ka-bar__icon">
-          <img src={line.icon} alt="" width={16} height={16} />
+      {/* The bar beside the camera: the agent on the left, status on the right */}
+      <Item on={s.mode === 'bar'} w={BOX.bar.w} className="ka-bar">
+        <Swap id={agent} className="ka-bar__icon">
+          <img src={agent} alt="" width={16} height={16} />
         </Swap>
-        <Swap id={line.text} className="ka-bar__text">
-          {line.text}
-        </Swap>
-        <span className="ka-bar__end">
-          <span className="ka-bar__mark" data-on={!held || undefined}>
-            <Spinner size={14} />
+        <span className="ka-bar__right">
+          <span className="ka-bar__laptop" data-on={s.ready || undefined}>
+            <Laptop size={14} strokeWidth={2.4} />
           </span>
-          <span className="ka-bar__mark ka-green" data-on={held || undefined}>
-            <Laptop size={16} strokeWidth={2.2} />
-          </span>
+          <Spinner size={14} className="ka-bar__ring" />
         </span>
-      </div>
+      </Item>
+
+      {/* Home: who's working, and the header buttons */}
+      <Item on={s.mode === 'home'} w={BOX.home.w} className="ka-panel">
+        <Band
+          left={<span className="ka-head">1 agent working</span>}
+          right={
+            <>
+              <CupButton on={working} lid={false} target />
+              <span className="ka-circle"><Plus size={14} strokeWidth={2.6} /></span>
+              <span className="ka-circle"><Settings size={14} strokeWidth={2.4} /></span>
+            </>
+          }
+        />
+        <div className="ka-row">
+          <img src={claude} alt="" width={24} height={24} className="ka-row__icon" />
+          <span className="ka-lines">
+            <span className="ka-title">shop</span>
+            <span className="ka-sub">Running the tests</span>
+          </span>
+          <span className="ka-row__meta">148/212</span>
+          <Spinner size={14} className="ka-row__ring" />
+        </div>
+      </Item>
 
       {/* The Keep Awake page */}
-      <div className="ka-item ka-page" data-on={s.mode === 'open' || undefined} style={{ width: G.open.w }}>
-        <div className="ka-page__head">Keep awake</div>
-        <div className="ka-card">
-          <span className="ka-disc" data-on>
-            <Coffee size={16} strokeWidth={2.4} />
-          </span>
-          <span className="ka-lines">
-            <span className="ka-title">Awake while agents work</span>
-            <span className="ka-sub">It naps again once they're done.</span>
-          </span>
+      <Item on={s.mode === 'page'} w={BOX.page.w} className="ka-panel">
+        <Band
+          left={
+            <>
+              <span className="ka-circle"><ChevronLeft size={14} strokeWidth={2.8} /></span>
+              <span className="ka-head">Keep awake</span>
+            </>
+          }
+        />
+        <div className="ka-card ka-card--status">
+          <div className="ka-card__row">
+            <span className="ka-disc" data-on>
+              <Coffee size={16} strokeWidth={2.4} />
+            </span>
+            <span className="ka-lines">
+              <span className="ka-title">Awake while agents work</span>
+              <span className="ka-sub">It naps again once they're done.</span>
+            </span>
+          </div>
+          <div className="ka-pills">
+            <span className="ka-for">For</span>
+            {['30 min', '1 hr', '2 hr', '4 hr', 'Until I stop'].map((p) => (
+              <span key={p} className="ka-pill">{p}</span>
+            ))}
+          </div>
         </div>
         <div className="ka-card">
-          <span className="ka-disc" data-on={s.ready || undefined}>
-            <Laptop size={16} strokeWidth={2.4} />
-          </span>
-          <span className="ka-lines">
-            <span className="ka-title">Keep going with the lid closed</span>
-            <span className="ka-status">
-              <span className="ka-status__opt" data-on={(!s.lid && !s.ready) || undefined}>
-                {compact ? 'One switch, one password.' : 'One switch. Your Mac asks for your password once.'}
-              </span>
-              <span className="ka-status__opt" data-on={s.pending || undefined}>
-                <Spinner size={11} />
-                Getting ready, hold the lid a sec
-              </span>
-              <span className="ka-status__opt ka-green ka-strong" data-on={s.ready || undefined}>
-                <i className="ka-dot" />
-                Ready to close the lid
+          <div className="ka-card__row">
+            <span className="ka-disc" data-on={s.ready || undefined}>
+              <Laptop size={16} strokeWidth={2.4} />
+            </span>
+            <span className="ka-lines">
+              <span className="ka-title">Keep going with the lid closed</span>
+              <span className="ka-status">
+                <span className="ka-status__opt" data-on={(!s.sw && !s.pending && !s.ready) || undefined}>
+                  One switch. Your Mac asks for your password once.
+                </span>
+                <span className="ka-status__opt" data-on={(s.sw && !s.pending && !s.ready) || undefined}>
+                  Setting up, check for the password box
+                </span>
+                <span className="ka-status__opt" data-on={s.pending || undefined}>
+                  <Spinner size={11} />
+                  Getting ready, hold the lid a sec
+                </span>
+                <span className="ka-status__opt ka-green ka-strong" data-on={s.ready || undefined}>
+                  <i className="ka-dot" />
+                  Ready to close the lid
+                </span>
               </span>
             </span>
-          </span>
-          <Toggle on={s.lid} className="ka-switch" data-target="switch" />
+            <Toggle on={s.sw} className="ka-switch" data-target="switch" />
+          </div>
         </div>
-      </div>
+      </Item>
 
       {/* Morning */}
-      <div className="ka-item ka-done" data-on={s.mode === 'done' || undefined} style={{ width: G.done.w }}>
-        <span className="ka-done__icon">
-          <img src={claude} alt="" width={30} height={30} />
-          <span className="ka-done__check">
-            <Check size={10} strokeWidth={3.4} />
+      <Item on={s.mode === 'done'} w={BOX.done.w} className="ka-panel">
+        <Band
+          left={<span className="ka-head">All caught up</span>}
+          right={
+            <>
+              <CupButton on lid={false} />
+              <span className="ka-circle"><Plus size={14} strokeWidth={2.6} /></span>
+              <span className="ka-circle"><Settings size={14} strokeWidth={2.4} /></span>
+            </>
+          }
+        />
+        <div className="ka-row">
+          <span className="ka-row__done">
+            <img src={claude} alt="" width={24} height={24} className="ka-row__icon" />
+            <span className="ka-row__check"><Check size={9} strokeWidth={3.6} /></span>
           </span>
-        </span>
-        <span className="ka-lines">
-          <span className="ka-done__title">All done. Napping now</span>
-          <span className="ka-done__sub">4 tasks shipped while you slept</span>
-        </span>
-        <span className="ka-done__time">6:58 AM</span>
+          <span className="ka-lines">
+            <span className="ka-title">All done. Napping now</span>
+            <span className="ka-sub">4 tasks shipped while you slept</span>
+          </span>
+          <span className="ka-row__meta">6:58 AM</span>
+        </div>
+      </Item>
+    </div>
+  )
+}
+
+/** The macOS password sheet, the one time the lid helper is installed */
+function Auth({ s }: { s: S }) {
+  return (
+    <div className="ka-auth" data-on={s.auth || undefined}>
+      <span className="ka-auth__icon">
+        <img src={appIcon} alt="" width={52} height={52} />
+      </span>
+      <div className="ka-auth__title">NotchBar wants to keep your Mac awake with the lid closed.</div>
+      <div className="ka-auth__text">You only need to do this once. Enter your password to allow this.</div>
+      <div className="ka-auth__field ka-auth__field--user">dev</div>
+      <div className="ka-auth__field" data-focus>
+        <span className="ka-auth__dots">{'•'.repeat(s.dots)}</span>
+        {s.auth && s.dots < 8 && <i className="ka-auth__caret" />}
+        {s.dots === 0 && <span className="ka-auth__ph">Password</span>}
+      </div>
+      <div className="ka-auth__btns">
+        <span className="ka-auth__btn">Cancel</span>
+        <span className="ka-auth__btn ka-auth__btn--ok" data-target="ok">OK</span>
       </div>
     </div>
   )
 }
 
-function Terminal({ s, compact }: { s: S; compact: boolean }) {
-  const passed = s.step >= 1
+function Terminal({ s }: { s: S }) {
+  const passed = s.act === 2 && s.step >= 1
   return (
     <Window chrome="terminal" title="shop · claude" className="ka-term">
       <div className="ka-term__body">
@@ -196,38 +306,34 @@ function Terminal({ s, compact }: { s: S; compact: boolean }) {
             <Roll>{passed ? '212/212 passed' : '148/212'}</Roll>
           </span>
         </div>
-        <TermLine on={s.step >= 2}>
-          <span className="ok">●</span> git push origin main <span className="dim">done</span>
-        </TermLine>
-        <TermLine on={s.step >= 3}>
-          <span className="ka-codex">◆</span> codex: fix the flaky login test
-        </TermLine>
-        <TermLine on={s.step >= 4}>
-          <span className="ok">●</span> CI <span className="ok">8/8 green</span>
-        </TermLine>
-        <TermLine on={s.step >= 5}>
-          <span className="ok">✓</span> 4 of 4 shipped{compact ? '' : <span className="dim">, nothing left to do</span>}
-        </TermLine>
+        <Collapse open={s.froze}>
+          <div className="ss-term__line">
+            <span className="err">✗</span> <span className="err">Mac slept at 11:43 PM.</span> <span className="dim">Nothing ran overnight.</span>
+          </div>
+        </Collapse>
+        <Collapse open={s.act === 2 && s.step >= 2}>
+          <div className="ss-term__line"><span className="ok">●</span> git push origin main <span className="dim">done</span></div>
+        </Collapse>
+        <Collapse open={s.act === 2 && s.step >= 3}>
+          <div className="ss-term__line"><span className="ka-codex">◆</span> codex: fix the flaky login test</div>
+        </Collapse>
+        <Collapse open={s.act === 2 && s.step >= 4}>
+          <div className="ss-term__line"><span className="ok">●</span> CI <span className="ok">8/8 green</span></div>
+        </Collapse>
+        <Collapse open={s.act === 2 && s.step >= 5}>
+          <div className="ss-term__line"><span className="ok">✓</span> 4 of 4 shipped</div>
+        </Collapse>
         <div className="ss-term__line ka-term__cue">
-          <Swap id={s.step < 5 ? 'cook' : 'idle'} className="dim">{s.step < 5 ? 'still cooking' : 'idle'}</Swap>
+          <Swap id={s.act === 2 && s.step >= 5 ? 'idle' : 'cook'} className="dim">{s.act === 2 && s.step >= 5 ? 'idle' : 'still cooking'}</Swap>
           <Caret />
         </div>
-        {!compact &&
-          [180, 132, 210, 96].map((w, i) => (
-            <div key={i} className="ka-term__filler">
-              <Bar w={w} h={7} r={3.5} tone={1} />
-            </div>
-          ))}
+        {[180, 132, 210, 96].map((w, i) => (
+          <div key={i} className="ka-term__filler">
+            <Bar w={w} h={7} r={3.5} tone={1} />
+          </div>
+        ))}
       </div>
     </Window>
-  )
-}
-
-function TermLine({ on, children }: { on: boolean; children: React.ReactNode }) {
-  return (
-    <Collapse open={on}>
-      <div className="ss-term__line">{children}</div>
-    </Collapse>
   )
 }
 
@@ -235,10 +341,7 @@ function Editor() {
   return (
     <Window title="total.ts" className="ka-editor" receded>
       <div className="ka-editor__body">
-        {[
-          [0, 120], [0, 220], [16, 180], [16, 150], [32, 200], [16, 90], [0, 60], [0, 0],
-          [0, 170], [16, 240], [16, 130], [32, 160], [32, 110], [16, 70], [0, 50],
-        ].map(([x, w], i) => (
+        {[[0, 120], [0, 200], [16, 160], [16, 130], [32, 180], [16, 90], [0, 60], [0, 0], [0, 150], [16, 210], [16, 120], [32, 140], [16, 70], [0, 50]].map(([x, w], i) => (
           <div key={i} className="ka-editor__line">
             <span className="ka-editor__no">{i + 1}</span>
             {w ? <Bar w={w} h={7} r={3.5} tone={i % 3 === 1 ? 3 : 2} style={{ marginLeft: x }} /> : null}
@@ -249,10 +352,9 @@ function Editor() {
   )
 }
 
-function MenuBar({ s, compact }: { s: S; compact: boolean }) {
+function MenuBar({ s }: { s: S }) {
   return (
     <div className="ka-menu">
-      {compact ? null : (<>
       <span className="ka-menu__left">
         <b>Terminal</b>
         <span>Shell</span>
@@ -263,108 +365,189 @@ function MenuBar({ s, compact }: { s: S; compact: boolean }) {
         <BatteryMedium size={17} strokeWidth={1.8} />
         <Wifi size={14} strokeWidth={2.2} />
         <span className="ka-menu__clock">
-          <Roll>{CLOCK[s.step]!}</Roll> {AMPM(s.step)}
+          <Roll>{CLOCK[s.hour]!}</Roll> {ampm(s.hour)}
         </span>
       </span>
-      </>)}
     </div>
   )
 }
 
+/** A 14" MacBook Pro, front on: space black lid, the notch, the base's lip */
+function MacBook({ s }: { s: S }) {
+  return (
+    <div className="ka-mac" data-closed={s.closed || undefined}>
+      <div className="ka-lid">
+        <div className="ka-screen" data-off={!s.screen || s.closed || undefined}>
+          <div className="ka-wall" />
+          <Editor />
+          <Terminal s={s} />
+          <MenuBar s={s} />
+          <span className="ka-hit" data-target="notch" />
+          <Notch s={s} />
+          <Auth s={s} />
+          <div className="ka-off" />
+        </div>
+        <span className="ka-cam" />
+      </div>
+      <div className="ka-base">
+        <span className="ka-base__scoop" />
+      </div>
+    </div>
+  )
+}
+
+const wait = (a: Act<S>, ms: number) => a.wait(ms)
+
+async function night(a: Act<S>, progress: boolean) {
+  for (let h = 1; h <= 6; h++) {
+    a.put(progress ? { hour: h, step: h } : { hour: h })
+    await wait(a, progress ? 900 : 520)
+  }
+}
+
 const script = async (a: Act<S>) => {
   const compact = a.layout === 'compact'
-  await a.wait(1000)
+  // ---- Act 1: without Keep Awake ----
+  await wait(a, 1400)
+  a.mark('close1')
+  a.put({ closed: true })
+  await wait(a, 1600)
+  await night(a, false)
+  await wait(a, 300)
+  a.mark('open1')
+  a.put({ closed: false })
+  await wait(a, 1100)
+  a.put({ froze: true })
+  a.mark('froze')
+  await wait(a, 2600)
+  // The Mac naps, and wakes in act 2
+  a.put({ screen: false })
+  await wait(a, 700)
+  await a.snap({ ...ACT2, screen: false })
+  await wait(a, 150)
+  a.put({ screen: true })
+  await wait(a, 900)
+
+  // ---- Act 2: with Keep Awake ----
   a.mark('hover')
-  // The pointer comes in from the corner, already on its way to the notch
-  await a.enter({ at: 'notch', x: 0.62, y: 0.6 }, { duration: 1100 })
-  a.put({ mode: 'open' })
-  await a.wait(800)
+  await a.enter({ at: 'notch', x: 0.7, y: 0.6 }, { duration: 1000 })
+  a.put({ mode: 'home' })
+  await wait(a, 700)
+  await a.move({ at: 'cup', x: 0.5, y: 0.55 }, { duration: 520 })
+  await a.click()
+  a.put({ mode: 'page' })
+  await wait(a, 800)
   await a.move({ at: 'switch', x: 0.5, y: 0.55 }, { duration: 620 })
   a.mark('switch')
   await a.click()
-  a.put({ lid: true, pending: true })
-  await a.wait(950)
+  a.put({ sw: true })
+  await wait(a, 350)
+  a.put({ auth: true })
+  a.mark('auth')
+  await wait(a, 700)
+  for (let i = 1; i <= 8; i++) {
+    a.put({ dots: i })
+    await wait(a, 75)
+  }
+  await wait(a, 250)
+  await a.move({ at: 'ok', x: 0.5, y: 0.55 }, { duration: 500 })
+  await a.click()
+  a.put({ auth: false, pending: true })
+  await wait(a, 1000)
   a.put({ pending: false, ready: true })
   a.mark('ready')
-  await a.wait(1300)
-  // Off the screen: the person reaches for the lid
-  void a.move(compact ? { x: 300, y: 520 } : { x: 900, y: 700 }, { duration: 700 })
-  await a.wait(260)
+  await wait(a, 1300)
+  // Off the screen: the hand goes to the lid
+  void a.move(compact ? { x: 330, y: 360 } : { x: 1000, y: 760 }, { duration: 700 })
+  await wait(a, 260)
   a.put({ mode: 'bar' })
-  await a.wait(1000)
-  a.mark('close')
+  await wait(a, 900)
+  a.mark('close2')
   a.put({ closed: true })
-  await a.wait(1500)
-  for (let i = 1; i <= 6; i++) {
-    a.put({ step: i })
-    await a.wait(i === 6 ? 700 : 950)
-  }
+  await wait(a, 1700)
+  await night(a, true)
   a.mark('dawn')
-  a.put({ dawn: true })
-  await a.wait(450)
-  a.put({ closed: false })
-  await a.wait(750)
+  a.put({ dawn: true, closed: false })
+  await wait(a, 1000)
   a.put({ mode: 'done' })
   a.mark('done')
-  await a.wait(2600)
-  // The Mac naps: the cause of the reset
-  a.mark('nap')
-  a.put({ asleep: true })
-  await a.wait(900)
-  await a.snap({ ...START, asleep: true })
-  await a.wait(250)
-  a.put({ asleep: false })
-  await a.wait(500)
+  await wait(a, 3000)
+  a.put({ screen: false })
+  await wait(a, 700)
+  await a.snap({ ...START, screen: false })
+  await wait(a, 150)
+  a.put({ screen: true })
+  await wait(a, 400)
+}
+
+function Readout({ s }: { s: S }) {
+  const on = s.closed && s.screen
+  const good = s.act === 2
+  return (
+    <div className="ka-read" data-on={on || undefined}>
+      <div className="ka-read__clock">
+        <span className="ka-read__time"><Roll align="end">{CLOCK[s.hour]!}</Roll></span>
+        <span className="ka-read__ampm">{ampm(s.hour)}</span>
+      </div>
+      <div className="ka-read__pill" data-good={good || undefined}>
+        <span className="ka-read__state">
+          {good ? <i className="ka-dot ka-green" /> : <Moon size={13} strokeWidth={2.4} />}
+          {good ? 'Lid closed. Agents still going' : 'Lid closed. Mac asleep, agents frozen'}
+        </span>
+      </div>
+      <div className="ka-read__feed" data-on={good || undefined}>
+        <Swap id={s.step}>
+          <span className="ka-read__line">
+            <img src={FEED[s.step]!.icon} alt="" width={16} height={16} />
+            {FEED[s.step]!.text}
+          </span>
+        </Swap>
+      </div>
+    </div>
+  )
 }
 
 export default function KeepAwake() {
   return (
     <Stage<S>
       width={1040}
-      height={600}
-      compact={{ below: 720, width: 358, height: 480 }}
+      height={680}
+      compact={{ below: 720, width: 358, height: 310 }}
       theme="dark"
       initial={START}
       poster={POSTER}
       script={script}
-      cursor={{ at: { wide: { x: 900, y: 700 }, compact: { x: 300, y: 520 } }, style: 'real' }}
+      cursor={{ at: { wide: { x: 1000, y: 760 }, compact: { x: 330, y: 360 } }, style: 'real' }}
       className="ka"
     >
       {(s, _rect, layout) => {
         const compact = layout === 'compact'
-        const W = compact ? 358 : 1040
-        const G = geo(compact)
+        // On a phone the laptop is small: push in on the notch while it's used
+        const panel = s.mode === 'home' || s.mode === 'page' || s.mode === 'done'
+        const focus = !compact ? null : s.auth ? { x: 124, y: 126, width: 110, height: 118 } : panel ? { x: 89, y: 64, width: 180, height: 92 } : null
         return (
-          <div className="ka-screen" data-closed={s.closed || undefined} data-dawn={s.dawn || undefined}>
-            <div className="ka-wall" />
-            {!compact && <Editor />}
-            <Terminal s={s} compact={compact} />
-            <MenuBar s={s} compact={compact} />
-
-            {/* The lid coming down over the screen, and the night it brings */}
-            <div className="ka-lid" aria-hidden>
-              <div className="ka-night">
-                <div className="ka-night__clock">
-                  <span className="ka-night__time"><Roll align="end">{CLOCK[s.step]!}</Roll></span>
-                  <span className="ka-night__ampm">{AMPM(s.step)}</span>
-                </div>
-                <div className="ka-night__note">
-                  <Moon size={13} strokeWidth={2.4} />
-                  Lid closed, agents still going
-                </div>
-              </div>
+          <div className="ka-world" data-act={s.act} data-dawn={s.dawn || undefined} data-zoom={focus ? true : undefined}>
+            <div className="ka-sky" />
+            <div className="ka-chip" data-act={s.act}>
+              <Swap id={s.act}>
+                <span className="ka-chip__in">
+                  <i className="ka-dot" />
+                  {s.act === 1 ? 'Without Keep Awake' : 'With NotchBar Keep Awake'}
+                </span>
+              </Swap>
             </div>
-
-            <span
-              className="ka-hit"
-              data-target="notch"
-              style={{ left: Math.round((W - G.bar.w) / 2), width: G.bar.w, height: G.bar.h }}
-            />
-            <Notch s={s} compact={compact} />
-            <div className="ka-sleep" data-on={s.asleep || undefined} />
+            <Readout s={s} />
+            {compact ? (
+              <Camera focus={focus} max={3.2} pad={0} feather={0}>
+                <div className="ka-fitc"><MacBook s={s} /></div>
+              </Camera>
+            ) : (
+              <MacBook s={s} />
+            )}
           </div>
         )
       }}
     </Stage>
   )
 }
+
