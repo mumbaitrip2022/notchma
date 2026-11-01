@@ -20,9 +20,8 @@ background: radial-gradient(ellipse 70% 40% at 50% 100%, #2a2160 0%, transparent
 }
 
 /* The sky follows the demo's clock (--awk-p: 0 at 11:43 PM, 1 at 6:58 AM, set
-   by awake-demo.js with the arc's size). The moon climbs on the left of the
-   laptop, arcs over it and warms into the sun on the right; the laptop's base
-   is the horizon. Stars fade as it goes, and morning light spreads from the right. */
+   by awake-demo.js with the path's size). The moon arcs over the laptop from
+   left to right and warms into the sun; stars fade, morning light comes in. */
 @property --awk-p { syntax: '<number>'; inherits: true; initial-value: 0; }
 .awake { --awk-p: 0; --awk-base: 1060px; --awk-rx: 620px; --awk-peak: 54px;
   --awk-ry: calc(var(--awk-base) - var(--awk-peak));
@@ -39,40 +38,25 @@ background: radial-gradient(ellipse 70% 40% at 50% 100%, #2a2160 0%, transparent
 
 /* Morning: light spreads in from the right horizon and warms the whole sky */
 .awk-dawn { inset: 0; opacity: calc(var(--awk-p) * var(--awk-p));
-  background: radial-gradient(70% 70% at 92% var(--awk-base), rgba(255,170,120,.34), rgba(230,120,160,.12) 45%, transparent 75%),
+  background: radial-gradient(70% 70% at 90% 62%, rgba(255,170,120,.24), rgba(230,120,160,.08) 45%, transparent 75%),
               linear-gradient(0deg, rgba(255,150,110,.16), rgba(90,110,220,.08) 45%, transparent 75%); }
 
-/* The path: a hairline dome, brighter where the night has already gone */
-.awk-arc, .awk-trail { left: calc(50% - var(--awk-rx)); top: var(--awk-peak); width: calc(var(--awk-rx) * 2); height: calc(var(--awk-ry) * 2);
-  border-radius: 50%; box-sizing: border-box; }
-.awk-arc { border: 1px dashed rgba(255,255,255,.13);
-  -webkit-mask: linear-gradient(180deg, #000 0%, rgba(0,0,0,.5) 34%, transparent 50%); mask: linear-gradient(180deg, #000 0%, rgba(0,0,0,.7) 40%, transparent 50%); }
-.awk-trail { --awk-c: atan2(calc(var(--awk-rx) * cos(var(--awk-a)) * -1), calc(var(--awk-ry) * sin(var(--awk-a))));
-  border: 1.5px solid color-mix(in oklab, rgba(255,200,150,.75) calc(var(--awk-p) * 100%), rgba(200,210,255,.5));
-  -webkit-mask: conic-gradient(from -90deg, transparent 6deg, #000 26deg, #000 calc(var(--awk-c) + 88deg), transparent calc(var(--awk-c) + 90deg)), linear-gradient(180deg, #000 0%, rgba(0,0,0,.75) 42%, transparent 50%);
-  -webkit-mask-composite: source-in;
-  mask: conic-gradient(from -90deg, transparent 6deg, #000 26deg, #000 calc(var(--awk-c) + 88deg), transparent calc(var(--awk-c) + 90deg)), linear-gradient(180deg, #000 0%, rgba(0,0,0,.75) 42%, transparent 50%);
-  mask-composite: intersect; }
 
 /* The orb and the light it throws */
 .awk-orb, .awk-halo { left: calc(50% - cos(var(--awk-a)) * var(--awk-rx)); top: calc(var(--awk-base) - sin(var(--awk-a)) * var(--awk-ry));
   translate: -50% -50%; transition: opacity 1.2s ease .2s; }
-.awk-halo { width: 620px; height: 620px; border-radius: 50%;
+.awk-halo { width: 520px; height: 520px; border-radius: 50%;
   background: radial-gradient(closest-side, color-mix(in oklab, #ffb47a calc(var(--awk-p) * 100%), #8fa2ff) 0%, transparent 100%);
-  opacity: calc(.16 + var(--awk-p) * var(--awk-p) * .34); }
-.awk-orb { width: 34px; height: 34px; }
+  opacity: calc(.1 + var(--awk-p) * var(--awk-p) * .22); }
+.awk-orb { width: 30px; height: 30px; }
 .awk-orb i { position: absolute; inset: 0; border-radius: 50%; }
-.awk-moon { box-shadow: inset -9px 3px 0 0 rgba(255,247,228,.95); filter: drop-shadow(0 0 14px rgba(220,230,255,.5));
+.awk-moon { box-shadow: inset -8px 3px 0 0 rgba(255,247,228,.95); filter: drop-shadow(0 0 12px rgba(220,230,255,.5));
   rotate: calc(var(--awk-a) - 60deg); opacity: clamp(0, (.86 - var(--awk-p)) * 5, 1); }
 .awk-sun { background: radial-gradient(circle at 40% 38%, #fff6e6, #ffd39a 45%, #ff9f68 100%);
-  box-shadow: 0 0 22px 6px rgba(255,190,130,.55), 0 0 70px 20px rgba(255,150,100,.25);
+  box-shadow: 0 0 18px 4px rgba(255,190,130,.45), 0 0 50px 12px rgba(255,150,100,.18);
   scale: calc(.6 + var(--awk-p) * .4); opacity: clamp(0, (var(--awk-p) - .7) * 4.5, 1); }
 .awake[data-jump] .awk-orb, .awake[data-jump] .awk-halo { opacity: 0; transition: none; }
 
-/* The two ends of the night, on the horizon */
-.awk-end { top: calc(var(--awk-base) + 18px); translate: -50% 0; font: 500 11px/1 var(--mono, ui-monospace, monospace); letter-spacing: .08em; color: rgba(255,255,255,.4); white-space: nowrap; }
-.awk-end.l { left: calc(50% - var(--awk-rx)); }
-.awk-end.r { left: calc(50% + var(--awk-rx)); color: color-mix(in oklab, #ffc89a calc(var(--awk-p) * 100%), rgba(255,255,255,.4)); }
 
 @media (prefers-reduced-motion: reduce) { .awake { transition: none; } .awk-stars-lit { animation: none; } }
-@media (max-width: 720px) { .awk-orb { width: 22px; height: 22px; } .awk-moon { box-shadow: inset -6px 2px 0 0 rgba(255,247,228,.95); } .awk-halo { width: 360px; height: 360px; } .awk-end { display: none; } }
+@media (max-width: 720px) { .awk-orb { width: 22px; height: 22px; } .awk-moon { box-shadow: inset -6px 2px 0 0 rgba(255,247,228,.95); } .awk-halo { width: 360px; height: 360px; } }
