@@ -1297,7 +1297,7 @@ animation: hfloat 1.6s var(--out) forwards; }
 const REPO = "mumbaitrip2022/notchma";
 const LATEST = `https://github.com/${REPO}/releases/latest/download/NotchBar.dmg`;
 /* Visit counts via GoatCounter: no cookies, nothing personal, only on the live site. */
-const count = (p, t, e) => { if (!location.hostname.endsWith("github.io") || navigator.webdriver) return; const q = new URLSearchParams({ p, t: t || document.title, r: e ? "" : document.referrer, s: `${screen.width},${screen.height},${devicePixelRatio}`, e: e ? "true" : "false", rnd: Math.random().toString(36).slice(2) }); new Image().src = `https://notchbar.goatcounter.com/count?${q}`; };
+const count = (p, t, e) => { if (!location.hostname.endsWith("github.io") || navigator.webdriver) return; const q = new URLSearchParams({ p, t: t || document.title, r: e ? "" : document.referrer, s: `${window.screen.width},${window.screen.height},${devicePixelRatio}`, e: e ? "true" : "false", rnd: Math.random().toString(36).slice(2) }); new Image().src = `https://notchbar.goatcounter.com/count?${q}`; };
 count(location.pathname + (location.search === "?download" ? "?download" : ""));
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const $ = (s, el = document) => el.querySelector(s);
