@@ -507,31 +507,34 @@ function Readout({ s }: { s: S }) {
   )
 }
 
-/** Lets the page's sky follow the demo's clock: the moon starts by the
- * laptop's top left at 11:43 PM and arcs over it, warming into the sun on the
- * right by 6:58 AM. The path is measured off the stage. */
+/** Lets the page's sky follow the demo's clock. The moon and sun ride one
+ * arm that swings over the laptop (a slice of a big circle), so only
+ * transforms and opacity animate: phones composite them without repainting
+ * the section. Moon through 4:41, sun from 5:52. */
 function SkySync({ hour }: { hour: number }) {
   const prev = useRef(hour)
+  const span = useRef(24)
   useEffect(() => {
     const sec = document.getElementById('awake')
-    if (!sec) return
+    const sky = sec?.querySelector<HTMLElement>('.awk-sky')
+    if (!sec || !sky) return
     const fit = (): void => {
       const stage = sec.querySelector<HTMLElement>('.ss-stage')
       if (!stage) { requestAnimationFrame(fit); return }
-      // Read the laptop off the stage box (the phone's camera zoom never moves it)
       const compact = stage.dataset.layout === 'compact'
       const st = stage.getBoundingClientRect()
       const top = sec.getBoundingClientRect().top
       const k = st.width / (compact ? 358 : 1040)
-      // The path stays above the open lid: it starts beside the lid's top
-      // corner, peaks just above the act label and ends by the other corner.
-      // Design px: horizon y, peak y, half width.
-      const g = compact ? { horizon: 70, peak: -24, half: 190 } : { horizon: 120, peak: -30, half: 600 }
-      const y0 = st.top - top
-      const room = sec.clientWidth / 2 - (compact ? 20 : 30)
-      sec.style.setProperty('--awk-base', `${Math.round(y0 + g.horizon * k)}px`)
-      sec.style.setProperty('--awk-peak', `${Math.round(y0 + g.peak * k)}px`)
-      sec.style.setProperty('--awk-rx', `${Math.round(Math.min(g.half * k, room))}px`)
+      // Stays above the open lid: starts by its top left corner, peaks over
+      // the act label, ends by the top right corner. Design px.
+      const g = compact ? { horizon: 46, peak: -28, half: 190 } : { horizon: 120, peak: -30, half: 600 }
+      const c = Math.min(g.half * k, sec.clientWidth / 2 - (compact ? 22 : 30))
+      const sag = (g.horizon - g.peak) * k
+      const r = (c * c + sag * sag) / (2 * sag)
+      span.current = (Math.asin(Math.min(1, c / r)) * 180) / Math.PI * 0.86
+      sky.style.setProperty('--awk-cy', `${Math.round(st.top - top + g.peak * k + r)}px`)
+      sky.style.setProperty('--awk-r', `${Math.round(r)}px`)
+      place(prev.current, false)
     }
     fit()
     const ro = new ResizeObserver(fit)
@@ -539,19 +542,27 @@ function SkySync({ hour }: { hour: number }) {
     return () => ro.disconnect()
   }, [])
   useEffect(() => {
-    const sec = document.getElementById('awake')
-    if (!sec) return
-    // Back to night happens during the nap: jump there, never travel backwards
     const back = hour < prev.current
     prev.current = hour
-    if (back) sec.setAttribute('data-jump', '')
-    sec.style.setProperty('--awk-p', String(hour / 6))
-    sec.toggleAttribute('data-morning', hour === 6)
-    if (back) {
-      void sec.offsetWidth
-      requestAnimationFrame(() => requestAnimationFrame(() => sec.removeAttribute('data-jump')))
-    }
+    place(hour, back)
   }, [hour])
+  function place(h: number, jump: boolean) {
+    const sec = document.getElementById('awake')
+    const sky = sec?.querySelector<HTMLElement>('.awk-sky')
+    const arm = sky?.querySelector<HTMLElement>('.awk-arm')
+    if (!sec || !sky || !arm) return
+    const p = h / 6
+    // Back to night happens during the nap: jump there, never swing backwards
+    if (jump) sky.setAttribute('data-jump', '')
+    arm.style.transform = `rotate(${(-span.current + p * 2 * span.current).toFixed(2)}deg)`
+    sky.toggleAttribute('data-sun', h >= 5)
+    sky.style.setProperty('--awk-night', String(1 - p * 0.9))
+    sky.style.setProperty('--awk-day', String(p * p))
+    if (jump) {
+      void sky.offsetWidth
+      requestAnimationFrame(() => requestAnimationFrame(() => sky.removeAttribute('data-jump')))
+    }
+  }
   return null
 }
 

@@ -19,44 +19,56 @@ background: radial-gradient(ellipse 70% 40% at 50% 100%, #2a2160 0%, transparent
   .awk-more { padding: 48px 0 100px; }
 }
 
-/* The sky follows the demo's clock (--awk-p: 0 at 11:43 PM, 1 at 6:58 AM, set
-   by awake-demo.js with the path's size). The moon arcs over the laptop from
-   left to right and warms into the sun; stars fade, morning light comes in. */
-@property --awk-p { syntax: '<number>'; inherits: true; initial-value: 0; }
-.awake { --awk-p: 0; --awk-base: 1060px; --awk-rx: 620px; --awk-peak: 54px;
-  --awk-ry: calc(var(--awk-base) - var(--awk-peak));
-  --awk-a: calc(24deg + var(--awk-p) * 132deg);
-  transition: --awk-p .95s cubic-bezier(.4,0,.3,1); }
-.awake[data-jump] { transition: none; }
-.awk-sky { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+/* The sky follows the demo's clock (set by awake-demo.js). The moon and sun
+   ride .awk-arm, which swings over the laptop from left to right; only
+   transform and opacity animate, so phones never repaint the section. */
+.awk-sky { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; contain: strict;
+  --awk-night: 1; --awk-day: 0; --awk-cy: 2000px; --awk-r: 1300px; }
 .awk-sky > * { position: absolute; }
 
-.awk-stars, .awk-stars-lit { left: 0; top: 0; width: 1px; height: 1px; border-radius: 50%; opacity: calc(1 - var(--awk-p) * .9); }
+.awk-field { inset: 0; opacity: var(--awk-night); transition: opacity 1.2s ease; }
+.awk-stars, .awk-stars-lit { position: absolute; left: 0; top: 0; width: 1px; height: 1px; border-radius: 50%; }
 .awk-stars { box-shadow: 33.1vw 328px rgba(255,255,255,0.39), 6.6vw 1117px rgba(255,255,255,0.28), 57.9vw 1059px rgba(255,255,255,0.33), 10.3vw 876px rgba(255,255,255,0.27), 10.7vw 889px rgba(255,255,255,0.27), 56.3vw 477px rgba(255,255,255,0.47), 58.0vw 146px rgba(255,255,255,0.45), 40.1vw 472px rgba(255,255,255,0.27), 84.4vw 613px rgba(255,255,255,0.4), 53.9vw 1189px rgba(255,255,255,0.36), 80.3vw 390px rgba(255,255,255,0.29), 56.8vw 404px rgba(255,255,255,0.38), 54.6vw 148px rgba(255,255,255,0.45), 61.4vw 1036px rgba(255,255,255,0.49), 43.0vw 663px rgba(255,255,255,0.41), 90.7vw 760px rgba(255,255,255,0.35), 78.3vw 1451px rgba(255,255,255,0.52), 9.9vw 634px rgba(255,255,255,0.43), 86.0vw 939px rgba(255,255,255,0.35), 96.1vw 261px rgba(255,255,255,0.43), 17.8vw 720px rgba(255,255,255,0.3), 48.9vw 100px rgba(255,255,255,0.59), 9.5vw 1162px rgba(255,255,255,0.45), 86.0vw 662px rgba(255,255,255,0.37), 35.6vw 1037px rgba(255,255,255,0.45), 45.8vw 211px rgba(255,255,255,0.58), 47.5vw 1380px rgba(255,255,255,0.27), 72.2vw 654px rgba(255,255,255,0.48), 97.3vw 932px rgba(255,255,255,0.35), 39.0vw 1389px rgba(255,255,255,0.37), 92.3vw 747px rgba(255,255,255,0.31), 13.2vw 140px rgba(255,255,255,0.33), 29.6vw 527px rgba(255,255,255,0.39), 90.0vw 1036px rgba(255,255,255,0.28), 45.1vw 1145px rgba(255,255,255,0.35), 15.1vw 901px rgba(255,255,255,0.55), 28.7vw 870px rgba(255,255,255,0.6), 67.5vw 799px rgba(255,255,255,0.59), 16.5vw 380px rgba(255,255,255,0.3), 65.2vw 44px rgba(255,255,255,0.42), 58.6vw 558px rgba(255,255,255,0.35), 16.0vw 1114px rgba(255,255,255,0.38), 56.4vw 277px rgba(255,255,255,0.49), 51.5vw 1284px rgba(255,255,255,0.48), 73.0vw 955px rgba(255,255,255,0.56), 76.9vw 1413px rgba(255,255,255,0.53), 39.7vw 837px rgba(255,255,255,0.39), 48.2vw 840px rgba(255,255,255,0.27), 8.5vw 447px rgba(255,255,255,0.4), 12.6vw 1250px rgba(255,255,255,0.27), 2.0vw 329px rgba(255,255,255,0.44), 93.1vw 1276px rgba(255,255,255,0.26), 85.9vw 1277px rgba(255,255,255,0.38), 62.9vw 731px rgba(255,255,255,0.46), 47.5vw 256px rgba(255,255,255,0.55), 97.3vw 974px rgba(255,255,255,0.42), 31.9vw 315px rgba(255,255,255,0.29), 34.9vw 562px rgba(255,255,255,0.42), 68.4vw 1077px rgba(255,255,255,0.26), 93.3vw 1101px rgba(255,255,255,0.38), 68.2vw 75px rgba(255,255,255,0.52), 30.6vw 1336px rgba(255,255,255,0.55), 68.8vw 554px rgba(255,255,255,0.43), 89.2vw 748px rgba(255,255,255,0.52), 53.1vw 1049px rgba(255,255,255,0.37), 23.4vw 419px rgba(255,255,255,0.53), 80.6vw 484px rgba(255,255,255,0.32), 49.3vw 79px rgba(255,255,255,0.6), 77.9vw 987px rgba(255,255,255,0.34), 68.5vw 725px rgba(255,255,255,0.41); }
 .awk-stars-lit { width: 2px; height: 2px; box-shadow: 92.0vw 735px rgba(255,255,255,0.89), 37.0vw 471px rgba(255,255,255,0.63), 47.1vw 711px rgba(255,255,255,0.66), 61.9vw 1269px rgba(255,255,255,0.85), 48.0vw 724px rgba(255,255,255,0.84), 10.1vw 265px rgba(255,255,255,0.87), 77.1vw 428px rgba(255,255,255,0.74), 19.1vw 700px rgba(255,255,255,0.63), 92.8vw 830px rgba(255,255,255,0.74), 73.4vw 193px rgba(255,255,255,0.82), 18.3vw 280px rgba(255,255,255,0.61), 58.7vw 973px rgba(255,255,255,0.84), 16.0vw 1240px rgba(255,255,255,0.89), 65.1vw 737px rgba(255,255,255,0.65), 54.6vw 63px rgba(255,255,255,0.6), 95.2vw 230px rgba(255,255,255,0.76), 91.6vw 908px rgba(255,255,255,0.9), 20.7vw 452px rgba(255,255,255,0.61); animation: awkTwinkle 5s ease-in-out infinite alternate; }
-@keyframes awkTwinkle { from { filter: opacity(1); } to { filter: opacity(.35); } }
+@keyframes awkTwinkle { from { opacity: 1; } to { opacity: .4; } }
 
-/* Morning: light spreads in from the right horizon and warms the whole sky */
-.awk-dawn { inset: 0; opacity: calc(var(--awk-p) * var(--awk-p));
-  background: radial-gradient(70% 70% at 90% 62%, rgba(255,170,120,.24), rgba(230,120,160,.08) 45%, transparent 75%),
-              linear-gradient(0deg, rgba(255,150,110,.16), rgba(90,110,220,.08) 45%, transparent 75%); }
+/* Morning light from the right */
+.awk-dawn { inset: 0; opacity: var(--awk-day); transition: opacity 1.2s ease;
+  background: radial-gradient(70% 60% at 88% 30%, rgba(255,170,120,.22), rgba(230,120,160,.07) 45%, transparent 75%),
+              linear-gradient(0deg, rgba(255,150,110,.14), rgba(90,110,220,.06) 45%, transparent 75%); }
 
+/* The arm: pivots far below the laptop; its tip traces the arc */
+.awk-arm { left: 50%; top: var(--awk-cy); width: 0; height: 0; will-change: transform;
+  transition: transform 1s cubic-bezier(.45,0,.25,1); }
+.awk-arm > * { position: absolute; left: 0; top: calc(var(--awk-r) * -1); translate: -50% -50%; border-radius: 50%;
+  transition: opacity 1.4s ease; }
 
-/* The orb and the light it throws */
-.awk-orb, .awk-halo { left: calc(50% - cos(var(--awk-a)) * var(--awk-rx)); top: calc(var(--awk-base) - sin(var(--awk-a)) * var(--awk-ry));
-  translate: -50% -50%; transition: opacity 1.2s ease .2s; }
-.awk-halo { width: 520px; height: 520px; border-radius: 50%;
-  background: radial-gradient(closest-side, color-mix(in oklab, #ffb47a calc(var(--awk-p) * 100%), #8fa2ff) 0%, transparent 100%);
-  opacity: calc(.1 + var(--awk-p) * var(--awk-p) * .22); }
-.awk-orb { width: 30px; height: 30px; }
-.awk-orb i { position: absolute; inset: 0; border-radius: 50%; }
-.awk-moon { box-shadow: inset -8px 3px 0 0 rgba(255,247,228,.95); filter: drop-shadow(0 0 12px rgba(220,230,255,.5));
-  rotate: calc(var(--awk-a) - 60deg); opacity: clamp(0, (.86 - var(--awk-p)) * 5, 1); }
-.awk-sun { background: radial-gradient(circle at 40% 38%, #fff6e6, #ffd39a 45%, #ff9f68 100%);
-  box-shadow: 0 0 18px 4px rgba(255,190,130,.45), 0 0 50px 12px rgba(255,150,100,.18);
-  scale: calc(.6 + var(--awk-p) * .4); opacity: clamp(0, (var(--awk-p) - .7) * 4.5, 1); }
-.awake[data-jump] .awk-orb, .awake[data-jump] .awk-halo { opacity: 0; transition: none; }
+.awk-glow { width: 380px; height: 380px; background: radial-gradient(closest-side, rgba(150,170,255,.16), transparent); }
+.awk-glow.warm { width: 520px; height: 520px; background: radial-gradient(closest-side, rgba(255,176,110,.30), rgba(255,140,90,.08) 55%, transparent); opacity: 0; }
 
+/* A real looking moon: lit disk, soft terminator, faint maria */
+.awk-moon { width: 28px; height: 28px;
+  background:
+    radial-gradient(circle at 34% 40%, rgba(120,118,130,.28) 0 14%, transparent 15%),
+    radial-gradient(circle at 58% 62%, rgba(120,118,130,.22) 0 11%, transparent 12%),
+    radial-gradient(circle at 62% 30%, rgba(120,118,130,.18) 0 7%, transparent 8%),
+    radial-gradient(circle at 30% 30%, #fffdf6, #ecebe4 55%, #cfcdc6);
+  box-shadow: inset -7px -3px 9px rgba(10,12,40,.55), 0 0 14px rgba(215,225,255,.35), 0 0 42px rgba(170,190,255,.18); }
 
-@media (prefers-reduced-motion: reduce) { .awake { transition: none; } .awk-stars-lit { animation: none; } }
-@media (max-width: 720px) { .awk-orb { width: 22px; height: 22px; } .awk-moon { box-shadow: inset -6px 2px 0 0 rgba(255,247,228,.95); } .awk-halo { width: 360px; height: 360px; } }
+/* The sun at dawn: hot core, warm rim, a soft corona */
+.awk-sun { width: 30px; height: 30px; opacity: 0;
+  background: radial-gradient(circle at 50% 50%, #fffdf2 0%, #ffeec0 38%, #ffc06e 72%, #ff9a4a 100%);
+  box-shadow: 0 0 10px 2px rgba(255,214,150,.75), 0 0 34px 10px rgba(255,170,90,.35), 0 0 90px 30px rgba(255,140,80,.16); }
+
+.awk-sky[data-sun] .awk-moon, .awk-sky[data-sun] .awk-glow.cool { opacity: 0; }
+.awk-sky[data-sun] .awk-sun, .awk-sky[data-sun] .awk-glow.warm { opacity: 1; }
+.awk-sky[data-jump] .awk-arm { transition: none; }
+.awk-sky[data-jump] .awk-arm > * { opacity: 0 !important; transition: none; }
+
+@media (prefers-reduced-motion: reduce) { .awk-arm, .awk-arm > *, .awk-field, .awk-dawn { transition: none; } .awk-stars-lit { animation: none; } }
+@media (max-width: 720px) {
+  .awk-moon { width: 20px; height: 20px; box-shadow: inset -5px -2px 7px rgba(10,12,40,.55), 0 0 10px rgba(215,225,255,.35), 0 0 28px rgba(170,190,255,.16); }
+  .awk-sun { width: 22px; height: 22px; box-shadow: 0 0 8px 2px rgba(255,214,150,.75), 0 0 26px 8px rgba(255,170,90,.32), 0 0 60px 18px rgba(255,140,80,.14); }
+  .awk-glow { width: 220px; height: 220px; } .awk-glow.warm { width: 300px; height: 300px; }
+  .awk-stars-lit { animation: none; }
+}
