@@ -16,7 +16,7 @@ enum PetSheet {
     static func pose(level: Int, _ edit: (inout PetSprite.Pose) -> Void = { _ in }) -> PetSprite.Pose {
         var p = PetSprite.Pose(eyes: .open(dx: 0))
         p.outfit = PetLook.outfit(level: level, wear: nil)
-        p.gear = PetLook.gear(level: level).intersection([.scarf, .boots, .aura, .orbit])
+        p.gear = PetLook.gear(level: level).intersection([.bow, .boots, .aura, .orbit])
         edit(&p)
         return p
     }
@@ -56,6 +56,7 @@ enum PetSheet {
                             .frame(width: 112, height: 72).background(Thermal.paper)
                     }
                 }
+                strip("lvl 6 vibing", PetSheet.film(level: 6, frames: 30, every: 2) { _ in })
                 strip("lvl 50 unlock", PetSheet.film(level: 50, frames: 60, every: 4) { $0.celebrate(level: 50) })
                 strip("lvl 30 unlock", PetSheet.film(level: 30, frames: 48, every: 4) { $0.celebrate(level: 30) })
                 strip("lvl 47 party", PetSheet.film(level: 47, frames: 16) { $0.celebrate(level: 47) })

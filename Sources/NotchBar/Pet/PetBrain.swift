@@ -265,7 +265,7 @@ final class PetBrain: ObservableObject {
         let lvl = preview?.level ?? level()
         let gear = PetLook.gear(level: lvl)
         pose.outfit = preview?.outfit ?? PetLook.outfit(level: lvl, wear: wear())
-        pose.gear = gear.intersection([.scarf, .boots, .aura, .orbit])
+        pose.gear = gear.intersection([.bow, .boots, .aura, .orbit])
         pose.phase = tick
         pose.egg = lvl == 0
         let oldX = x
@@ -281,10 +281,21 @@ final class PetBrain: ObservableObject {
             // A slow, lazy tail sway.
             pose.tail = (tick / 6) % 3 == 2 ? .curl : .up
             if hungry { pose.eyes = blinkOr(.sleepy); pose.mouth = .flat; pose.tail = .down }
+            // Headphones on: every so often it vibes to the music, head bopping.
+            let vibing = pose.outfit == .headphones && !hungry && (6..<22).contains(actTicks % 60)
+            if vibing {
+                pose.eyes = .happy
+                pose.mouth = .smile
+                lift = (actTicks / 2) % 2
+                pose.tail = lift == 1 ? .up : .curl
+                if actTicks % 5 == 0 {
+                    spawn(.note, x: Double.random(in: 1...13, using: &rng), y: 3, vx: Double.random(in: -0.3...0.3, using: &rng), vy: -0.5, life: 5)
+                }
+            }
             if pose.egg {
                 // Eggs wobble now and then.
                 if actTicks % 24 < 4 { start(.wobble) }
-            } else if actTicks > 8 {
+            } else if actTicks > 8 && !vibing {
                 let roll = Int.random(in: 0..<(hungry ? 60 : 24), using: &rng)
                 if roll == 0 && !stayPut {
                     let target = randomSpot()

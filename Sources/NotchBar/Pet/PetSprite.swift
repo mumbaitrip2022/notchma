@@ -49,7 +49,7 @@ enum PetSprite {
     /// Extras that come with high levels and stack up (unlike hats).
     struct Gear: OptionSet, Equatable {
         let rawValue: UInt8
-        static let scarf = Gear(rawValue: 1)      // lvl 15
+        static let bow = Gear(rawValue: 1)      // lvl 15
         static let boots = Gear(rawValue: 2)      // lvl 30, rocket boots
         static let trail = Gear(rawValue: 4)      // lvl 35, sparkles where it walks
         static let aura = Gear(rawValue: 8)       // lvl 40, a soft glow

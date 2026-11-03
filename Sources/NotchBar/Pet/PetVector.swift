@@ -135,34 +135,59 @@ enum PetVector {
             cut(c) { c.move(to: pt(8.1, 12.6)); c.addQuadCurve(to: pt(9.9, 12.6), control: pt(9, 11.7)); c.strokePath() }
         }
 
-        // A pink scarf, its ends fluttering behind while it moves.
-        if p.gear.contains(.scarf) { scarf(c, by: by, moving: p.feet == .stepA || p.feet == .stepB || p.flying, t: t, pink: pink) }
+        // A pink bow tie under the chin; it wiggles while it moves.
+        if p.gear.contains(.bow) { bow(c, sq: sq, moving: p.feet == .stepA || p.feet == .stepB || p.flying, t: t, pink: pink, ink: ink) }
 
         // Outfits get a thin cut out line so they read on top of the body.
         c.setFillColor(ink); c.setStrokeColor(ink)
         switch p.outfit {
         case .none: break
         case .sprout:
+            // Sways in the breeze, and blooms a tiny pink flower when it's happy.
+            let base = pt(9, by + 0.3)
+            c.saveGState()
+            c.translateBy(x: base.x, y: base.y); c.rotate(by: sin(t * 0.5) * 0.14); c.translateBy(x: -base.x, y: -base.y)
             c.setLineWidth(0.7)
-            c.move(to: pt(9, by + 0.3)); c.addQuadCurve(to: pt(9.4, 2.7 + sy), control: pt(9.1, 4 + sy)); c.strokePath()
+            c.move(to: base); c.addQuadCurve(to: pt(9.4, 2.7 + sy), control: pt(9.1, 4 + sy)); c.strokePath()
             c.addPath(oval(10.7, 2.3 + sy, 1.3, 0.65, rot: -0.45)); c.fillPath()
             c.addPath(oval(8.3, 2.5 + sy, 0.95, 0.5, rot: 0.5)); c.fillPath()
+            if p.blush {
+                let f = pt(9.4, 1.9 + sy)
+                c.setFillColor(pink)
+                for k in 0..<5 {
+                    let a = CGFloat(k) * 2 * .pi / 5 + t * 0.2
+                    c.addPath(oval(f.x + cos(a) * 0.75, f.y + sin(a) * 0.75, 0.55, 0.55)); c.fillPath()
+                }
+                c.setFillColor(gold); c.addPath(oval(f.x, f.y, 0.42, 0.42)); c.fillPath()
+                c.setFillColor(ink)
+            }
+            c.restoreGState()
         case .headphones:
             let band = CGMutablePath()
             band.move(to: pt(2.8, 8 + sy))
             band.addCurve(to: pt(15.2, 8 + sy), control1: pt(2.8, 2.4 + sy), control2: pt(15.2, 2.4 + sy))
             cut(c) { c.setLineWidth(1.5); c.addPath(band); c.strokePath() }
             c.setLineWidth(0.8); c.addPath(band); c.strokePath()
-            outlined(c, round(1.5, 7.2 + sy, 2.4, 3.2, 1))
-            outlined(c, round(14.1, 7.2 + sy, 2.4, 3.2, 1))
+            // Pink cups with a white rim, so they pop on the white cat.
+            for x: CGFloat in [1.5, 14.1] {
+                outlined(c, round(x, 7.2 + sy, 2.4, 3.2, 1))
+                c.setFillColor(pink); c.addPath(round(x + 0.45, 7.65 + sy, 1.5, 2.3, 0.7)); c.fillPath()
+                c.setFillColor(ink)
+            }
         case .crown:
+            // Worn at a sassy little tilt, with a sparkle now and then.
             let b = by + 0.2
+            c.saveGState()
+            c.translateBy(x: 9, y: b); c.rotate(by: -0.2); c.translateBy(x: -9, y: -b)
             let crown = CGMutablePath()
             crown.addLines(between: [pt(6, b), pt(5.7, b - 3), pt(7.5, b - 1.6), pt(9, b - 3.5),
                                      pt(10.5, b - 1.6), pt(12.3, b - 3), pt(12, b)])
             crown.closeSubpath()
             outlined(c, crown)
             c.setFillColor(pink); c.addPath(oval(9, b - 1, 0.45, 0.45)); c.fillPath()
+            if p.phase % 16 < 2 { star(c, 12.3, b - 3, 1.3, color: gold) }
+            c.restoreGState()
+            c.setFillColor(ink)
         case .wizard:
             // A floppy pink pointed hat between the ears, white dots, a gold star on the tip.
             let b = by + 0.5
@@ -231,25 +256,25 @@ enum PetVector {
         }
     }
 
-    private static func scarf(_ c: CGContext, by: CGFloat, moving: Bool, t: CGFloat, pink: CGColor) {
-        c.saveGState()
-        c.setFillColor(pink); c.setStrokeColor(pink)
-        // The band, clipped to the body so it wraps around it.
-        c.saveGState()
-        c.addPath(round(2, by, 14, 15 - by, 3.8)); c.clip()
-        cut(c) { c.addPath(round(1, 12.75, 16, 1.9, 0.9)); c.fillPath() }
-        c.addPath(round(1, 13.0, 16, 1.4, 0.7)); c.fillPath()
-        c.restoreGState()
-        // Two ends at the back, by the tail.
-        c.setLineCap(.round); c.setLineWidth(1.05)
-        let w = sin(t * 1.6) * 0.7
-        if moving {
-            c.move(to: pt(3.4, 13.6)); c.addQuadCurve(to: pt(-0.4, 12.9 + w), control: pt(1.4, 14.2 - w)); c.strokePath()
-            c.move(to: pt(3.4, 13.9)); c.addQuadCurve(to: pt(0.2, 14.9 - w), control: pt(1.6, 13.8 + w)); c.strokePath()
-        } else {
-            c.move(to: pt(3.3, 13.7)); c.addQuadCurve(to: pt(1.9, 15.9), control: pt(2.0, 14.4)); c.strokePath()
-            c.move(to: pt(3.9, 13.9)); c.addQuadCurve(to: pt(3.2, 16.2), control: pt(3.2, 15.0)); c.strokePath()
+    private static func bow(_ c: CGContext, sq: Bool, moving: Bool, t: CGFloat, pink: CGColor, ink: CGColor) {
+        let cx: CGFloat = 9, cy: CGFloat = sq ? 14.2 : 13.95
+        let wig: CGFloat = moving ? (Int(t) % 2 == 0 ? 0.25 : -0.25) : 0
+        let bow = CGMutablePath()
+        for s: CGFloat in [-1, 1] {
+            let tip = cx + s * 2.7, top = cy - 1.05 + s * wig, bot = cy + 1.05 + s * wig
+            bow.move(to: pt(cx, cy))
+            bow.addCurve(to: pt(tip, top), control1: pt(cx + s * 0.9, cy - 0.7), control2: pt(tip - s * 0.6, top - 0.35))
+            bow.addQuadCurve(to: pt(tip, bot), control: pt(tip + s * 0.45, cy + s * wig))
+            bow.addCurve(to: pt(cx, cy), control1: pt(tip - s * 0.6, bot + 0.35), control2: pt(cx + s * 0.9, cy + 0.7))
+            bow.closeSubpath()
         }
+        c.saveGState()
+        c.setFillColor(pink)
+        outlined(c, bow)
+        // The knot, with a soft fold line in each loop.
+        outlined(c, round(cx - 0.6, cy - 0.65, 1.2, 1.3, 0.5))
+        c.setStrokeColor(ink); c.setAlpha(0.55); c.setLineWidth(0.3)
+        for s: CGFloat in [-1, 1] { line(c, pt(cx + s * 1.05, cy), pt(cx + s * 1.9, cy - 0.35 + s * wig * 0.5)) }
         c.restoreGState()
     }
 

@@ -177,12 +177,12 @@ final class PetTests: XCTestCase {
         XCTAssertEqual(PetSprite.Outfit.forLevel(49), .halo)
         XCTAssertEqual(PetSprite.Outfit.forLevel(50), .goldCrown)
         XCTAssertEqual(PetLook.gear(level: 14), [])
-        XCTAssertEqual(PetLook.gear(level: 30), [.scarf, .boots])
-        XCTAssertEqual(PetLook.gear(level: 50), [.scarf, .boots, .trail, .aura, .shooting, .orbit])
+        XCTAssertEqual(PetLook.gear(level: 30), [.bow, .boots])
+        XCTAssertEqual(PetLook.gear(level: 50), [.bow, .boots, .trail, .aura, .shooting, .orbit])
         // A hat you picked sticks, unless it isn't unlocked yet.
         XCTAssertEqual(PetLook.outfit(level: 30, wear: .headphones), .headphones)
         XCTAssertEqual(PetLook.outfit(level: 12, wear: .halo), .crown)
-        XCTAssertEqual(PetLook.nextLine(12), "lvl 15 unlocks a cozy scarf 🧣")
+        XCTAssertEqual(PetLook.nextLine(12), "lvl 15 unlocks a little bow 🎀")
         XCTAssertEqual(PetLook.levelUpLine(19), "one more level to a wizard hat 🪄")
         for l in 1...60 {
             for line in [PetLook.levelUpLine(l), PetLook.nextLine(l)] {

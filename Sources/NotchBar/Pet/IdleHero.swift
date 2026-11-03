@@ -22,7 +22,7 @@ struct IdleHero: View {
     private var portrait: PetSprite.Pose {
         var p = PetSprite.Pose()
         p.outfit = PetLook.outfit(level: ledger.level, wear: ledger.wearing)
-        p.gear = PetLook.gear(level: ledger.level).intersection([.scarf, .boots, .orbit])
+        p.gear = PetLook.gear(level: ledger.level).intersection([.bow, .boots, .orbit])
         p.egg = ledger.level == 0
         p.eyes = p.egg ? .open(dx: 0) : (ledger.streak >= 7 ? .shades : .happy)
         p.mouth = .smile

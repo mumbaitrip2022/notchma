@@ -14,7 +14,7 @@ enum PetLook {
         Unlock(level: 3, name: "a sprout", emoji: "🌱", outfit: .sprout),
         Unlock(level: 6, name: "headphones", emoji: "🎧", outfit: .headphones),
         Unlock(level: 10, name: "the crown", emoji: "👑", outfit: .crown),
-        Unlock(level: 15, name: "a cozy scarf", emoji: "🧣", gear: .scarf),
+        Unlock(level: 15, name: "a little bow", emoji: "🎀", gear: .bow),
         Unlock(level: 20, name: "a wizard hat", emoji: "🪄", outfit: .wizard),
         Unlock(level: 25, name: "a halo", emoji: "😇", outfit: .halo),
         Unlock(level: 30, name: "rocket boots", emoji: "🚀", gear: .boots),
