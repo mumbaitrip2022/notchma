@@ -30,6 +30,8 @@ cp Resources/AppIcon.icns "$APP/Contents/Resources/"
 cp Resources/codex.png "$APP/Contents/Resources/"   # the Codex mark for small glyphs
 for b in NotchBar notchbar-hook; do
   [ "$(lipo -archs "$APP/Contents/MacOS/$b")" = "arm64" ] || { echo "✗ $b must be Apple silicon (arm64) only"; exit 1; }
+  # Drop debug symbols (about 60% of the binary). The code itself is untouched.
+  strip -x "$APP/Contents/MacOS/$b" 2>/dev/null
 done
 
 echo "▸ Signing…"
@@ -63,7 +65,8 @@ STAGE=$(mktemp -d)
 cp -R "$APP" "$STAGE/"
 ln -s /Applications "$STAGE/Applications"
 DMG="dist/NotchBar-$VERSION.dmg"
-hdiutil create -quiet -volname "NotchBar" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
+# LZMA: about a third smaller than the old zlib format, opens on macOS 10.15 and newer.
+hdiutil create -quiet -volname "NotchBar" -srcfolder "$STAGE" -ov -format ULMO "$DMG"
 rm -rf "$STAGE"
 if [ -n "$SIGN_ID" ]; then
   codesign --force --sign "$SIGN_ID" --timestamp "$DMG"

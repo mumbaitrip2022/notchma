@@ -317,8 +317,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     env:
-      # The website promises a 2 MB download; leave room, but catch a real regression.
-      MAX_ZIP_KB: 5120
+      # The website promises a 2 MB download (it's about 1.5 MB stripped); catch a real regression.
+      MAX_ZIP_KB: 2048
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
