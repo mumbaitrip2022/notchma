@@ -81,7 +81,7 @@ final class PetTests: XCTestCase {
 
     func testSpriteShapes() {
         for eyes: PetSprite.Eyes in [.open(dx: -1), .open(dx: 1), .closed, .happy, .sleepy, .shades, .wide, .love, .wink, .blink] {
-            for outfit: PetSprite.Outfit in [.none, .sprout, .headphones, .crown] {
+            for outfit in PetSprite.Outfit.allCases {
                 let g = PetSprite.render(.init(eyes: eyes, outfit: outfit))
                 XCTAssertEqual(g.count, PetSprite.height)
                 XCTAssertTrue(g.allSatisfy { $0.count == PetSprite.width })
@@ -160,5 +160,73 @@ final class PetTests: XCTestCase {
         XCTAssertTrue(drawn.allSatisfy { (11..<29).contains($0 % w) && (2..<19).contains($0 / w) }, "stays in its box")
         XCTAssertEqual(alpha(20, 10), 255, "solid body between the eyes")
         XCTAssertLessThan(alpha(18, 13), 128, "eyes are cut out of the body")
+    }
+
+    /// Set PET_SHEET=/path.png to draw every look and celebration for a visual check.
+    @MainActor func testRenderPetSheet() throws {
+        guard let path = ProcessInfo.processInfo.environment["PET_SHEET"] else { throw XCTSkip("PET_SHEET not set") }
+        PetSheet.write(to: path)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: path))
+    }
+
+    func testUnlockRoadToFifty() {
+        XCTAssertEqual(PetSprite.Outfit.forLevel(2), PetSprite.Outfit.none)
+        XCTAssertEqual(PetSprite.Outfit.forLevel(10), .crown)
+        XCTAssertEqual(PetSprite.Outfit.forLevel(19), .crown)
+        XCTAssertEqual(PetSprite.Outfit.forLevel(24), .wizard)
+        XCTAssertEqual(PetSprite.Outfit.forLevel(49), .halo)
+        XCTAssertEqual(PetSprite.Outfit.forLevel(50), .goldCrown)
+        XCTAssertEqual(PetLook.gear(level: 14), [])
+        XCTAssertEqual(PetLook.gear(level: 30), [.scarf, .boots])
+        XCTAssertEqual(PetLook.gear(level: 50), [.scarf, .boots, .trail, .aura, .shooting, .orbit])
+        // A hat you picked sticks, unless it isn't unlocked yet.
+        XCTAssertEqual(PetLook.outfit(level: 30, wear: .headphones), .headphones)
+        XCTAssertEqual(PetLook.outfit(level: 12, wear: .halo), .crown)
+        XCTAssertEqual(PetLook.nextLine(12), "lvl 15 unlocks a cozy scarf 🧣")
+        XCTAssertEqual(PetLook.levelUpLine(19), "one more level to a wizard hat 🪄")
+        for l in 1...60 {
+            for line in [PetLook.levelUpLine(l), PetLook.nextLine(l)] {
+                XCTAssertFalse(line.contains("—") || line.contains("–"), line)
+            }
+        }
+        // Level 50 is reachable: about a year at a few hundred XP a day.
+        XCTAssertEqual(DayLedger.level(xp: DayLedger.xpFor(level: 50)), 50)
+    }
+
+    func testStreakSkipDay() {
+        let now = Date()
+        func counts(_ active: [Int]) -> [String: Int] {
+            Dictionary(uniqueKeysWithValues: active.map { (DayLedger.dayKey(now.addingTimeInterval(Double(-$0) * 86_400)), 1) })
+        }
+        XCTAssertEqual(DayLedger.streak(counts([0, 1, 2]), from: now).days, 3)
+        XCTAssertTrue(DayLedger.streak(counts([0, 1, 2]), from: now).skipReady)
+        // Today not done yet: count from yesterday.
+        XCTAssertEqual(DayLedger.streak(counts([1, 2]), from: now).days, 2)
+        // One missed day is forgiven, but uses the skip.
+        let one = DayLedger.streak(counts([0, 1, 3, 4]), from: now)
+        XCTAssertEqual(one.days, 4)
+        XCTAssertFalse(one.skipReady)
+        // Missed yesterday, today still empty: the streak survives.
+        XCTAssertEqual(DayLedger.streak(counts([2, 3]), from: now).days, 2)
+        // Two days off in a row break it.
+        XCTAssertEqual(DayLedger.streak(counts([0, 3, 4]), from: now).days, 1)
+        // Two skips within a week break it; a week apart is fine.
+        XCTAssertEqual(DayLedger.streak(counts([0, 2, 4, 5]), from: now).days, 2)
+        XCTAssertEqual(DayLedger.streak(counts([0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 14, 15]), from: now).days, 14)
+        XCTAssertEqual(DayLedger.streak([:], from: now).days, 0)
+    }
+
+    func testCelebrationsRunAndSettle() {
+        let brain = PetBrain()
+        brain.level = { 50 }
+        brain.lastFedAt = { Date() }
+        brain.appeared(stageWidth: 120)
+        brain.celebrate(level: 50); brain.debugStep(90)
+        brain.celebrate(level: 47); brain.debugStep(30)
+        brain.celebrate(streak: 100); brain.debugStep(120)
+        brain.debugStep(300)   // walks, sparkle trail, shooting stars
+        XCTAssertLessThanOrEqual(brain.frame.particles.count, 48)
+        XCTAssertLessThanOrEqual(brain.frame.x, 120 - PetSprite.width)
+        brain.disappeared()
     }
 }

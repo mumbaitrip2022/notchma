@@ -131,7 +131,8 @@ struct RootView: View {
                         CIBannerView(banner: b, ci: snap.isFinished ? snap : (live ?? snap)) { actions.bannerTap(b) }
                     } else {
                         BannerView(banner: b, receipt: store.session(b.sessionID)?.lastTask,
-                                   petOutfit: .forLevel(store.ledger.level)) { actions.bannerTap(b) }
+                                   petOutfit: PetLook.outfit(level: store.ledger.level, wear: store.ledger.wearing),
+                                   pet: pet) { actions.bannerTap(b) }
                     }
                     }
                         .padding(.top, ui.hasHardwareNotch ? ui.bandHeight - 6 : 0)
@@ -199,11 +200,19 @@ struct BannerView: View {
     let banner: Banner
     var receipt: TaskReceipt?
     var petOutfit: PetSprite.Outfit = .none
+    /// Pet banners (hatch, level up, streak) show the live pet, so its celebration plays here.
+    var pet: PetBrain?
     let onTap: () -> Void
+    @Environment(\.displayScale) private var displayScale
 
     var body: some View {
         HStack(spacing: 12) {
-            if banner.kind == .pet || banner.kind == .update || banner.action == .report {
+            if banner.kind == .pet, let pet {
+                PetView(brain: pet, pixel: displayScale >= 2 ? 1.5 : 1, roams: false, ground: 1)
+                    .frame(width: 36, height: 36)
+                    .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface3))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            } else if banner.kind == .pet || banner.kind == .update || banner.action == .report {
                 let startled = banner.action == .report
                 PetCanvas(frame: PetBrain.Frame(pose: startled
                             ? PetSprite.Pose(eyes: .wide, mouth: .open, ears: false, outfit: petOutfit)

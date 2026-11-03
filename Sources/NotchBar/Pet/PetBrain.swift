@@ -13,6 +13,8 @@ final class PetBrain: ObservableObject {
         var x: Double, y: Double       // pet pixels, relative to the sprite's top-left
         var vx: Double = 0, vy: Double = 0
         var life: Int                  // ticks left
+        var tint = 0                   // confetti and star colors
+        var world = false              // stays where it was dropped while the pet walks on
     }
 
     struct Frame: Equatable {
@@ -48,9 +50,21 @@ final class PetBrain: ObservableObject {
     var level: () -> Int = { 1 }
     var lastFedAt: () -> Date? = { nil }
     var streak: () -> Int = { 0 }
+    /// The hat you picked in the wardrobe (nil: the newest one).
+    var wear: () -> PetSprite.Outfit? = { nil }
+    /// Try on a look for a moment (a level and a hat), from the wardrobe.
+    var preview: (level: Int, outfit: PetSprite.Outfit)? {
+        didSet {
+            guard preview?.level != oldValue?.level || preview?.outfit != oldValue?.outfit else { return }
+            poke()
+            if viewers > 0 { step() }
+        }
+    }
 
     private enum Act: Equatable {
         case sit, walk(to: Int), sleep, yawn, eat(cookieY: Double, chomps: Int), party, petted, wobble
+        // Level and streak celebrations: a spin, a big jump and fireworks; a little dance.
+        case tada(big: Bool), dance
         // Little idle fidgets.
         case hop, blep, wag, curious
     }
@@ -63,6 +77,9 @@ final class PetBrain: ObservableObject {
     private var lastStimulus = Date()
     private var pendingTreats = 0
     private var particles: [Particle] = []
+    private var lastLift = 0
+    /// Confetti to add to the next plain party (bigger at higher levels).
+    private var partyConfetti = 0
     private var timer: Timer?
     private var viewers = 0
     private var displaysAsleep = false
@@ -173,6 +190,25 @@ final class PetBrain: ObservableObject {
         burst(.sparkle, count: 3)
     }
 
+    /// Reached a level: a party that grows with the level, and a big show on unlocks.
+    func celebrate(level: Int) {
+        lastStimulus = Date()
+        let tier = PetLook.tier(level)
+        if PetLook.unlock(at: level) != nil {
+            start(.tada(big: level >= PetLook.maxLevel))
+        } else {
+            partyConfetti = tier * 2
+            start(.party)
+            burst(.sparkle, count: 3 + tier / 3)
+        }
+    }
+
+    /// A streak milestone: a dance on the big ones, a party otherwise.
+    func celebrate(streak days: Int) {
+        lastStimulus = Date()
+        if days >= 100 { start(.dance) } else { partyConfetti = min(days / 3, 16); start(.party); burst(.heart, count: 2) }
+    }
+
     #if DEBUG
     func debugSleep() { lastStimulus = .distantPast; start(.sleep) }
     func debugStep(_ n: Int) { for _ in 0..<n { step() } }
@@ -187,7 +223,7 @@ final class PetBrain: ObservableObject {
         guard viewers > 0, !displaysAsleep else { return }
         let asleep = act == .sleep
         if asleep && actTicks >= Self.deepSleepTicks { return }   // deep sleep: woken by poke()
-        let t = Timer(timeInterval: asleep ? 1.0 : 0.25, repeats: true) { [weak self] _ in self?.step() }
+        let t = Timer(timeInterval: asleep ? 1.0 : (isFast ? Self.fastTick : 0.25), repeats: true) { [weak self] _ in self?.step() }
         t.tolerance = asleep ? 0.2 : 0.05
         RunLoop.main.add(t, forMode: .common)
         timer = t
@@ -196,11 +232,15 @@ final class PetBrain: ObservableObject {
         step()
     }
 
+    /// Celebrations run at 10 fps so the fireworks and confetti move smoothly.
+    private static let fastTick = 0.1
+    private var isFast: Bool { if case .tada = act { return true }; return false }
+
     private func start(_ a: Act) {
-        let wasAsleep = act == .sleep
+        let wasAsleep = act == .sleep, wasFast = isFast
         act = a
         actTicks = 0
-        if wasAsleep != (a == .sleep) { reschedule(immediate: false) }
+        if wasAsleep != (a == .sleep) || wasFast != isFast { reschedule(immediate: false) }
     }
 
     private func serveTreat() {
@@ -222,8 +262,13 @@ final class PetBrain: ObservableObject {
         }
         let night = cachedNight
         var pose = PetSprite.Pose()
-        pose.outfit = .forLevel(level())
-        pose.egg = level() == 0
+        let lvl = preview?.level ?? level()
+        let gear = PetLook.gear(level: lvl)
+        pose.outfit = preview?.outfit ?? PetLook.outfit(level: lvl, wear: wear())
+        pose.gear = gear.intersection([.scarf, .boots, .aura, .orbit])
+        pose.phase = tick
+        pose.egg = lvl == 0
+        let oldX = x
         let hungry = mood == .hungry
         var lift = 0
 
@@ -260,6 +305,11 @@ final class PetBrain: ObservableObject {
             pose.ears = !hungry
             pose.tail = hungry ? .down : (tick % 4 < 2 ? .up : .curl)
             if hungry { pose.mouth = .flat }
+            // Level 35: sparkles left behind on the ground.
+            if gear.contains(.trail) && tick % 2 == 0 {
+                spawn(.star, x: facingLeft ? 13 : 1, y: Double.random(in: 11...14, using: &rng), vy: -0.15, life: 6,
+                      tint: Int.random(in: 0...2, using: &rng), world: true)
+            }
             // Hums a little tune on a full belly.
             if mood == .happy && tick % 10 == 0 {
                 spawn(.note, x: facingLeft ? 1 : 13, y: 3, vx: facingLeft ? -0.3 : 0.3, vy: -0.5, life: 5)
@@ -318,7 +368,51 @@ final class PetBrain: ObservableObject {
             pose.feet = lift > 0 ? .tucked : .stand
             pose.tail = tick % 2 == 0 ? .up : .curl
             if actTicks % 6 == 0 { spawn(.sparkle, x: Double.random(in: -2...12, using: &rng), y: 2, vy: -0.4, life: 4) }
+            if actTicks == 1 && partyConfetti > 0 { confetti(partyConfetti, speed: 0.4); partyConfetti = 0 }
             if !printing && actTicks > 14 { start(.sit) }
+
+        case let .tada(big):
+            // 10 fps: crouch, spin up into a big jump, fireworks at the top, then a happy bounce.
+            let t = actTicks
+            switch t {
+            case ..<6:
+                pose.eyes = .wide; pose.mouth = .small; pose.squash = t >= 2; pose.ears = true
+                pose.tail = .up
+            case 6..<14:
+                if t % 2 == 0 { facingLeft.toggle() }
+                lift = [1, 2, 3, 3, 4, 4, 4, 4][t - 6]
+                pose.eyes = .happy; pose.mouth = .open; pose.feet = .tucked; pose.tail = .curl
+                if t == 6 { haptic() }
+            case 14..<24:
+                lift = [4, 4, 4, 3, 3, 2, 2, 1, 0, 0][t - 14]
+                pose.eyes = .love; pose.mouth = .open; pose.blush = true; pose.feet = .tucked
+                if t == 14 { fireworks(at: -3, 6); fireworks(at: 19, 6); confetti(big ? 22 : 14, speed: 1); haptic() }
+            default:
+                let b = (t - 24) % 8
+                lift = b < 2 ? 0 : b < 4 ? 2 : b < 6 ? 1 : 0
+                pose.eyes = (t / 6) % 3 == 2 ? .love : .happy
+                pose.mouth = lift > 0 ? .open : .smile
+                pose.blush = true
+                pose.feet = lift > 0 ? .tucked : .stand
+                pose.tail = t % 4 < 2 ? .up : .curl
+                if big && t == 34 { fireworks(at: -4, 4); fireworks(at: 20, 8); haptic() }
+                if big && t == 48 { fireworks(at: 20, 3); fireworks(at: -4, 8); confetti(16, speed: 1) }
+                if t > (big ? 70 : 44) { start(.sit) }
+            }
+
+        case .dance:
+            // Side steps, a turn each beat, notes flying. Ends in the big jump.
+            let beat = actTicks / 2
+            facingLeft = beat % 4 >= 2
+            lift = actTicks % 2 == 0 ? 1 : 0
+            pose.feet = actTicks % 2 == 0 ? .stepA : .stepB
+            pose.eyes = beat % 6 == 5 ? .wink : .happy
+            pose.mouth = .smile
+            pose.blush = true
+            pose.tail = actTicks % 2 == 0 ? .up : .curl
+            x += beat % 4 < 2 ? 1 : -1
+            if actTicks % 3 == 0 { spawn(.note, x: Double.random(in: 0...14, using: &rng), y: 2, vx: 0.2, vy: -0.5, life: 5) }
+            if actTicks > 32 { start(.tada(big: true)) }
 
         case .petted:
             // Melts: heart eyes, rosy cheeks, a happy wiggle, then a wink.
@@ -376,10 +470,35 @@ final class PetBrain: ObservableObject {
         pose.flip = facingLeft && !pose.egg
         x = min(max(0, x), max(0, stageWidth - PetSprite.width))
 
+        // Rocket boots: flames while it's up, little puffs when it lands.
+        if gear.contains(.boots) && !pose.egg {
+            pose.flying = lift > 0
+            if lastLift > 0 && lift == 0 {
+                spawn(.puff, x: 3, y: 14, vx: -0.35, vy: -0.1, life: 4)
+                spawn(.puff, x: 12, y: 14, vx: 0.35, vy: -0.1, life: 4)
+            }
+        }
+        lastLift = lift
+
+        // Level 45: now and then a shooting star crosses the notch.
+        if gear.contains(.shooting) && !pose.egg && Int.random(in: 0..<(isFast ? 400 : 170), using: &rng) == 0 {
+            let dir: Double = Bool.random(using: &rng) ? 1 : -1
+            let from = stayPut ? Double.random(in: -6...18, using: &rng)
+                : Double(Int.random(in: 0...max(1, stageWidth), using: &rng) - x)
+            spawn(.shooting, x: from, y: Double.random(in: -1...1.5, using: &rng), vx: dir * 2.4, vy: 0.55, life: 7, world: true)
+        }
+
+        let moved = Double(x - oldX)
         particles = particles.compactMap { p in
             var p = p
+            if p.world { p.x -= moved }
             p.x += p.vx; p.y += p.vy; p.life -= 1
-            if p.kind == .crumb { p.vy += 0.5 }
+            switch p.kind {
+            case .crumb: p.vy += 0.5
+            case .confetti: p.vy = min(p.vy + 0.12, 0.7); p.vx *= 0.93
+            case .star where !p.world: p.vx *= 0.82; p.vy = p.vy * 0.82 + 0.03
+            default: break
+            }
             return p.life > 0 ? p : nil
         }
         var shown = particles
@@ -406,9 +525,32 @@ final class PetBrain: ObservableObject {
         return t == 0 || (tick % 69 == 2 && t == 2) ? .blink : e
     }
 
-    private func spawn(_ k: PetSprite.ParticleKind, x: Double, y: Double, vx: Double = 0, vy: Double = 0, life: Int) {
-        guard particles.count < 10 else { return }
-        particles.append(Particle(kind: k, x: x, y: y, vx: vx, vy: vy, life: life))
+    private func spawn(_ k: PetSprite.ParticleKind, x: Double, y: Double, vx: Double = 0, vy: Double = 0, life: Int,
+                       tint: Int = 0, world: Bool = false, cap: Int = 10) {
+        guard particles.count < cap else { return }
+        particles.append(Particle(kind: k, x: x, y: y, vx: vx, vy: vy, life: life, tint: tint, world: world))
+    }
+
+    /// A ring of gold and pink stars bursting out from a point (pet pixels).
+    private func fireworks(at cx: Double, _ cy: Double) {
+        for i in 0..<10 {
+            let a = Double(i) / 10 * 2 * .pi
+            spawn(.star, x: cx + cos(a), y: cy + sin(a), vx: cos(a) * 1.0, vy: sin(a) * 0.8, life: 9,
+                  tint: i % 3 == 0 ? 2 : 0, cap: 48)
+        }
+    }
+
+    /// Confetti raining down over the pet. `speed` 1 at 10 fps, lower for 4 fps parties.
+    private func confetti(_ n: Int, speed: Double) {
+        for i in 0..<n {
+            spawn(.confetti, x: Double.random(in: -6...20, using: &rng), y: Double.random(in: 0...5, using: &rng),
+                  vx: Double.random(in: -0.6...0.6, using: &rng) / speed, vy: Double.random(in: -0.9...0, using: &rng),
+                  life: Int((Double.random(in: 14...24, using: &rng) * speed).rounded()) + 4, tint: i % 3, cap: 48)
+        }
+    }
+
+    private func haptic() {
+        NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
     }
 
     private func burst(_ k: PetSprite.ParticleKind, count: Int) {

@@ -546,6 +546,7 @@ final class NotchController: NSObject {
         pet.level = { ledger.level }
         pet.lastFedAt = { ledger.lastTaskAt }
         pet.streak = { ledger.streak }
+        pet.wear = { ledger.wearing }
         ledger.onLevelChange = { [weak self] old, new in
             guard let self, self.prefs.showPet, new > old else { return }
             let name = ledger.petName
@@ -554,19 +555,24 @@ final class NotchController: NSObject {
                 title = "\(name) just hatched 🐣"
                 sub = "your first task fed it. it lives in your notch now"
             } else {
-                title = "\(name) hit level \(new) ✨"
-                switch new {
-                case 3: sub = "unlocked a sprout 🌱"
-                case 6: sub = "unlocked headphones 🎧"
-                case 10: sub = "unlocked the crown 👑 absolute legend"
-                default: sub = "keep shipping. hover the notch for today's receipt"
-                }
+                title = new == PetLook.maxLevel ? "\(name) hit level 50 🌟" : "\(name) hit level \(new) ✨"
+                sub = PetLook.levelUpLine(new)
             }
             // Let the "done" banner show first.
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 self.store.showBanner(Banner(kind: .pet, sessionID: "", agent: .claude, title: title,
                                              subtitle: sub, action: .receipt))
-                self.pet.party()
+                if old == 0 { self.pet.party() } else { self.pet.celebrate(level: new) }
+            }
+        }
+        ledger.onStreakMilestone = { [weak self] days in
+            guard let self, self.prefs.showPet else { return }
+            let line = PetLook.streakLine(days)
+            // After the "done" banner and any level up.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+                self.store.showBanner(Banner(kind: .pet, sessionID: "", agent: .claude, title: line.title,
+                                             subtitle: line.sub, action: .receipt))
+                self.pet.celebrate(streak: days)
             }
         }
     }
@@ -1223,13 +1229,17 @@ extension NotchController {
                 d.commands = 86; d.testsPassed = 112; d.testsFailed = 0; d.allowed = 19; d.denied = 2; d.autoAllowed = 7
             }
             let tasks = json["tasks"] as? Int ?? 60
-            store.ledger.debugFill(d, lifetime: .init(tasks: tasks, files: tasks * 3, tests: 400, approvals: 50))
+            let life = (json["level"] as? Int).map(DayLedger.debugLifetime(level:))
+                ?? .init(tasks: tasks, files: tasks * 3, tests: 400, approvals: 50)
+            store.ledger.debugFill(d, lifetime: life, streak: json["streak"] as? Int)
             pet.lastPrinted = ""
             ui.forceIdle = (json["idle"] as? Bool) ?? true
             return true
         case "_PetShare":
             let l = store.ledger
-            var pose = PetSprite.Pose(eyes: .happy, mouth: .smile, blush: true, outfit: .forLevel(l.level))
+            var pose = PetSprite.Pose(eyes: .happy, mouth: .smile, blush: true,
+                                      outfit: PetLook.outfit(level: l.level, wear: l.wearing))
+            pose.gear = PetLook.gear(level: l.level)
             pose.egg = l.level == 0
             let c = ReceiptContent.make(day: l.today, number: l.receiptNumber, petName: l.petName, streak: l.streak)
             let png: Data? = MainActor.assumeIsolated {
@@ -1299,10 +1309,21 @@ extension NotchController {
             if name == "start" { ci.onStart?(sid, st) }
             store.setCI(sid, st)
             return true
+        case "_PetSheet":
+            // Every look from level 1 to 50 on one image, a few frames each, for checking the art.
+            MainActor.assumeIsolated { PetSheet.write(to: json["path"] as? String ?? "/tmp/pets.png") }
+            return true
         case "_PetAct":
             switch json["act"] as? String {
             case "feed": pet.feed()
             case "party": pet.party()
+            case "levelup":
+                // Preview a level up banner and its party: {"act":"levelup","level":50}
+                let n = json["level"] as? Int ?? 50
+                store.ledger.onLevelChange?(n - 1, n)
+            case "streak":
+                store.ledger.onStreakMilestone?(json["days"] as? Int ?? 100)
+            case "celebrate": pet.celebrate(level: json["level"] as? Int ?? 50)
             case "pet": pet.pet()
             case "sleep": pet.debugSleep()
             default: pet.poke()

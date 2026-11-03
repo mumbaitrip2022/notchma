@@ -149,15 +149,21 @@ struct PetCanvas: View {
         let originY = height - ground - CGFloat(PetSprite.height) - CGFloat(frame.lift)
         let dim = ink.copy(alpha: ink.alpha * 0.45) ?? ink
         let pink = accent ?? dim
+        // Gold only on screen; on paper it prints in ink, and there's no glow.
+        let gold = accent == nil ? ink : PetSprite.goldColor
+        var pose = frame.pose
+        if accent == nil { pose.gear.remove(.aura) }
         c.saveGState()
         c.translateBy(x: originX, y: originY)
-        PetVector.draw(frame.pose, in: c, ink: ink, pink: pink)
+        PetVector.draw(pose, in: c, ink: ink, pink: pink, gold: gold)
         c.restoreGState()
         for p in frame.particles {
             let h = CGFloat(PetSprite.particle(p.kind).count)
-            let fade = p.kind == .z || p.kind == .sparkle ? min(1, CGFloat(p.life) / 3) : 1
-            PetVector.particle(p.kind, at: CGPoint(x: originX + p.x, y: originY + p.y - h), in: c,
-                               ink: ink, pink: pink, alpha: fade)
+            let fades: Bool
+            switch p.kind { case .z, .sparkle, .star, .puff, .confetti: fades = true; default: fades = false }
+            let fade = fades ? min(1, CGFloat(p.life) / 3) : 1
+            PetVector.particle(p, at: CGPoint(x: originX + p.x, y: originY + p.y - h), in: c,
+                               ink: ink, pink: pink, gold: gold, alpha: fade)
         }
     }
 }

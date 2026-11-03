@@ -18,15 +18,43 @@ enum PetSprite {
 
     /// Soft pink for ears, cheeks, tongue and hearts.
     static let blushColor = Color(red: 1.0, green: 0.55, blue: 0.70)
+    /// Warm gold for the high level gear: boots, halo, stars, the golden crown.
+    static let goldColor = CGColor(srgbRed: 1.0, green: 0.80, blue: 0.36, alpha: 1)
 
     enum Eyes: Equatable { case open(dx: Int), closed, happy, sleepy, shades, wide, love, wink, blink }
     enum Mouth: Equatable { case small, open, smile, flat, blep }
     enum Feet: Equatable { case stand, stepA, stepB, tucked }
     enum Tail: Equatable { case up, curl, down }
-    enum Outfit: Int, Comparable {
-        case none, sprout, headphones, crown
+    /// What it wears on its head. One at a time; you pick from the ones you've unlocked.
+    enum Outfit: Int, Comparable, CaseIterable {
+        case none, sprout, headphones, crown, wizard, halo, goldCrown
         static func < (a: Outfit, b: Outfit) -> Bool { a.rawValue < b.rawValue }
-        static func forLevel(_ l: Int) -> Outfit { l >= 10 ? .crown : l >= 6 ? .headphones : l >= 3 ? .sprout : .none }
+        /// The newest hat unlocked at this level.
+        static func forLevel(_ l: Int) -> Outfit {
+            allCases.last { $0.unlockLevel <= l } ?? .none
+        }
+        var unlockLevel: Int {
+            switch self {
+            case .none: return 0
+            case .sprout: return 3
+            case .headphones: return 6
+            case .crown: return 10
+            case .wizard: return 20
+            case .halo: return 25
+            case .goldCrown: return 50
+            }
+        }
+    }
+
+    /// Extras that come with high levels and stack up (unlike hats).
+    struct Gear: OptionSet, Equatable {
+        let rawValue: UInt8
+        static let scarf = Gear(rawValue: 1)      // lvl 15
+        static let boots = Gear(rawValue: 2)      // lvl 30, rocket boots
+        static let trail = Gear(rawValue: 4)      // lvl 35, sparkles where it walks
+        static let aura = Gear(rawValue: 8)       // lvl 40, a soft glow
+        static let shooting = Gear(rawValue: 16)  // lvl 45, shooting stars
+        static let orbit = Gear(rawValue: 32)     // lvl 50, stars circling it
     }
 
     struct Pose: Equatable {
@@ -40,6 +68,9 @@ enum PetSprite {
         var egg = false
         var flip = false         // face left
         var tail: Tail = .up
+        var gear: Gear = []
+        var flying = false       // off the ground (rocket boots fire)
+        var phase = 0            // ticks, for things that bob, twinkle and orbit
     }
 
     /// Row-major grid, `height` rows of `width` pixels.
@@ -71,6 +102,14 @@ enum PetSprite {
                   x: bodyX, y: top)
         case .crown:
             stamp(&g, ["....#.##.#....", "....######....", "....######...."], x: bodyX, y: top)
+        case .wizard:
+            stamp(&g, ["........#.....", ".......##.....", "......###.....", ".....####.....", "....######....", "...########..."],
+                  x: bodyX, y: top - 3)
+        case .halo:
+            stamp(&g, ["....######....", "...#......#...", "....######...."], x: bodyX, y: 0)
+        case .goldCrown:
+            stamp(&g, ["...#..##..#...", "...#.####.#...", "...########...", "...########...", "...########..."],
+                  x: bodyX, y: top - 1)
         }
         if p.flip { g = g.map { $0.reversed() } }
         return g
@@ -185,7 +224,7 @@ enum PetSprite {
 
     // MARK: particles
 
-    enum ParticleKind: Equatable { case heart, z, sparkle, cookie, crumb, note, gift }
+    enum ParticleKind: Equatable { case heart, z, sparkle, cookie, crumb, note, gift, star, shooting, puff, confetti }
 
     /// `#` ink, `+` dim, `P` pink.
     static func particle(_ k: ParticleKind) -> [String] {
@@ -197,6 +236,10 @@ enum PetSprite {
         case .crumb:   return ["#"]
         case .note:    return [".##", ".#.", "##."]
         case .gift:    return ["PP.PP", ".PPP.", "#####", "##+##", "##+##"]
+        case .star:    return [".#.", "###", ".#."]
+        case .shooting: return ["#"]
+        case .puff:    return ["++", "++"]
+        case .confetti: return ["#"]
         }
     }
 }

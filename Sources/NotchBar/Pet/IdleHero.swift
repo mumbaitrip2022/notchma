@@ -21,7 +21,8 @@ struct IdleHero: View {
     /// The pet as printed on paper and in the shared image: always smiling.
     private var portrait: PetSprite.Pose {
         var p = PetSprite.Pose()
-        p.outfit = .forLevel(ledger.level)
+        p.outfit = PetLook.outfit(level: ledger.level, wear: ledger.wearing)
+        p.gear = PetLook.gear(level: ledger.level).intersection([.scarf, .boots, .orbit])
         p.egg = ledger.level == 0
         p.eyes = p.egg ? .open(dx: 0) : (ledger.streak >= 7 ? .shades : .happy)
         p.mouth = .smile
@@ -63,6 +64,7 @@ struct IdleHero: View {
             brain.poke()
         }
         .onDisappear {
+            brain.preview = nil
             brain.stayPut = false
             brain.lookAt = nil
             brain.printing = false
@@ -82,7 +84,10 @@ struct IdleHero: View {
                     .monospacedDigit()
                     .foregroundStyle(.black)
                     .padding(.horizontal, 7).padding(.vertical, 2)
-                    .background(Capsule().fill(Color.white))
+                    .background(Capsule().fill(ledger.level >= PetLook.maxLevel
+                        ? AnyShapeStyle(LinearGradient(colors: [Color(cgColor: PetSprite.goldColor), Color(red: 1, green: 0.66, blue: 0.3)],
+                                                       startPoint: .leading, endPoint: .trailing))
+                        : AnyShapeStyle(Color.white)))
                     .contentTransition(.numericText())
             }
 
@@ -90,7 +95,9 @@ struct IdleHero: View {
                 GeometryReader { g in
                     ZStack(alignment: .leading) {
                         Capsule().fill(Palette.surface3)
-                        Capsule().fill(Color.white)
+                        Capsule().fill(ledger.level >= 40 ? AnyShapeStyle(LinearGradient(
+                                colors: [PetSprite.blushColor, Color(cgColor: PetSprite.goldColor)], startPoint: .leading, endPoint: .trailing))
+                            : AnyShapeStyle(Color.white))
                             .frame(width: max(6, g.size.width * ledger.levelProgress))
                     }
                 }
@@ -104,12 +111,22 @@ struct IdleHero: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 fact("face.smiling", brain.moodLine)
-                if ledger.streak >= 2 { fact("flame", "\(ledger.streak) day streak") }
+                let st = ledger.streakInfo
+                if st.days >= 2 {
+                    HStack(alignment: .firstTextBaseline, spacing: 7) {
+                        StreakFlame(days: st.days).frame(width: 14)
+                        (Text("\(st.days) day streak").foregroundStyle(Palette.text2)
+                         + Text(st.skipReady ? "  ·  1 skip left" : "  ·  skip used").foregroundStyle(Palette.text3))
+                            .font(.system(size: 12))
+                    }
+                    .help("Miss one day a week and the streak keeps going. Gold flame at 30 days.")
+                }
                 if ledger.lifetime.tasks > 0 {
                     fact("shippingbox", "\(ledger.lifetime.tasks.formatted()) task\(ledger.lifetime.tasks == 1 ? "" : "s") shipped all time")
                 }
-                fact("gift", unlockLine)
             }
+
+            if ledger.level > 0 { wardrobe }
 
             if let feedback {
                 Text(feedback)
@@ -165,13 +182,46 @@ struct IdleHero: View {
         return "\(ledger.xp.formatted()) / \(next.formatted()) xp to lvl \(ledger.level + 1)"
     }
 
-    private var unlockLine: String {
-        switch ledger.level {
-        case 0: return "hatches when a task finishes 🐣"
-        case ..<3: return "lvl 3 unlocks a sprout 🌱"
-        case ..<6: return "lvl 6 unlocks headphones 🎧"
-        case ..<10: return "lvl 10 unlocks the crown 👑"
-        default: return "max drip unlocked 👑"
+    // MARK: wardrobe
+
+    /// Hats to pick from. Hover any of them, even locked ones, to try it on.
+    private var wardrobe: some View {
+        let level = ledger.level
+        let worn = PetLook.outfit(level: level, wear: ledger.wearing)
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 4) {
+                ForEach(PetLook.hats, id: \.self) { hat in
+                    let open = hat.unlockLevel <= level
+                    Button {
+                        guard open else { return }
+                        ledger.wearing = hat == .forLevel(level) ? nil : hat
+                        brain.preview = nil
+                        brain.pet()
+                    } label: {
+                        HatChip(hat: hat, unlocked: open, selected: open && hat == worn)
+                    }
+                    .buttonStyle(.plain)
+                    .onHover { on in
+                        brain.preview = on ? (max(level, hat.unlockLevel), hat) : nil
+                    }
+                    .help(open ? (hat == .none ? "No hat" : "Wear it") : "Unlocks at lvl \(hat.unlockLevel). Hover to try it on")
+                }
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 7) {
+                Image(systemName: "gift")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Palette.text3)
+                    .frame(width: 14)
+                Text(PetLook.nextLine(level))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Palette.text2)
+            }
+            .contentShape(Rectangle())
+            .onHover { on in
+                guard let n = PetLook.next(after: level) else { return }
+                brain.preview = on ? (n.level, n.outfit ?? PetLook.outfit(level: n.level, wear: ledger.wearing)) : nil
+            }
+            .help("Hover to preview it")
         }
     }
 
@@ -259,5 +309,58 @@ struct PetButton: View {
         .buttonStyle(.plain)
         .onHover { hover = $0; if $0 { brain.poke() } }
         .help(fresh ? "\(ledger.petName) has a fresh receipt for you" : "Today's receipt from \(ledger.petName)")
+    }
+}
+
+/// One hat in the wardrobe: the pet wearing it, dimmed with a lock until it's unlocked.
+private struct HatChip: View {
+    let hat: PetSprite.Outfit
+    let unlocked: Bool
+    let selected: Bool
+    @State private var hover = false
+
+    var body: some View {
+        ZStack {
+            Circle().fill(hover ? Palette.surface3.opacity(1.5) : Palette.surface3)
+            PetCanvas(frame: .init(pose: PetSprite.Pose(eyes: .happy, mouth: .smile, outfit: hat)),
+                      pixel: 1.5, ink: .white, roams: false, ground: 0)
+                .frame(width: 26, height: 25)
+                .opacity(unlocked ? 1 : 0.3)
+            if !unlocked {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundStyle(Palette.text2)
+                    .offset(x: 9, y: 9)
+            }
+        }
+        .frame(width: 27, height: 27)
+        .overlay(Circle().strokeBorder(Color.white.opacity(selected ? 0.9 : 0), lineWidth: 1.5))
+        .scaleEffect(hover ? 1.1 : 1)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: hover)
+        .onHover { hover = $0 }
+    }
+}
+
+/// The streak flame: still at first, flickering from 14 days, gold from 30.
+struct StreakFlame: View {
+    let days: Int
+
+    var body: some View {
+        let icon = Image(systemName: days >= 14 ? "flame.fill" : "flame")
+            .font(.system(size: 11, weight: .semibold))
+        if days >= 14 {
+            TimelineView(.periodic(from: .now, by: 0.12)) { ctx in
+                let t = ctx.date.timeIntervalSinceReferenceDate
+                icon
+                    .foregroundStyle(days >= 30
+                        ? AnyShapeStyle(LinearGradient(colors: [Color(red: 1, green: 0.93, blue: 0.6), Color(cgColor: PetSprite.goldColor), Color(red: 1, green: 0.55, blue: 0.2)],
+                                                       startPoint: .top, endPoint: .bottom))
+                        : AnyShapeStyle(Color(red: 1, green: 0.55, blue: 0.3)))
+                    .scaleEffect(x: 1 + 0.05 * sin(t * 11), y: 1 + 0.09 * sin(t * 7.3), anchor: .bottom)
+                    .opacity(0.85 + 0.15 * sin(t * 17))
+            }
+        } else {
+            icon.foregroundStyle(Palette.text3)
+        }
     }
 }

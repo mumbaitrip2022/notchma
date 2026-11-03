@@ -62,6 +62,8 @@ struct ReceiptContent: Equatable {
             if let p = day.topProject { l.append(.row("top project", ToolInfo.clip(p, 18))) }
             if day.longest >= 60 { l.append(.row("longest task", Self.duration(day.longest))) }
             if streak >= 2 { l.append(.row("streak", "🔥 \(streak) days")) }
+            if streak >= 100 { l.append(.center("★ ★ century club ★ ★")) }
+            else if streak >= 30 { l.append(.center("★ golden streak ★")) }
         }
         l.append(.gap)
         l.append(.barcode(day.signature))
@@ -120,8 +122,8 @@ struct ReceiptPaper: View {
     var body: some View {
         VStack(spacing: 0) {
             PetCanvas(frame: PetBrain.Frame(pose: pose), pixel: 2, ink: Thermal.ink, accent: nil, roams: false, ground: 0)
-                .frame(width: 40, height: 28)
-                .padding(.top, 10)
+                .frame(width: 44, height: 32)
+                .padding(.top, 6)
             VStack(spacing: 1.5) {
                 ForEach(Array(content.lines.enumerated()), id: \.offset) { _, line in row(line) }
             }

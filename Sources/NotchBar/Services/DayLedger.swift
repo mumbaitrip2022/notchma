@@ -72,6 +72,7 @@ final class DayLedger: ObservableObject {
         var lifetime: Lifetime
         var firstDay: String
         var petName: String?
+        var wear: Int?              // the hat picked in the wardrobe
     }
 
     @Published private(set) var today: Day
@@ -79,9 +80,13 @@ final class DayLedger: ObservableObject {
     private(set) var history: [String: Int] = [:]
     private(set) var firstDay: String
     @Published var petName: String { didSet { if petName != oldValue { scheduleSave() } } }
+    /// The hat you picked; nil wears the newest one you've unlocked.
+    @Published var wearing: PetSprite.Outfit? { didSet { if wearing != oldValue { scheduleSave() } } }
 
     /// Fired when lifetime XP crosses a level (old, new). Level 0 → 1 is the hatch.
     var onLevelChange: ((Int, Int) -> Void)?
+    /// Fired by the first task of a day when the streak lands on a milestone (7, 14, 30…).
+    var onStreakMilestone: ((Int) -> Void)?
 
     private let url: URL
     private let io = DispatchQueue(label: "notchbar.ledger", qos: .utility)
@@ -103,6 +108,7 @@ final class DayLedger: ObservableObject {
             lifetime = s.lifetime
             firstDay = s.firstDay
             petName = s.petName ?? Self.randomName()
+            wearing = s.wear.flatMap(PetSprite.Outfit.init(rawValue:))
         } else {
             today = Day(key: key)
             firstDay = key
@@ -136,18 +142,33 @@ final class DayLedger: ObservableObject {
         return Double(xp - lo) / Double(max(hi - lo, 1))
     }
 
-    /// Consecutive days with at least one finished task, ending today (or yesterday, if today is still empty).
-    var streak: Int {
+    /// Days with at least one finished task in a row, ending today (or yesterday, if today is still empty).
+    var streak: Int { streakInfo.days }
+
+    /// The streak, and whether this week's skip day is still unused. One missed day a week
+    /// doesn't break it (it just doesn't count), so a day off is fine.
+    var streakInfo: (days: Int, skipReady: Bool) {
         var counts = history
         counts[today.key] = today.tasks
-        var day = Date()
-        if (counts[Self.dayKey(day)] ?? 0) == 0 { day = day.addingTimeInterval(-86_400) }
-        var n = 0
-        while (counts[Self.dayKey(day)] ?? 0) > 0 {
-            n += 1
-            day = day.addingTimeInterval(-86_400)
+        return Self.streak(counts, from: Date())
+    }
+
+    static func streak(_ counts: [String: Int], from now: Date) -> (days: Int, skipReady: Bool) {
+        func active(_ i: Int) -> Bool { (counts[dayKey(now.addingTimeInterval(Double(-i) * 86_400))] ?? 0) > 0 }
+        let start = active(0) ? 0 : 1      // today still empty: count from yesterday
+        var i = start, n = 0
+        var skips: [Int] = []              // days back that were forgiven
+        while i < 800 {
+            if active(i) { n += 1; i += 1; continue }
+            // A one day gap is forgiven if no other skip is within a week of it.
+            guard n > 0 || i == start, active(i + 1), skips.allSatisfy({ i - $0 >= 7 }) else { break }
+            skips.append(i)
+            i += 1
         }
-        return n
+        guard n > 0 else { return (0, true) }
+        // The skip is used up if one was taken in the last 7 days.
+        let ready = !skips.contains { $0 - start < 7 }
+        return (n, ready)
     }
 
     /// Receipt number: days since NotchBar first ran, starting at 1.
@@ -176,6 +197,10 @@ final class DayLedger: ObservableObject {
             guard Self.dayKey(endedAt) == today.key else { return }
             mutateLifetime { $0.tasks += 1 }
             today.turns.append(t)
+            if today.tasks == 1 {
+                let n = streak
+                if PetLook.streakMilestones.contains(n) { onStreakMilestone?(n) }
+            }
         }
         touch(endedAt)
     }
@@ -235,9 +260,9 @@ final class DayLedger: ObservableObject {
         guard today.key != key else { return }
         if today.tasks > 0 { history[today.key] = today.tasks }
         lastFinishedBefore = today.turns.map(\.endedAt).max() ?? lastFinishedBefore
-        // Keep about three months of streak history.
-        if history.count > 100 {
-            for k in history.keys.sorted().prefix(history.count - 100) { history[k] = nil }
+        // Keep over a year of streak history (one number per day).
+        if history.count > 400 {
+            for k in history.keys.sorted().prefix(history.count - 400) { history[k] = nil }
         }
         today = Day(key: key)
         scheduleSave()
@@ -248,7 +273,8 @@ final class DayLedger: ObservableObject {
     private func scheduleSave() {
         guard persists, !demo else { return }
         saveWork?.cancel()
-        let stored = Stored(today: today, history: history, lifetime: lifetime, firstDay: firstDay, petName: petName)
+        let stored = Stored(today: today, history: history, lifetime: lifetime, firstDay: firstDay, petName: petName,
+                            wear: wearing?.rawValue)
         let url = url
         let work = DispatchWorkItem {
             guard let data = try? JSONEncoder.ledger.encode(stored) else { return }
@@ -266,10 +292,20 @@ final class DayLedger: ObservableObject {
 
     #if DEBUG
     /// Test hook: replace today's numbers in memory only (never saved).
-    func debugFill(_ day: Day, lifetime: Lifetime) {
+    func debugFill(_ day: Day, lifetime: Lifetime, streak: Int? = nil) {
         demo = true
         today = day
         self.lifetime = lifetime
+        if let streak {
+            history = [:]
+            for i in 1..<max(1, streak) { history[Self.dayKey(Date().addingTimeInterval(Double(-i) * 86_400))] = 3 }
+        }
+    }
+
+    /// Lifetime numbers that land on a level (for previews).
+    static func debugLifetime(level: Int) -> Lifetime {
+        let xp = xpFor(level: max(1, level)) + 10
+        return Lifetime(tasks: max(1, xp / 10), files: 0, tests: 0, approvals: 0)
     }
     #endif
 }

@@ -5,7 +5,8 @@ import CoreGraphics
 /// squares, so it stays sharp at any size. Face features are cut out of the body,
 /// so whatever is behind the pet shows through them, like the pixel version.
 enum PetVector {
-    static func draw(_ p: PetSprite.Pose, in c: CGContext, ink: CGColor, pink: CGColor) {
+    static func draw(_ p: PetSprite.Pose, in c: CGContext, ink: CGColor, pink: CGColor, gold: CGColor? = nil) {
+        let gold = gold ?? ink
         c.saveGState()
         defer { c.restoreGState() }
         if p.flip { c.translateBy(x: 16, y: 0); c.scaleBy(x: -1, y: 1) }
@@ -18,6 +19,11 @@ enum PetVector {
 
         let sq = p.squash, up = p.ears && !sq
         let by: CGFloat = sq ? 7 : 6, sy: CGFloat = sq ? 1 : 0
+        let t = CGFloat(p.phase)
+
+        // Behind everything: the aura and the far side of the orbit.
+        if p.gear.contains(.aura) { aura(c, pink: pink, t: t) }
+        if p.gear.contains(.orbit) { orbit(c, gold: gold, t: t, front: false) }
         c.setFillColor(ink); c.setStrokeColor(ink)
 
         // Tail
@@ -29,20 +35,38 @@ enum PetVector {
         }
         c.strokePath()
 
-        // Feet
+        // Feet (gold rocket boots from level 30)
+        let boots = p.gear.contains(.boots)
+        var feet: [CGRect] = []
         if sq || p.feet == .tucked {
-            fillRound(c, 5, 14.2, 8, 1.8, 0.9)
+            feet = [CGRect(x: 5, y: 14.2, width: 8, height: 1.8)]
         } else {
             let (a, b): (CGFloat, CGFloat) = p.feet == .stepA ? (4, 11) : p.feet == .stepB ? (5, 12) : (5, 11)
-            fillRound(c, a, 14.2, 2, 1.8, 0.9)
-            fillRound(c, b, 14.2, 2, 1.8, 0.9)
+            feet = [CGRect(x: a, y: 14.2, width: 2, height: 1.8), CGRect(x: b, y: 14.2, width: 2, height: 1.8)]
         }
+        if boots && p.flying && !sq {
+            // Little rocket flames under each foot, flickering.
+            let flick: CGFloat = p.phase % 2 == 0 ? 0.8 : 0
+            let spots: [CGFloat] = feet.count == 1 ? [6.2, 11.8] : feet.map { $0.midX }
+            for x in spots { flame(c, x, 16, 2.4 + flick, pink: pink, gold: gold) }
+        }
+        c.setFillColor(boots ? gold : ink)
+        for f in feet {
+            if boots { fillRound(c, f.minX - 0.35, 14.3, f.width + 0.7, 2, 1) } else { fillRound(c, f.minX, f.minY, f.width, f.height, 0.9) }
+        }
+        c.setFillColor(ink)
 
         // Ears, then the round body
         let ear = up ? [pt(3.4, 7.6), pt(4.3, 2.9), pt(8.2, 6.3)]
                      : [pt(2.3, by + 2.8), pt(1.2, by + 0.6), pt(5.2, by + 0.2)]
         c.setLineWidth(1.1)
         for e in [ear, mirror(ear)] { c.addLines(between: e); c.closePath(); c.drawPath(using: .fillStroke) }
+        if boots {
+            // Separate the body from the gold boots, only down by the feet.
+            c.saveGState(); c.clip(to: CGRect(x: 0, y: 13.5, width: 18, height: 4))
+            cut(c) { c.setLineWidth(0.5); c.addPath(round(2, by, 14, 15 - by, 3.8)); c.strokePath() }
+            c.restoreGState()
+        }
         fillRound(c, 2, by, 14, 15 - by, 3.8)
 
         // Pink inside the ears
@@ -111,6 +135,9 @@ enum PetVector {
             cut(c) { c.move(to: pt(8.1, 12.6)); c.addQuadCurve(to: pt(9.9, 12.6), control: pt(9, 11.7)); c.strokePath() }
         }
 
+        // A pink scarf, its ends fluttering behind while it moves.
+        if p.gear.contains(.scarf) { scarf(c, by: by, moving: p.feet == .stepA || p.feet == .stepB || p.flying, t: t, pink: pink) }
+
         // Outfits get a thin cut out line so they read on top of the body.
         c.setFillColor(ink); c.setStrokeColor(ink)
         switch p.outfit {
@@ -136,12 +163,119 @@ enum PetVector {
             crown.closeSubpath()
             outlined(c, crown)
             c.setFillColor(pink); c.addPath(oval(9, b - 1, 0.45, 0.45)); c.fillPath()
+        case .wizard:
+            // A floppy pink pointed hat between the ears, white dots, a gold star on the tip.
+            let b = by + 0.5
+            let hat = CGMutablePath()
+            hat.move(to: pt(5.6, b))
+            hat.addQuadCurve(to: pt(9.7, 1.0 + sy), control: pt(7.6, 3.0 + sy))
+            hat.addQuadCurve(to: pt(11.5, 0.5 + sy), control: pt(10.7, 0.1 + sy))
+            hat.addQuadCurve(to: pt(12.4, b), control: pt(11.1, 3.4 + sy))
+            hat.closeSubpath()
+            c.setFillColor(pink)
+            outlined(c, hat)
+            outlined(c, oval(9, b, 4.4, 0.95))
+            c.setFillColor(ink)
+            for d in [pt(8.4, b - 2.0), pt(10.5, b - 3.6), pt(10.9, b - 1.4)] { c.addPath(oval(d.x, d.y, 0.38, 0.38)); c.fillPath() }
+            let tw: CGFloat = p.phase % 8 < 2 ? 1.8 : 1.25
+            star(c, 11.7, 0.6 + sy, tw, color: gold)
+            c.setFillColor(ink)
+        case .halo:
+            let bob = sin(t * 0.55) * 0.45
+            c.setStrokeColor(gold); c.setLineWidth(0.75)
+            c.addPath(oval(9, 1.5 + bob + sy, 3.3, 0.85)); c.strokePath()
+            c.setStrokeColor(ink)
+        case .goldCrown:
+            let b = by + 0.3
+            let crown = CGMutablePath()
+            crown.addLines(between: [pt(5.5, b), pt(5.0, b - 3.6), pt(7.2, b - 1.9), pt(9, b - 4.3),
+                                     pt(10.8, b - 1.9), pt(13, b - 3.6), pt(12.5, b)])
+            crown.closeSubpath()
+            c.setFillColor(gold)
+            outlined(c, crown)
+            for d in [pt(5.0, b - 3.6), pt(9, b - 4.3), pt(13, b - 3.6)] { c.addPath(oval(d.x, d.y, 0.5, 0.5)); c.fillPath() }
+            c.setFillColor(pink); c.addPath(oval(9, b - 1.2, 0.55, 0.55)); c.fillPath()
+            cut(c) { c.setLineWidth(0.4); line(c, pt(5.6, b - 0.55), pt(12.4, b - 0.55)) }
+            // A glint that runs over the gems now and then.
+            let g = p.phase % 12
+            if g < 3 { star(c, [5.0, 9, 13][g], [b - 3.6, b - 4.3, b - 3.6][g], 1.4, color: ink) }
+            c.setFillColor(ink)
+        }
+
+        if p.gear.contains(.orbit) { orbit(c, gold: gold, t: t, front: true) }
+    }
+
+    // MARK: high level extras
+
+    private static func aura(_ c: CGContext, pink: CGColor, t: CGFloat) {
+        let a = 0.55 + 0.2 * sin(t * 0.35)
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let base = pink.converted(to: space, intent: .defaultIntent, options: nil),
+              let g = CGGradient(colorsSpace: space,
+                                 colors: [base.copy(alpha: a)!, base.copy(alpha: a * 0.35)!, base.copy(alpha: 0)!] as CFArray,
+                                 locations: [0, 0.55, 1]) else { return }
+        c.drawRadialGradient(g, startCenter: pt(9, 10.5), startRadius: 0, endCenter: pt(9, 10.5), endRadius: 10.5, options: [])
+    }
+
+    /// Two little stars circling the pet, passing behind it and in front.
+    private static func orbit(_ c: CGContext, gold: CGColor, t: CGFloat, front: Bool) {
+        for k in 0..<2 {
+            let a = t * 0.42 + CGFloat(k) * .pi
+            let depth = sin(a)
+            guard (depth > 0) == front else { continue }
+            let x = 9 + 9.4 * cos(a), y = 9.6 + 2.4 * depth
+            c.saveGState()
+            c.setAlpha(front ? 1 : 0.55)
+            star(c, x, y, 1.15 + 0.35 * depth, color: gold)
+            c.restoreGState()
         }
     }
 
+    private static func scarf(_ c: CGContext, by: CGFloat, moving: Bool, t: CGFloat, pink: CGColor) {
+        c.saveGState()
+        c.setFillColor(pink); c.setStrokeColor(pink)
+        // The band, clipped to the body so it wraps around it.
+        c.saveGState()
+        c.addPath(round(2, by, 14, 15 - by, 3.8)); c.clip()
+        cut(c) { c.addPath(round(1, 12.75, 16, 1.9, 0.9)); c.fillPath() }
+        c.addPath(round(1, 13.0, 16, 1.4, 0.7)); c.fillPath()
+        c.restoreGState()
+        // Two ends at the back, by the tail.
+        c.setLineCap(.round); c.setLineWidth(1.05)
+        let w = sin(t * 1.6) * 0.7
+        if moving {
+            c.move(to: pt(3.4, 13.6)); c.addQuadCurve(to: pt(-0.4, 12.9 + w), control: pt(1.4, 14.2 - w)); c.strokePath()
+            c.move(to: pt(3.4, 13.9)); c.addQuadCurve(to: pt(0.2, 14.9 - w), control: pt(1.6, 13.8 + w)); c.strokePath()
+        } else {
+            c.move(to: pt(3.3, 13.7)); c.addQuadCurve(to: pt(1.9, 15.9), control: pt(2.0, 14.4)); c.strokePath()
+            c.move(to: pt(3.9, 13.9)); c.addQuadCurve(to: pt(3.2, 16.2), control: pt(3.2, 15.0)); c.strokePath()
+        }
+        c.restoreGState()
+    }
+
+    private static func flame(_ c: CGContext, _ x: CGFloat, _ y: CGFloat, _ len: CGFloat, pink: CGColor, gold: CGColor) {
+        let f = CGMutablePath()
+        f.move(to: pt(x - 0.95, y))
+        f.addQuadCurve(to: pt(x, y + len), control: pt(x - 0.8, y + len * 0.65))
+        f.addQuadCurve(to: pt(x + 0.95, y), control: pt(x + 0.8, y + len * 0.65))
+        f.closeSubpath()
+        c.setFillColor(pink); c.addPath(f); c.fillPath()
+        c.setFillColor(gold); c.addPath(oval(x, y + 0.6, 0.5, 0.7)); c.fillPath()
+    }
+
+    /// A four point sparkle centered on (x, y), `r` from the center to a tip.
+    static func star(_ c: CGContext, _ x: CGFloat, _ y: CGFloat, _ r: CGFloat, color: CGColor) {
+        let i = r * 0.3
+        c.setFillColor(color)
+        c.addLines(between: [pt(x, y - r), pt(x + i, y - i), pt(x + r, y), pt(x + i, y + i),
+                             pt(x, y + r), pt(x - i, y + i), pt(x - r, y), pt(x - i, y - i)])
+        c.closePath(); c.fillPath()
+    }
+
     /// One particle in its pixel box (`PetSprite.particle` sizes), top-left at `o`.
-    static func particle(_ k: PetSprite.ParticleKind, at o: CGPoint, in c: CGContext,
-                         ink: CGColor, pink: CGColor, alpha: CGFloat) {
+    static func particle(_ p: PetBrain.Particle, at o: CGPoint, in c: CGContext,
+                         ink: CGColor, pink: CGColor, gold: CGColor? = nil, alpha: CGFloat) {
+        let k = p.kind, gold = gold ?? ink
         c.saveGState()
         defer { c.restoreGState() }
         c.translateBy(x: o.x, y: o.y)
@@ -175,6 +309,26 @@ enum PetVector {
             c.setFillColor(pink)
             c.addPath(oval(1.6, 1.2, 0.9, 0.55, rot: 0.4)); c.fillPath()
             c.addPath(oval(3.4, 1.2, 0.9, 0.55, rot: -0.4)); c.fillPath()
+        case .star:
+            star(c, 1.5, 1.5, 1.5, color: p.tint == 2 ? pink : gold)
+        case .shooting:
+            // A gold head with a fading tail pointing back along its path.
+            let len = max(1, (p.vx * p.vx + p.vy * p.vy).squareRoot())
+            let dx = -CGFloat(p.vx / len), dy = -CGFloat(p.vy / len)
+            for i in 0..<6 {
+                let f = CGFloat(i)
+                c.setFillColor(gold.copy(alpha: 1 - f / 6) ?? gold)
+                c.addPath(oval(0.5 + dx * f * 0.9, 0.5 + dy * f * 0.9, 0.42 - f * 0.05, 0.42 - f * 0.05)); c.fillPath()
+            }
+        case .puff:
+            let r = 0.5 + CGFloat(max(0, 4 - p.life)) * 0.3
+            c.setFillColor(ink.copy(alpha: 0.5) ?? ink)
+            c.addPath(oval(1, 1, r, r * 0.8)); c.fillPath()
+        case .confetti:
+            c.setFillColor([pink, gold, ink][p.tint % 3])
+            c.translateBy(x: 0.5, y: 0.5)
+            c.rotate(by: CGFloat(p.life) * 0.9 + CGFloat(p.tint))
+            c.fill(CGRect(x: -0.55, y: -0.3, width: 1.1, height: 0.6))
         }
     }
 
