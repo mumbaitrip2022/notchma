@@ -169,6 +169,27 @@ final class PetTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: path))
     }
 
+    /// Every unlock has a reveal, it ends where it began (faded out), and it encodes.
+    @MainActor func testRevealGIF() throws {
+        XCTAssertNil(PetReveal.latest(level: 2))
+        XCTAssertEqual(PetReveal.latest(level: 17)?.level, 15)
+        let s = PetReveal.shot(PetReveal.latest(level: 15)!, name: "mochi", wear: nil)
+        XCTAssertEqual(PetReveal.frame(0, s).pose.outfit, .crown)
+        XCTAssertFalse(PetReveal.frame(0, s).pose.gear.contains(.bow))
+        XCTAssertTrue(PetReveal.frame(PetReveal.count - 1, s).pose.gear.contains(.bow))
+        let hat = PetReveal.shot(PetReveal.latest(level: 20)!, name: "mochi", wear: nil)
+        XCTAssertEqual(PetReveal.frame(PetReveal.swapAt - 1, hat).pose.outfit, .crown)
+        XCTAssertEqual(PetReveal.frame(PetReveal.swapAt, hat).pose.outfit, .wizard)
+        let out = ProcessInfo.processInfo.environment["PET_REVEAL"]
+        let data = try XCTUnwrap(PetReveal.gif(s, scale: out == nil ? 0.5 : 2))
+        XCTAssertGreaterThan(data.count, 1000)
+        guard let dir = out else { return }
+        for u in PetLook.unlocks {
+            let shot = PetReveal.shot(u, name: "mochi", wear: nil)
+            try PetReveal.gif(shot)?.write(to: URL(fileURLWithPath: dir).appendingPathComponent("reveal-\(u.level).gif"))
+        }
+    }
+
     func testUnlockRoadToFifty() {
         XCTAssertEqual(PetSprite.Outfit.forLevel(2), PetSprite.Outfit.none)
         XCTAssertEqual(PetSprite.Outfit.forLevel(10), .crown)

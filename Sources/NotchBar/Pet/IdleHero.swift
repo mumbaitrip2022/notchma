@@ -12,6 +12,7 @@ struct IdleHero: View {
 
     @State private var feedback: String?
     @State private var feedbackWork: DispatchWorkItem?
+    @State private var making = false
 
     private var content: ReceiptContent {
         ReceiptContent.make(day: ledger.today, number: ledger.receiptNumber, petName: ledger.petName,
@@ -222,6 +223,14 @@ struct IdleHero: View {
                 brain.preview = on ? (n.level, n.outfit ?? PetLook.outfit(level: n.level, wear: ledger.wearing)) : nil
             }
             .help("Hover to preview it")
+            if let u = PetReveal.latest(level: level) {
+                Button(action: reveal) {
+                    Label(making ? "making it…" : "Show off the \(u.emoji) reveal", systemImage: "film")
+                }
+                .buttonStyle(NBButtonStyle(kind: .secondary, compact: true))
+                .disabled(making)
+                .help("Makes a GIF of \(ledger.petName) twirling into \(u.name). Saved to your Desktop and copied, ready to post")
+            }
         }
     }
 
@@ -257,6 +266,22 @@ struct IdleHero: View {
         c.queryItems = [URLQueryItem(name: "text", value: text)]
         if let url = c.url { NSWorkspace.shared.open(url) }
         say("image copied. press ⌘V in the post 📸")
+    }
+
+    /// The outfit reveal GIF for the newest unlock.
+    private func reveal() {
+        guard let u = PetReveal.latest(level: ledger.level), !making else { return }
+        making = true
+        // Let the button show "making it" before the frames render.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            let data = PetReveal.gif(PetReveal.shot(u, name: ledger.petName, wear: ledger.wearing))
+            making = false
+            guard let data, let url = PetReveal.share(data, name: ledger.petName, unlock: u) else {
+                return say("couldn't make the gif")
+            }
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+            say("saved to Desktop and copied ✨")
+        }
     }
 
     private func say(_ text: String) {
